@@ -21,7 +21,9 @@ export default function Header() {
       <div className="container mx-auto px-4 py-4 flex justify-between items-center relative z-40">
         <div className="flex items-center space-x-4">
           {/* Logo */}
+          <Link href="/">
           <img src="./iconFull.png" className="w-10 h-10 rounded-lg" />
+          </Link>
 
           {/* Desktop nav */}
           <nav className="hidden md:flex ml-6 space-x-6 text-gray-900 font-bold text-xs tracking-tight items-center relative">
@@ -43,30 +45,37 @@ export default function Header() {
                   {[
                     {
                       img: '/assets/icon1.png',
+                      link: '/',
                       title: 'Test The Market Campaign',
                       desc: 'Run a 30 day campaign to test the market and gauge interest in your property.'
                     },
                     {
                       img: '/assets/icon3.png',
+                      link: '/agents',
                       title: 'Go To Market Agents',
                       desc: 'Work with agents in a structured 30 day campaign before formally listing.'
                     },
                     {
                       img: '/assets/icon2.png',
+                      link: '/edge',
                       title: 'Premarket Edge - Sell Yourself',
                       desc: 'Skip agents. Engage directly with buyers and save.'
                     }
-                  ].map(({ img, title, desc }) => (
+                  ].map(({ img, title, desc, link }) => (
+                     <Link href={link}>
                     <div className="flex space-x-2 items-center" key={title}>
-                      <img src={img} className="w-20 rounded -mt-5 mr-2 h-auto" />
+                     
+                      <img src={img} className="w-10 rounded -mt-10 mr-2 h-auto" />
                       <div className="pr-6">
-                        <Link href="#" className="hover:text-gray-500 font-bold text-gray-900 text-lg">
+                        <div className="hover:text-gray-500 font-bold text-gray-900 text-lg">
                           {title}
-                        </Link>
-                        <div className="text-gray-500 text-xs mb-6">{desc}</div>
+                        </div>
+                        <div className="text-gray-500 font-normal inter text-xs mb-6">{desc}</div>
                       </div>
                       <ChevronRight className="text-gray-500" />
+                      
                     </div>
+                    </Link>
                   ))}
                 </div>
               </div>
@@ -116,9 +125,9 @@ export default function Header() {
               <div>
                 <div className="mb-2 text-gray-500 uppercase text-xs">Products</div>
                 <div className="space-y-4">
-                  <Link href="#" className="block">Test The Market Campaign</Link>
-                  <Link href="#" className="block">Go To Market Agents</Link>
-                  <Link href="#" className="block">Premarket Edge</Link>
+                  <Link href="/" className="block">Test The Market Campaign</Link>
+                  <Link href="/agents" className="block">Go To Market Agents</Link>
+                  <Link href="/edge" className="block">Premarket Edge</Link>
                 </div>
               </div>
 
