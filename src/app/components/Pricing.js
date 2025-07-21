@@ -1,7 +1,8 @@
 // components/Features.js
-
+import { useModal } from '../context/ModalContext';
 export default function Pricing() {
-
+  const { setShowModal } = useModal();
+  
   return (
     <div className="bg-gray-100">
         <div className=" sm:p-20 container mx-auto">
@@ -15,7 +16,7 @@ export default function Pricing() {
     <h2 className="text-3xl font-bold mb-2 text-gray-900">First Campaign</h2>
     <div className="text-5xl font-extrabold text-gray-900 mb-2">Free</div>
     
-    <ul className="space-y-2 mb-6 text-gray-700">
+    <ul className="space-y-2 mb-6 text-gray-700 inter">
         <li>30 Day Campaign</li>
         <li>Property Report Card</li>
       <li>Exposure to buyer database</li>
@@ -24,26 +25,30 @@ export default function Pricing() {
       <li>Accept or reject offers</li>      
       <li>Go to market options*</li>      
     </ul>
-    <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full">
+    <button onClick={() => setShowModal(true)} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full">
       Start your free campaign
     </button>
     <span className="block text-sm text-gray-500 mt-4">No credit card required</span>
   </div>
 
-  <div className="w-full sm:w-72 bg-gray-900 p-8 rounded sm:rounded-r-lg">
+  <div className="w-full sm:w-80 bg-gray-900 p-8 rounded sm:rounded-r-lg">
     <h2 className="text-3xl font-bold mb-2 text-white">Buyer</h2>
-    <div className="text-5xl font-extrabold text-white mb-2">$19</div>
-    <div><span className="text-sm font-normal">for your first campaign</span></div>
-    <div className="text-sm font-extrabold text-white mb-2">then $599<span className="text-sm">/year</span></div>
-    <ul className="space-y-2 mb-6 text-white">
+    <div className="text-5xl font-extrabold text-white mb-2">$199<span className="text-sm interBold font-normal">/year</span></div>
+    <ul className="space-y-2 mb-6 text-white inter">
       <li>Exclusive access to properties not on the market yet</li>
       <li>Make unlimited handshake offers on all properties</li>
       <li>Priority support for any deals</li>
       <li>Notifications and alerts</li>
     </ul>
-    <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full">
-      Sign Up
-    </button>
+    <div className="">
+      <p className="space-y-2 mt-6 text-xs interBold text-white">Buyers download</p>
+                <a href="">
+                  <img src="./apple.png" className="mt-3 w-36" />
+                </a>
+                <a href="">
+                  <img src="./play.png" className="-ml-3 h-18" />
+                </a>
+              </div>
   </div>
 </div>
 </div>

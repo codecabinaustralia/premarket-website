@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function CallToAction() {
   return (
     <section className="bg-gray-900 py-16">
@@ -7,7 +9,8 @@ export default function CallToAction() {
 
         <div className="flex flex-col md:flex-row justify-center">
           {/* Card 1 */}
-          <div className="border-2 my-4 sm:border-r-0 border-white rounded-lg sm:rounded-r-none w-full md:w-1/3">
+           <Link href="/" className='w-full md:w-1/3'>
+          <div className="border-2 my-4 sm:border-r-0 border-white rounded-lg sm:rounded-r-none ">
             <div className="card-inner flex flex-col items-center">
               <img src="/assets/icon1.png" alt="Extend Campaign" className="w-16 mt-10 h-16 mb-4 rounded" />
               <h3 className="text-5xl font-bold mb-2">Keep it going</h3>
@@ -17,9 +20,11 @@ export default function CallToAction() {
               </p>
             </div>
           </div>
+          </Link>
 
           {/* Card 2 */}
-          <div className="rainbow-border w-full md:w-1/3">
+          <Link href="/edge" className='w-full md:w-1/3'>
+          <div className="rainbow-border">
             <div className="card-inner2 text-gray-900 py-20 px-10">
                <img src="/assets/icon2.png" alt="Extend Campaign" className="mx-auto w-16 h-16 mb-4 rounded" />
               <h3 className="text-5xl font-bold mb-2">Formalise</h3>
@@ -29,9 +34,11 @@ export default function CallToAction() {
               </p>
             </div>
           </div>
+          </Link>
 
           {/* Card 3 */}
-          <div className="border-2 my-4 sm:border-l-0 border-white rounded-lg sm:rounded-l-none w-full md:w-1/3">
+           <Link href="/agents" className='w-full md:w-1/3'>
+          <div className="border-2 my-4 sm:border-l-0 border-white rounded-lg sm:rounded-l-none ">
             <div className="card-inner">
                <img src="/assets/icon3.png" alt="Extend Campaign" className="mx-auto mt-10 w-16 h-16 mb-4 rounded" />
               <h3 className="text-5xl font-bold mb-2">Go to market</h3>
@@ -41,6 +48,7 @@ export default function CallToAction() {
               </p>
             </div>
           </div>
+          </Link>
         </div>
       </div>
     </section>

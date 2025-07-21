@@ -1,6 +1,9 @@
 'use client';
+import { useModal } from '../context/ModalContext';
 
 export default function Welcome() {
+  const { setShowModal } = useModal();
+
   return (
 
     <section className="bg-white py-20">
@@ -15,7 +18,7 @@ export default function Welcome() {
 
               Homeowners get to test demand, gauge their property's true value, and even sell — without the broken promises of a traditional real estate listing.
             </p>
-            <button className="bg-blue-700 font-bold cursor-pointer hover:bg-blue-900 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition">
+            <button onClick={() => setShowModal(true)} className="bg-blue-700 font-bold cursor-pointer hover:bg-blue-900 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition">
               Start your free 30 day campaign
             </button>
           </div>

@@ -1,4 +1,6 @@
 import { Poppins, Inter, Anton } from "next/font/google";
+import { ModalProvider } from './context/ModalContext';
+
 import "./globals.css";
 
 const poppins = Poppins({
@@ -27,8 +29,10 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={`${antons.variable} antialiased`}>
-        {children}
+      <body className={`${antons.variable} antialiased bg-white`}>
+        <ModalProvider>
+          {children}
+        </ModalProvider>
       </body>
     </html>
   );

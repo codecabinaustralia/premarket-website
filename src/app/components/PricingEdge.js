@@ -1,6 +1,8 @@
 // components/Features.js
+import { useModal } from '../context/ModalContext';
 
 export default function Pricing() {
+const { setShowModal } = useModal();
 
   return (
     <div className="bg-gray-100">
@@ -30,7 +32,7 @@ export default function Pricing() {
       <li>Access to Utility Discounts</li>
       <li>Access to Removalist Discounts</li>
     </ul>
-    <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full">
+    <button onClick={() => setShowModal(true)} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full">
       Start your free campaign
     </button>
     <span className="block text-sm text-gray-500 mt-4">Pay only when deposit is made</span>

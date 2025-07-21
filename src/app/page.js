@@ -1,4 +1,6 @@
 // pages/index.js
+'use client';
+
 import Head from 'next/head';
 import Header from './components/Header';
 import Hero from './components/Hero';
@@ -11,16 +13,23 @@ import Testimonials from './components/Testimonials';
 import StatBox from './components/Stats';
 import Welcome from './components/Welcome';
 import Pricing from './components/Pricing';
+import PropertyFormModal from './components/Form';
+import { useModal } from './context/ModalContext';
 
 export default function Home() {
+  const { showModal } = useModal();
+
   return (
     <>
-      <Head>
+      <Head >
         <title>Premarket Homes</title>
         <meta name="description" content="Premarket Homes - Test the market before you sell." />
       </Head>
       <Header />
-      <main>
+      <PropertyFormModal />
+      
+        <main>
+       
         <Hero />
         <Logos />
         <Welcome />
