@@ -454,7 +454,7 @@ const closeModal = () => {
                                     <input type="checkbox" className="mr-2" required />
                                     I agree to the{' '}
                                     <a
-                                        href="/terms-and-conditions"
+                                        href="/terms"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="text-blue-600 underline"
