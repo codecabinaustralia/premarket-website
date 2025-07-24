@@ -24,8 +24,8 @@ export default function Welcome() {
           </div>
           <div className="sm:order-2 md:w-1/2 px-10 -mt-10 relative">
           <div className="absolute z-50 bottom-0 right-10 m-10 text-white ">
-            <div className="text-xl font-bold">Josh Reilly</div>
-            <div>Co-Founder </div>
+            <div className="text-lg font-bold">Josh Reilly & Luke Wilson</div>
+            <div>Founders </div>
             </div>
             <img src="/assets/ceo.png" alt="Welcome" className="w-full h-auto rounded-2xl shadow-lg" />
           </div>
