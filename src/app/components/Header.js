@@ -83,7 +83,6 @@ export default function Header() {
 
             <div className="space-y-6 text-sm font-bold text-gray-900">
               <div>
-                <div className="mb-2 text-gray-500 uppercase text-xs">Products</div>
                 <div className="space-y-4">
                   <Link href="/" className="block">Test The Market Campaign</Link>
                   <Link href="/agents" className="block">Go To Market Agents</Link>
@@ -91,12 +90,12 @@ export default function Header() {
                 </div>
               </div>
 
-              <Link href="#" className="block">Pricing</Link>
-              <Link href="#" className="block">Why Us</Link>
+              {/* <Link href="#" className="block">Pricing</Link>
+              <Link href="#" className="block">Why Us</Link> */}
               <hr />
               <div className="space-y-2 pt-2">
-                <button className="w-full text-left bg-blue-800 text-white px-4 py-3 rounded-lg">Launch your free campaign</button>
-                <button className="w-full text-left bg-white text-gray-900 px-4 py-3 rounded-lg border border-gray-900">Buyers</button>
+                <button onClick={() => setShowModal(true)}  className="w-full text-left bg-blue-800 text-white px-4 py-3 rounded-lg">Launch your free campaign</button>
+                {/* <button className="w-full text-left bg-white text-gray-900 px-4 py-3 rounded-lg border border-gray-900">Buyers</button> */}
               </div>
             </div>
           </motion.div>

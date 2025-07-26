@@ -14,7 +14,7 @@ import {
     collection,
     addDoc,
     updateDoc,
-    serverTimestamp,getDocs, orderBy, limit, query
+    serverTimestamp, getDocs, orderBy, limit, query
 } from 'firebase/firestore';
 import {
     ref,
@@ -54,19 +54,19 @@ export default function PropertyFormModal() {
 
     const [startDate, setStartDate] = useState(null);
 
-useEffect(() => {
-  async function fetchStartDate() {
-    const q = query(collection(db, 'campaigns'), orderBy('created', 'desc'), limit(1));
-    const snapshot = await getDocs(q);
-    if (!snapshot.empty) {
-      const data = snapshot.docs[0].data();
-      const date = data.startDate.toDate ? data.startDate.toDate() : new Date(data.startDate.seconds * 1000);
-      setStartDate(date);
-    }
-  }
+    useEffect(() => {
+        async function fetchStartDate() {
+            const q = query(collection(db, 'campaigns'), orderBy('created', 'desc'), limit(1));
+            const snapshot = await getDocs(q);
+            if (!snapshot.empty) {
+                const data = snapshot.docs[0].data();
+                const date = data.startDate.toDate ? data.startDate.toDate() : new Date(data.startDate.seconds * 1000);
+                setStartDate(date);
+            }
+        }
 
-  fetchStartDate();
-}, []);
+        fetchStartDate();
+    }, []);
 
 
     const toggleFeature = (feature) => {
@@ -98,28 +98,28 @@ useEffect(() => {
     };
 
     const resetForm = () => {
-  setStep(1);
-  setAddress(null);
-  setType(null);
-  setPriceRaw('');
-  setBathrooms('');
-  setBedrooms('');
-  setCarSpaces('');
-  setSquareFootage('');
-  setTitle('');
-  setDescription('');
-  setLocation(null);
-  setFeatures({});
-  setImages([]);
-  setEmail('');
-  setPassword('');
-  setErrors({});
-};
+        setStep(1);
+        setAddress(null);
+        setType(null);
+        setPriceRaw('');
+        setBathrooms('');
+        setBedrooms('');
+        setCarSpaces('');
+        setSquareFootage('');
+        setTitle('');
+        setDescription('');
+        setLocation(null);
+        setFeatures({});
+        setImages([]);
+        setEmail('');
+        setPassword('');
+        setErrors({});
+    };
 
-const closeModal = () => {
-  resetForm();
-  setShowModal(false);
-};
+    const closeModal = () => {
+        resetForm();
+        setShowModal(false);
+    };
 
 
     const validateStep = () => {
@@ -243,9 +243,9 @@ const closeModal = () => {
                         <div className='container mx-auto flex'>
                             <div className='flex-grow'>
                                 <h2
-                                    className="my-8 leading-none text-4xl inter text-white flex"
+                                    className="px-10 sm:px-0 my-8 leading-none text-2xl sm:text-4xl inter text-white flex flex-wrap sm:flex-nowrap"
                                 >
-                                    <img onClick={closeModal} src="./iconFull.png" className="mr-2 w-10 h-10 rounded-lg" /> Add your property to the next campaign
+                                    <img onClick={closeModal} src="./iconFull.png" className="mr-2 w-6 h-6 sm:w-10 sm:h-10 rounded sm:rounded-lg mb-4 sm:mb-0" /> Add your property to the next campaign
                                 </h2>
 
                                 {errors.step && (
@@ -256,15 +256,16 @@ const closeModal = () => {
 
 
                             </div>
-                            <button className=" cursor-pointer right-4 text-white hover:text-black">
-                                <X size={50} onClick={closeModal} />
+                            <button className="absolute top-0 right-0 m-3 sm:m-0 sm:relative cursor-pointer sm:right-4 text-white hover:text-black">
+                                <X size={50} className='sm:block hidden' onClick={closeModal} />
+                                <X size={20} className='block sm:hidden' onClick={closeModal} />
                             </button>
                         </div>
 
                     </div>
                 )}
 
-                <div className=" w-full max-w-3xl mx-auto py-10  px-20 relative h-[90vh] overflow-y-auto">
+                <div className=" w-full max-w-3xl mx-auto py-10  px-10 sm:px-20 relative h-[90vh] overflow-y-auto">
                     {/* Step 1 - Address */}
                     {step === 1 && (
                         <div>
@@ -282,12 +283,12 @@ const closeModal = () => {
                     {/* Step 2 - Type of Home */}
                     {step === 2 && (
                         <div>
-                            <h2 className="text-2xl font-semibold mb-4">What type of home do you have?</h2>
+                            <h2 className="text-lg sm:text-2xl font-semibold mb-4">What type of home do you have?</h2>
                             <div className="grid grid-cols-1 gap-4">
                                 {homeTypes.map((item, idx) => (
                                     <button
                                         key={idx}
-                                        className={`px-4 py-2 rounded-full text-base w-56 cursor-pointer hover:bg-gray-200 font-medium border border-gray-200 ${type === idx + 1 ? 'bg-red-700 text-white' : 'bg-gray-100 text-gray-800'}`}
+                                        className={`px-4 py-2 rounded-full text-base w-full sm:w-56 cursor-pointer hover:bg-gray-200 font-medium border border-gray-200 ${type === idx + 1 ? 'bg-red-700 text-white' : 'bg-gray-100 text-gray-800'}`}
                                         onClick={() => setType(idx + 1)}
                                     >
                                         {item}
@@ -300,7 +301,7 @@ const closeModal = () => {
                     {/* Step 3 - Price */}
                     {step === 3 && (
                         <div>
-                            <h2 className="text-2xl font-semibold mb-4">What price are you expecting?</h2>
+                            <h2 className="text-lg sm:text-2xl font-semibold mb-4">What price are you expecting?</h2>
                             <input
                                 type="text"
                                 className="border rounded p-3 w-full text-xl"
@@ -326,7 +327,7 @@ const closeModal = () => {
                     {/* Step 4 - Features */}
                     {step === 4 && (
                         <div>
-                            <h2 className="text-2xl font-semibold mb-4">Property Details</h2>
+                            <h2 className="text-lg sm:text-2xl font-semibold mb-4">Property Details</h2>
                             <div className='flex space-x-3'>
                                 <input
                                     type="number"
@@ -359,7 +360,7 @@ const closeModal = () => {
                                     onChange={(e) => setSquareFootage(e.target.value)}
                                     className="mb-2 w-full p-3 border rounded"
                                 />  </div>
-                            <div className="grid grid-cols-3 gap-2 mt-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-6">
                                 {homeFeatures.map((feature, i) => (
                                     <button
                                         key={i}
@@ -467,40 +468,40 @@ const closeModal = () => {
                     )}
 
                     {step === 8 ? (
-                        <div className="h-[90vh] w-full text-center p-20 flex items-center justify-center">
-                            <div className="text-center px-4 bg-gray-100 rounded-xl shadow-lg p-10 relative">
-                                 <button className="absolute top-3 right-0 cursor-pointer right-4 text-gray-400 hover:text-black">
-                                <X size={30} onClick={closeModal} />
-                            </button>
+                        <div className="h-[90vh] w-full text-center p-0 sm:p-20 flex items-center justify-center">
+                            <div className="text-center px-4 bg-gray-100 rounded-xl shadow-lg p-4 sm:p-10 relative">
+                                <button className="absolute top-3 right-0 cursor-pointer right-4 text-gray-400 hover:text-black">
+                                    <X size={30} onClick={closeModal} />
+                                </button>
 
-                                 <img onClick={closeModal} src="./iconFull.png" className="mx-auto mb-4 w-10 h-10 rounded-lg" />
-                                <h2 className="text-3xl font-semibold text-gray-900 mb-4">Property Submitted</h2>
-                                <p className="text-lg  inter text-gray-700 max-w-xl mx-auto mb-6 leading-tight">
+                                <img onClick={closeModal} src="./iconFull.png" className="mx-auto mb-4 w-10 h-10 rounded-lg" />
+                                <h2 className="text-xl sm:text-3xl font-semibold text-gray-900 mb-4">Property Submitted</h2>
+                                <p className="text-base sm:text-lg  inter text-gray-700 max-w-xl mx-auto mb-6 leading-tight">
                                     Your property has been submitted for approval. Campaigns run every 30 days.
                                     We want to give you the best shot, so we’ll let you know if there’s anything you can do to improve your success.
                                     <br />{startDate && (
-      <> Entries will close at <strong>{startDate.toLocaleString('en-AU', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true
-      })}</strong></>
-    )}.
+                                        <> Entries will close at <strong>{startDate.toLocaleString('en-AU', {
+                                            day: '2-digit',
+                                            month: 'short',
+                                            year: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                            hour12: true
+                                        })}</strong></>
+                                    )}.
                                 </p>
-                                <div className="px-10 text-lg inter text-gray-700 mb-4">
+                                <div className="px-10 text-sm sm:text-lg inter text-gray-700 mb-4">
                                     Keep an eye on your inbox we'll keep you updated as the campaign nears.
                                 </div>
                                 <p className="text-sm text-gray-700 mb-4">
                                     Be sure to download the Premarket App from the app stores:
                                 </p>
-                                <div className="flex space-x-1 justify-center">
+                                <div className="sm:flex space-x-1 justify-center">
                                     <a href="">
-                                        <img src="./apple.png" className="mt-3 w-36" />
+                                        <img src="./apple.png" className="mt-4 sm:mt-3 w-36 mx-auto" />
                                     </a>
                                     <a href="">
-                                        <img src="./play.png" className="h-18" />
+                                        <img src="./play.png" className="h-18 mx-auto -mt-4 sm:mt-0" />
                                     </a>
                                 </div>
                             </div>
@@ -518,7 +519,7 @@ const closeModal = () => {
             </div>
 
             {/* Nav Buttons */}
-            <div className="mt-6 z-50 flex justify-between fixed bottom-0 w-full p-20">
+            <div className="mt-6 z-50 flex justify-between fixed bottom-0 w-full p-4 sm:p-20">
                 {step > 1 && step < 8 && (
                     <button
                         onClick={() => setStep((s) => s - 1)}

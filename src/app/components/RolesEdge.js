@@ -1,8 +1,8 @@
 // components/PremarketEdgeTasks.js
 export default function PremarketEdgeTasks() {
   return (
-    <div className="bg-gray-100 w-full">
-        <div className="container mx-auto p-20">
+    <div className="bg-gray-100 w-full mb-10 sm:mb-0">
+        <div className="container mx-auto sm:p-20">
 
         
     <div className="flex flex-col md:flex-row gap-6">

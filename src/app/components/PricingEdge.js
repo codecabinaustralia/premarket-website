@@ -7,11 +7,11 @@ const { setShowModal } = useModal();
   return (
     <div className="bg-gray-100">
         <div className=" sm:p-20 container mx-auto">
-        <div className="text-4xl sm:text-7xl font-extrabold text-gray-900 mb-2 text-center p-10 sm:p-0">
+        <div className="text-4xl sm:text-7xl font-extrabold text-gray-900 mb-2 text-center p-4 sm:p-10 sm:p-0">
             Ultra low fee
-            <div className="mt-6 text-xl inter text-gray-500">Save thousands by selling yourself</div>
+            <div className="sm:mt-6 text-xl inter text-gray-500">Save thousands by selling yourself</div>
             </div>
-<div className="p-10 sm:p-0 flex-wrap sm:flex-wrap-none flex items-start justify-center space-x-0 mt-10">
+<div className="sm:p-10 flex-wrap sm:flex-wrap-none flex items-start justify-center space-x-0 sm:mt-10">
 
   <div className="w-full sm:w-96 bg-white shadow-2xl p-8 rounded-lg py-20 mb-6 sm:mb-0">
     <h2 className="text-3xl font-bold mb-2 text-gray-900">Fixed fee</h2>

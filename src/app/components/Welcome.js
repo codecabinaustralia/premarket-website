@@ -22,9 +22,9 @@ export default function Welcome() {
               Start your free 30 day campaign
             </button>
           </div>
-          <div className="sm:order-2 md:w-1/2 px-10 -mt-10 relative">
-          <div className="absolute z-50 bottom-0 right-10 m-10 text-white ">
-            <div className="text-lg font-bold">Josh Reilly & Luke Wilson</div>
+          <div className="sm:order-2 md:w-1/2 sm:px-10 -mt-10 relative">
+          <div className="absolute z-20 bottom-0 left-10 m-4 sm:m-10 text-white ">
+            <div className="text-sm sm:text-lg font-bold">Josh Reilly & Luke Wilson</div>
             <div>Founders </div>
             </div>
             <img src="/assets/ceo.png" alt="Welcome" className="w-full h-auto rounded-2xl shadow-lg" />
