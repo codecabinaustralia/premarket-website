@@ -226,9 +226,9 @@ export default function PropertyFormModal() {
 
 
     return (
-        <div className={isHidden ? 'hidden' : 'fixed w-full z-90 top-0 left-0 h-screen bg-white'}>
+        <div className={isHidden ? 'hidden' : 'fixed overflow-hidden z-50 w-full z-90 top-0 left-0 h-screen bg-white'}>
 
-            <div className="text-gray-900 border-t border-gray-900 relative fixed inset-0 z-50 flex flex-col justify-center">
+            <div className="overflow-y-scroll overflow-x-hidden text-gray-900 border-t border-gray-900 relative fixed inset-0 z-50 flex flex-col justify-center">
 
                 <motion.div
                     className="absolute top-0 left-0 h-1 bg-red-700"
@@ -265,7 +265,7 @@ export default function PropertyFormModal() {
                     </div>
                 )}
 
-                <div className=" w-full max-w-3xl mx-auto py-10  px-10 sm:px-20 relative h-[90vh] overflow-y-auto">
+                <div className=" w-full max-w-5xl mx-auto py-10  px-10 sm:px-20 relative h-[90vh]">
                     {/* Step 1 - Address */}
                     {step === 1 && (
                         <div>
@@ -468,13 +468,65 @@ export default function PropertyFormModal() {
                     )}
 
                     {step === 8 ? (
-                        <div className="h-[90vh] w-full text-center p-0 sm:p-20 flex items-center justify-center">
-                            <div className="text-center px-4 bg-gray-100 rounded-xl shadow-lg p-4 sm:p-10 relative">
+                        <div className="h-[90vh] w-full bg-white text-center flex items-center justify-center">
+                            <div className="text-center px-4 bg-gray-100 overflow-y-scroll rounded-xl shadow-lg p-4 sm:p-10 relative">
                                 <button className="absolute top-3 right-0 cursor-pointer right-4 text-gray-400 hover:text-black">
                                     <X size={30} onClick={closeModal} />
                                 </button>
 
-                                <img onClick={closeModal} src="./iconFull.png" className="mx-auto mb-4 w-10 h-10 rounded-lg" />
+                                {/* Synthesia Video Embed */}
+            <div
+             className='sm:h-72 mb-10 text-center flex-shrink mx-auto relative flex items-center justify-center'
+                style={{
+                    overflow: 'hidden',
+                    aspectRatio: '1920 / 1080',
+                }}
+            >
+                <iframe
+                    src="https://share.synthesia.io/embeds/videos/9d09d0b1-57eb-4835-81d8-2a3f231d37af"
+                    loading="lazy"
+                    title="Synthesia video player - Property Submitted"
+                    allowFullScreen
+                    className='mx-auto hidden sm:block'
+                    allow="encrypted-media; fullscreen;"
+                    style={{
+                        position: 'absolute',
+                        width: '500px',
+                        height: '280px',
+                        top: 0,
+                        left: 0,
+                        border: 'none',
+                        padding: 0,
+                        margin: 'auto',
+                        overflow: 'hidden',
+                        borderRadius: '12px',
+                    }}
+                />
+
+
+                <iframe
+                    src="https://share.synthesia.io/embeds/videos/9d09d0b1-57eb-4835-81d8-2a3f231d37af"
+                    loading="lazy"
+                    title="Synthesia video player - Property Submitted"
+                    allowFullScreen
+                    className='mx-auto sm:hidden block'
+                    allow="encrypted-media; fullscreen;"
+                    style={{
+                        position: 'absolute',
+                        width: '100%',
+                        height: '180px',
+                        top: 0,
+                        left: 0,
+                        border: 'none',
+                        padding: 0,
+                        margin: 'auto',
+                        overflow: 'hidden',
+                        borderRadius: '12px',
+                    }}
+                />
+            </div>
+                                
+                                
                                 <h2 className="text-xl sm:text-3xl font-semibold text-gray-900 mb-4">Property Submitted</h2>
                                 <p className="text-base sm:text-lg  inter text-gray-700 max-w-xl mx-auto mb-6 leading-tight">
                                     Your property has been submitted for approval. Campaigns run every 30 days.
@@ -519,6 +571,7 @@ export default function PropertyFormModal() {
             </div>
 
             {/* Nav Buttons */}
+            {step < 8 && (
             <div className="mt-6 z-50 flex justify-between fixed bottom-0 w-full p-4 sm:p-20">
                 {step > 1 && step < 8 && (
                     <button
@@ -555,6 +608,7 @@ export default function PropertyFormModal() {
                     </div>
                 )}
             </div>
+             )}
         </div>
     );
 }
