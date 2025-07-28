@@ -60,9 +60,7 @@ export default function Hero() {
       {/* White radial overlay */}
       <div
         className="h-full w-full"
-        style={{
-          background: `radial-gradient(circle at center, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.4) 70%, transparent 100%)`,
-        }}
+        
       >
         <div className="container mx-auto px-4 py-20 text-center relative z-10 pointer-events-auto">
           <div className="text-center h-full items-center flex w-full">
@@ -71,17 +69,17 @@ export default function Hero() {
 
               {/* Gradient text with cursor-based background position */}
               <h2
-                className="mt-8 leading-none text-4xl sm:text-[100px] uppercase interBold text-gray-900"
+                className="mt-8 leading-none text-4xl sm:text-[100px] interBold text-gray-900"
               >
-                Test the market
+                Get Real <span className='px-5 bg-gradient-to-r from-pink-600 to-orange-700 text-white'>Buyer Intent</span> 
               </h2>
 
 
               <h2
-                className="leading-none text-4xl sm:text-[100px] uppercase interBold bg-clip-text text-gray-900"
+                className="leading-none text-4xl sm:text-[100px] interBold bg-clip-text text-gray-900"
 
               >
-                Before you sell
+                Before Going to Market
               </h2>
 
              
@@ -92,8 +90,9 @@ export default function Hero() {
                   backgroundSize: `200%`,
                   backgroundPositionX: gradientPos,
                 }}>
-                  Run your free 30 Day campaign and connect with real buyers
+                  Skip the stress. Ditch the open homes. Forget the fees. <br className='hidden sm:block'/> Gain more confidence and run your free 30 Day campaign today
                 </h2>
+               
               </div>
 
               <div className="flex space-x-1 justify-center">
