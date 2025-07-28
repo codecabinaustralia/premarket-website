@@ -71,7 +71,7 @@ export default function Hero() {
               <h2
                 className="mt-8 leading-none text-4xl sm:text-[100px] interBold text-gray-900"
               >
-                Get Real <br className='sm:hidden' /><span className='px-5 bg-gradient-to-r from-pink-600 to-orange-700 text-white'>Buyer Intent</span> 
+                See Real <br className='sm:hidden' /><span className='px-5 bg-gradient-to-r from-pink-600 to-orange-700 text-white'>Buyer Demand</span> 
               </h2>
 
 
