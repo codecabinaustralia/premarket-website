@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 
 export default function Hero() {
   const sectionRef = useRef(null);
@@ -67,9 +68,6 @@ export default function Hero() {
           <div className="text-center h-full items-center flex w-full">
             <div className="w-full justify-center">
 
-              <span className="text-sm text-gray-600 bg-gray-100 rounded-full p-2 mb-6 inter">
-                It's the smarter way to start selling your home
-              </span>
 
               {/* Gradient text with cursor-based background position */}
               <h2
@@ -77,22 +75,6 @@ export default function Hero() {
               >
                 Test the market
               </h2>
-              {/* <h2
-  className="mt-8 leading-none text-[140px] uppercase anton text-white"
-  style={{
-    WebkitTextStroke: '15px transparent', // base so Safari doesn't break
-    color: 'white',
-    backgroundImage: `linear-gradient(to right, #2384bb, #573ca3, #a73f79, #c1583b)`,
-    backgroundSize: `200%`,
-    backgroundPositionX: gradientPos,
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'white',
-    WebkitTextStrokeColor: 'transparent',
-    textShadow: `0 0 15px #2384bb, 0 0 15px #573ca3`, // optional glow
-  }}
->
-  Test Demand
-</h2> */}
 
 
               <h2
@@ -102,16 +84,7 @@ export default function Hero() {
                 Before you sell
               </h2>
 
-              {/* <h2
-                className="leading-none text-[100px] uppercase anton bg-clip-text text-transparent"
-                style={{
-                  backgroundImage: `linear-gradient(to right, #2384bb, #573ca3, #a73f79, #c1583b)`,
-                  backgroundSize: `200%`,
-                  backgroundPositionX: gradientPos,
-                }}
-              >
-                Before you sell
-              </h2> */}
+             
 
               <div className=" my-3 ">
                 <h2 className="leading-none text-xl inter bg-clip-text text-transparent" style={{
