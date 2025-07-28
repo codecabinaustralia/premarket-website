@@ -42,10 +42,10 @@ export default function Pricing() {
     </ul>
     <div className="">
       <p className="space-y-2 mt-6 text-xs interBold text-white">Buyers download</p>
-                <a href="">
+                <a href="https://apps.apple.com/au/app/premarket-homes/id6742205449">
                   <img src="./apple.png" className="mt-3 w-36" />
                 </a>
-                <a href="">
+                <a href="https://play.google.com/store/apps/details?id=com.premarkethomes.app&hl=en_AU">
                   <img src="./play.png" className="-ml-3 h-18" />
                 </a>
               </div>

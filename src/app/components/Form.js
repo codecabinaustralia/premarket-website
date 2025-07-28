@@ -549,10 +549,12 @@ export default function PropertyFormModal() {
                                     Be sure to download the Premarket App from the app stores:
                                 </p>
                                 <div className="sm:flex space-x-1 justify-center">
-                                    <a href="">
+
+                            
+                                     <a href="https://apps.apple.com/au/app/premarket-homes/id6742205449">
                                         <img src="./apple.png" className="mt-4 sm:mt-3 w-36 mx-auto" />
                                     </a>
-                                    <a href="">
+                                   <a href="https://play.google.com/store/apps/details?id=com.premarkethomes.app&hl=en_AU">
                                         <img src="./play.png" className="h-18 mx-auto -mt-4 sm:mt-0" />
                                     </a>
                                 </div>
