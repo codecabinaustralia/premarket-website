@@ -128,8 +128,29 @@ export default function AgentLanding({ id }) {
 
                     </div>
 
-                    <iframe className="sm:block hidden mx-auto my-10" width="560" height="315" src="https://www.youtube.com/embed/H-uq5JUKEac?si=fVIodKIBgHNA22ZS" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-                    <iframe className="sm:hidden mx-auto my-10" width="560" height="315" src="https://www.youtube.com/embed/H-uq5JUKEac?si=fVIodKIBgHNA22ZS" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                   <iframe
+  className="sm:block hidden mx-auto my-10"
+  width="560"
+  height="315"
+  src="https://www.youtube.com/embed/H-uq5JUKEac?si=fVIodKIBgHNA22ZS"
+  title="YouTube video player"
+  frameBorder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+  referrerPolicy="strict-origin-when-cross-origin"
+  allowFullScreen
+></iframe>
+
+<iframe
+  className="sm:hidden mx-auto my-10"
+  width="560"
+  height="315"
+  src="https://www.youtube.com/embed/H-uq5JUKEac?si=fVIodKIBgHNA22ZS"
+  title="YouTube video player"
+  frameBorder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+  referrerPolicy="strict-origin-when-cross-origin"
+  allowFullScreen
+></iframe>
 
                    
 
