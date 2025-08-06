@@ -214,7 +214,7 @@ export default function CheckoutReturn() {
     <div className="flex flex-col sm:flex-row justify-center items-center gap-4 max-w-xl mx-auto">
       <input
         type="text"
-        value={typeof window !== 'undefined' ? window.location.href : ''}
+        value={`https://www.premarket.homes/register?agent=${agentId}`}
         disabled
         className="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 text-sm text-gray-700"
       />
