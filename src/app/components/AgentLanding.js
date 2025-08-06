@@ -1,14 +1,42 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
+
 import { db } from '../firebase/clientApp';
 import { doc, getDoc } from 'firebase/firestore';
 import Image from 'next/image';
 import FAQSection from '../components/faq.js';
+import { loadStripe } from '@stripe/stripe-js';
+import {
+  EmbeddedCheckoutProvider,
+  EmbeddedCheckout
+} from '@stripe/react-stripe-js';
+
+    const stripePromise = loadStripe('pk_test_51Rss7dDcMpgqKXQPB3MThRe6T8ufaYzVfgdICmLxTTlbjvwyJ3GCz3CFQNdpddGJvjzDfSuVCmVg7r9NSo5IdIwm00kBZqWNAu');
+
+
+const App = ({fetchClientSecret}) => {
+  const options = {fetchClientSecret};
+
+  return (
+    <EmbeddedCheckoutProvider
+      stripe={stripePromise}
+      options={options}
+    >
+      <EmbeddedCheckout />
+    </EmbeddedCheckoutProvider>
+  )
+}
+
 
 export default function AgentLanding({ id }) {
     const [agent, setAgent] = useState(null);
     const [loading, setLoading] = useState(true);
+var [clientSecret, setClientSecret] = useState(null);
+const params = useParams();
+        const agentId = params.id;
+
 
     useEffect(() => {
         const fetchAgent = async () => {
@@ -40,6 +68,31 @@ export default function AgentLanding({ id }) {
             </div>
         );
     }
+const handleSubscribe = async (priceId) => {
+    try {
+        
+        const response = await fetch('https://us-central1-premarket-homes.cloudfunctions.net/api/stripe/session', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ priceId, agentId}),
+        });
+
+        const data = await response.json(); // ✅ this parses the actual response body as JSON
+        console.log('Stripe session response:', data);
+
+        if (data.client_secret.client_secret) {
+            clientSecret = data.client_secret.client_secret
+            setClientSecret(() => () => Promise.resolve(data.client_secret.client_secret)); // ✅ embedded checkout requires a function that returns a Promise<string>
+        } else {
+            console.error('❌ No client_secret returned:', data);
+        }
+    } catch (error) {
+        console.error('❌ Subscription error:', error);
+    }
+};
+
 
     const {
         logo,
@@ -220,7 +273,7 @@ export default function AgentLanding({ id }) {
                     <div className="flex flex-col md:flex-row justify-center gap-0 mt-16 max-w-7xl mx-auto">
                         {/* Base Package */}
                         <div className="flex-1 bg-white border border-gray-100 p-8 text-center rounded-l-xl shadow-md">
-                            <h3 className="text-2xl font-semibold mb-2">Starter</h3>
+                            <h3 className="text-2xl font-semibold mb-2">Small Agent</h3>
                             <p className="text-gray-500 text-base mb-6">For solo agents getting started with warm prospecting</p>
 
                             <div className="text-4xl font-bold text-gray-900 mb-1">
@@ -240,7 +293,7 @@ export default function AgentLanding({ id }) {
                                 <li className="flex items-start"><span className="text-green-500 mr-3 text-xl">✔</span> Property Report Card</li>
                             </ul>
 
-                            <button className="bg-black text-white px-6 py-3 rounded-full font-semibold hover:bg-gray-700 transition">
+                            <button onClick={() => handleSubscribe('price_1RssKFDcMpgqKXQPBPafZpc6')} className="bg-black text-white px-6 py-3 rounded-full font-semibold hover:bg-gray-700 transition">
                                 Get Started
                             </button>
                         </div>
@@ -250,15 +303,15 @@ export default function AgentLanding({ id }) {
                             <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">
                                 Most Popular
                             </div>
-                            <h3 className="text-3xl font-bold mb-2">Professional</h3>
-                            <p className="text-gray-500 text-lg mb-6">For agents who want full control and full speed</p>
+                            <h3 className="text-3xl font-bold mb-2">Agent Pro</h3>
+                            <p className="text-gray-500 text-lg mb-6">For agents with a small team</p>
 
                             <div className="text-5xl font-extrabold mb-1 text-gray-900">
                                 $499<span className="text-base font-medium">/month</span>
                             </div>
                             <p className="text-sm text-gray-500">Paid annually – <span className="text-sm text-gray-400">$5,988/year</span></p>
 
-                            <p className="text-xs text-gray-900 mb-8 mt-2 bg-gray-300 font-semibold rounded-lg p-2">Upto 50 prospects /month</p>
+                            <p className="text-xs text-gray-900 mb-8 mt-2 bg-gray-300 font-semibold rounded-lg p-2">Upto 100 prospects /month</p>
 
                             <ul className="text-left space-y-4 text-gray-700 mb-8">
                                 <li className="flex items-start"><span className="text-green-500 mr-2">✔</span> 1000 branded prospect cards with qr code</li>
@@ -272,7 +325,7 @@ export default function AgentLanding({ id }) {
                                 <li className="flex items-start"><span className="text-green-500 mr-3 text-xl">✔</span> Property Report Card</li>
                             </ul>
 
-                            <button className="bg-black text-white px-6 py-3 rounded-full font-semibold hover:bg-gray-700 transition">
+                            <button onClick={() => handleSubscribe('price_1RssM8DcMpgqKXQPYL1JhlPy')} className="bg-black text-white px-6 py-3 rounded-full font-semibold hover:bg-gray-700 transition">
                                 Get Started Now
                             </button>
                         </div>
@@ -304,6 +357,18 @@ export default function AgentLanding({ id }) {
                             </a>
                         </div>
                     </div>
+
+                    {clientSecret && (
+                        <div className="h-screen w-full fixed top-0 left-0 z-50 bg-gray-300">
+                            <div className="w-full h-full bg-white p-20 overflow-y-scroll relative">
+                                <div onClick={() => setClientSecret(null)} className="text-3xl absolute top-0 right-0 m-4 cursor-pointer text-2xl font-bold">
+  ×
+</div>
+                                <App fetchClientSecret={clientSecret} />
+                            </div>
+                        </div>
+  
+)}
 
                     <div className="mt-20 bg-blue-50 text-gray-800 rounded-xl shadow-lg p-8 max-w-3xl mx-auto">
                         <div className="flex flex-col md:flex-row items-center space-y-6 md:space-y-0 md:space-x-6">
