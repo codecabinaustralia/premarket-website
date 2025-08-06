@@ -179,7 +179,7 @@ export default function CheckoutReturn() {
               </div>
             </div>
           </div>
-        )}
+       )}
 
         {/* QR Code */}
         {agentData?.qrcode && (
@@ -194,8 +194,9 @@ export default function CheckoutReturn() {
             />
           </div>
         )}
-
         {/* Thank You / Email */}
+
+{agentData && (
         <div className="text-left mt-10 px-10 sm:px-40">
           <h1 className="text-4xl font-bold text-teal-600 mb-4">Welcome {agentData.fullName}, You've just unlocked the most powerful prospect-nurturing machine. 🧠✨</h1>
           <p className="text-lg mb-4 font-bold text-xl">Now it’s time to put it to work.</p>
@@ -208,13 +209,14 @@ export default function CheckoutReturn() {
 
 
         </div>
+          )}
 
         {agentData && (
   <div className="mt-8 mb-40 text-center">
     <div className="flex flex-col sm:flex-row justify-center items-center gap-4 max-w-xl mx-auto">
       <input
         type="text"
-        value={`https://www.premarket.homes/register?agent=${agentId}`}
+        value={typeof window !== 'undefined' ? `https://www.premarket.homes/register?agent=${agentId}` : ''}
         disabled
         className="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 text-sm text-gray-700"
       />
