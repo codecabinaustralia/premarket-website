@@ -17,6 +17,7 @@ import {
   getDoc,
   updateDoc,
   serverTimestamp,
+  setDoc,
   getDocs,
   orderBy,
   limit,
@@ -466,6 +467,7 @@ export default function PropertyFormModal() {
       };
 
       await updateDoc(doc(db, 'properties', propertyId), propertyData);
+      await setDoc(doc(db, 'draftProperties', propertyId), {...propertyData, override: true});
 
 
       const userRef = doc(db, 'users', agentData.id);
