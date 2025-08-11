@@ -62,6 +62,7 @@ export default function PropertyFormModal() {
   const [type, setType] = useState(null);
 
   // location
+  const [formattedAddress, setFormattedAddress] = useState(null);
   const [address, setAddress] = useState(null);
   const [location, setLocation] = useState(null);
 
@@ -182,15 +183,34 @@ export default function PropertyFormModal() {
   };
 
   const handlePlaceChanged = () => {
-    const autocomplete = autocompleteRef.current;
-    if (!autocomplete) return;
-    const place = autocomplete.getPlace();
-    const formatted = place?.formatted_address || '';
-    const lat = place?.geometry?.location?.lat?.();
-    const lng = place?.geometry?.location?.lng?.();
-    setAddress(formatted || null);
-    if (lat && lng) setLocation({ latitude: lat, longitude: lng });
-  };
+  const autocomplete = autocompleteRef.current;
+  if (!autocomplete) return;
+
+  const place = autocomplete.getPlace();
+  const fullFormatted = place?.formatted_address || '';
+
+  const lat = place?.geometry?.location?.lat?.();
+  const lng = place?.geometry?.location?.lng?.();
+
+  // Extract "area" from address_components
+  let areaAddress = '';
+  if (place?.address_components) {
+    const components = place.address_components;
+    const suburb = components.find(c => c.types.includes('locality'))?.long_name || '';
+    const state = components.find(c => c.types.includes('administrative_area_level_1'))?.short_name || '';
+    const country = components.find(c => c.types.includes('country'))?.long_name || '';
+    areaAddress = [suburb, state, country].filter(Boolean).join(' ');
+  }
+
+  // Save both
+  setAddress(areaAddress || null); // area only
+  setFormattedAddress(fullFormatted || null); // full address
+
+  if (lat && lng) {
+    setLocation({ latitude: lat, longitude: lng });
+  }
+};
+
 
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files || []);
@@ -411,7 +431,7 @@ export default function PropertyFormModal() {
 
       const propertyData = {
         address,
-        formattedAddress: address,
+        formattedAddress,
         bathrooms,
         bedrooms,
         carSpaces,
