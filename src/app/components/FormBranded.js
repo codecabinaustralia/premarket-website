@@ -379,6 +379,8 @@ export default function PropertyFormModal() {
         },
       });
 
+      
+
       // upload sequentially to keep progress deterministic
       for (let i = 0; i < total; i++) {
         const file = images[i];
@@ -444,6 +446,14 @@ export default function PropertyFormModal() {
       };
 
       await updateDoc(doc(db, 'properties', propertyId), propertyData);
+
+
+      const userRef = doc(db, 'users', agentData.id);
+      const userSnap = await getDoc(userRef);
+
+      const docRef = await addDoc(collection(db, 'notifications'), {property: propertyData, createdAt: new Date(), read: false, type: "newProspect", user: userSnap.data()});
+
+
       setStep(STEPS.COMPLETE);
     } catch (err) {
       console.error('Submit failed:', err);
