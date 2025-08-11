@@ -133,8 +133,8 @@ export default function AgentLanding() {
           </div>
         </div>
 
-        <div className="mt-12 text-center px-6">
-          <h2 className="text-2xl sm:text-8xl tracking-tight font-bold mb-6">
+        <div className="mt-12 text-center px-2 sm:px-6">
+          <h2 className="text-4xl sm:text-8xl tracking-tight font-bold mb-6">
             We have a secret sauce most sellers never get to try
           </h2>
           <p className="text-xl mb-6 text-teal-600"> Selling your home isn’t just about putting up a listing — it’s about building momentum before you hit the market. That’s why, together with Premarket Australia Pty Ltd, we’re giving you a <strong>free, no-risk premarket campaign</strong> — our gift to you. Your property will be showcased directly to real, motivated buyers without open homes, without spending a cent, and without obligation. The goal? To quietly build interest, uncover genuine buyer intent, and position you for a stronger sale when you decide the time is right. </p>
