@@ -198,7 +198,7 @@ export default function CheckoutReturn() {
 
 {agentData && (
         <div className="text-left mt-10 px-10 sm:px-40">
-          <h1 className="text-4xl font-bold text-teal-600 mb-4">Welcome {agentData.fullName}, You've just unlocked the most powerful prospect-nurturing machine. 🧠✨</h1>
+          <h1 className="text-4xl font-bold text-teal-600 mb-4">Welcome {agentData.fullName}, You've just unlocked the most powerful prospect-nurturing machine ever built.</h1>
           <p className="text-lg mb-4 font-bold text-xl">Now it’s time to put it to work.</p>
 
 <p className="text-lg mb-4">Share the QR code or link below with any potential seller, buyer, or nosy neighbour you meet. Print it on flyers, slap it on signs, text it to phones, or beam it straight into inboxes—your call.</p>

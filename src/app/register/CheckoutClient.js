@@ -1,11 +1,13 @@
 'use client';
-
+import { useModal } from '../context/ModalContext';
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { db } from '../firebase/clientApp';
 import { doc, getDoc } from 'firebase/firestore';
 import Image from 'next/image';
 import FAQSection from '../components/faq.js';
+import PropertyFormModal from '../components/FormBranded';
+
 import { loadStripe } from '@stripe/stripe-js';
 import {
   EmbeddedCheckoutProvider,
@@ -13,6 +15,7 @@ import {
 } from '@stripe/react-stripe-js';
 
 const stripePromise = loadStripe('pk_test_51Rss7dDcMpgqKXQPB3MThRe6T8ufaYzVfgdICmLxTTlbjvwyJ3GCz3CFQNdpddGJvjzDfSuVCmVg7r9NSo5IdIwm00kBZqWNAu');
+
 
 const EmbeddedCheckoutWrapper = ({ fetchClientSecret }) => (
   <EmbeddedCheckoutProvider
@@ -30,6 +33,7 @@ const fetchAgentFromFirestore = async (agentId) => {
 };
 
 export default function AgentLanding() {
+  const { setShowModal } = useModal();
   const searchParams = useSearchParams();
   const agentId = searchParams.get('agent');
 
@@ -99,6 +103,8 @@ export default function AgentLanding() {
 
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900 font-sans p-4">
+      <PropertyFormModal />
+
       <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-lg">
 
         <div
@@ -128,20 +134,16 @@ export default function AgentLanding() {
         </div>
 
         <div className="mt-12 text-center px-6">
-          <h1 className="font-bold text-lg">Welcome</h1>
-          <h2 className="text-2xl sm:text-7xl font-bold mb-6">
-            We have something very valuable for you.
+          <h2 className="text-2xl sm:text-8xl tracking-tight font-bold mb-6">
+            We have a secret sauce most sellers never get to try
           </h2>
-          <p className="text-xl font-bold mb-6">
-            We've partnered with Premarket to help you gain confidence before going to market. Access property data, community, and join outreach campaigns to connect with real buyers.
-          </p>
-          <p className="text-lg leading-relaxed max-w-2xl mx-auto">
-            Enjoy community, campaign tools like podcasts, and discounts to services that help you build momentum.
-          </p>
+          <p className="text-xl mb-6 text-teal-600"> Selling your home isn’t just about putting up a listing — it’s about building momentum before you hit the market. That’s why, together with Premarket Australia Pty Ltd, we’re giving you a <strong>free, no-risk premarket campaign</strong> — our gift to you. Your property will be showcased directly to real, motivated buyers without open homes, without spending a cent, and without obligation. The goal? To quietly build interest, uncover genuine buyer intent, and position you for a stronger sale when you decide the time is right. </p>
+          <p className="text-base leading-relaxed max-w-2xl mx-auto">
+            Add your property below and together we'll test the market.</p>
 
           <button
-            onClick={() => handleSubscribe('price_1RssKFDcMpgqKXQPBPafZpc6')}
-            className="bg-black text-white px-6 py-3 mt-6 rounded-full font-semibold hover:bg-gray-700 transition"
+            onClick={() => setShowModal(true)}
+            className="bg-black text-white px-6 py-8 mt-20 rounded cursor-pointer font-semibold hover:bg-gray-700 transition"
           >
             Get Started by Adding Your Property
           </button>
@@ -154,16 +156,21 @@ export default function AgentLanding() {
             </div>
           )}
 
-          <h3 className="text-lg sm:text-5xl mt-16 font-semibold" style={{ color: secondaryColor }}>
-            Don't get left behind. Join hundreds of Aussie agents already using Premarket.
-          </h3>
 
-          <div className="mt-16 text-sm text-gray-500">
-            Visit us at{' '}
-            <a href={website} target="_blank" rel="noopener noreferrer" className="underline hover:text-black">
-              {website}
-            </a>
+          {/* Header Section */}
+          <div className="flex flex-wrap mt-20 sm:flex-nowrap sm:items-center justify-center mb-4 sm:mb-0">
+
+            <div className="hidden sm:block text-gray-500 text-xs">
+              Powered By
+            </div>
+            <img
+              src="https://firebasestorage.googleapis.com/v0/b/premarket-homes.firebasestorage.app/o/agents%2Fsneakpeek%20(1).png?alt=media&token=54065973-ddba-4be8-9052-b8c4c696337a"
+              className="sm:mx-0 w-32 my-6"
+              alt="Premarket logo"
+            />
+
           </div>
+
         </div>
       </div>
     </div>

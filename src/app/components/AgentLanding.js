@@ -156,7 +156,7 @@ const handleSubscribe = async (priceId) => {
                 <div className="mt-12">
                     <div className='text-center px-6'>
 
-                        {qrcode && (
+                        {/* {qrcode && (
                             <div className="flex justify-center items-center -mt-16 sm:-mt-20 mb-10">
                                 <Image
                                     src={qrcode}
@@ -167,19 +167,21 @@ const handleSubscribe = async (priceId) => {
                                     unoptimized
                                 />
                             </div>
-                        )}
+                        )} */}
+
+                        
+
 
                         <h1 className='font-bold text-lg'>Hi {fullName.split(" ")[0]}</h1>
-                        <h2 className="text-2xl sm:text-7xl font-bold mb-6">We built a prospect nurturing machine that you won't want to live without.</h2>
-                        <h2 className="text-xl font-bold mb-6">Send your prosopects to premarket and we'll turn them into gold 💰</h2>
+                        <h2 className="text-2xl sm:text-7xl font-bold mb-6">We built a super powerful prospect nurturing machine.</h2>
+                        <h2 className="text-xl sm:text-2xl text-teal-600 px-0 sm:px-20 font-bold mb-6">Share your magic link with prospects or drop your QR code on flyers, signs, or socials. We’ll take it from there—nurturing and turning curiosity into committed clients. Some may even show up with buyers ready to move.</h2>
                         <p className="text-lg leading-relaxed max-w-2xl mx-auto">
                             Every agent knows the drill—barely a sip into your coffee and someone’s already asking, “What’s my place worth?, How's the market” Instead of brushing them off or burning time on cold leads, give them something of real value.
-
-                            With Premarket, you’re not chasing—you're gifting. Prospects enter their home into a series of premarket campaigns designed to surface real buyer interest without you lifting a finger. Just flick them a QR code—no pressure, no pitch.
-
-                            They get a premium experience. You stay in control. And when serious buyers show up? That’s when you step in to close the deal.</p>
+                            Prospects enter their property into a structured premarket journey—starting with a clear go-to-market goal. We handle everything from there: drop them into our buyer campaigns, invite them to private groups where they can access masterclasses, premium services, and real-time market insights. Every step is designed to build trust, momentum, and intent. You don’t pitch, chase, or convince. You just hand them a QR code, their properties will be added to your profile, you'll get regular reports and buyer intent on each prospect — and when they’re primed, motivated, and market-ready, you'll have everything you need to close the deal.</p>
 
                     </div>
+
+                                           
 
                    <iframe
   className="sm:block hidden mx-auto my-10"
@@ -208,32 +210,31 @@ const handleSubscribe = async (priceId) => {
                    
 
                     <div className="text-center">
-                        <h3 className="text-2xl sm:text-5xl mt-10 font-semibold" style={{ color: secondaryColor }}>
-                            What is Premarket—and how does it solve your biggest problem?
+                        <h3 className="px-0 sm:px-20 text-2xl sm:text-5xl mt-10 font-semibold" style={{ color: secondaryColor }}>
+                            Premarket is a supercharged automated engine that turns prospects into real clients and this is how we do it.
                         </h3>
 
                         <p className="mt-4 text-lg max-w-2xl text-center mx-auto leading-relaxed">
-                            Premarket runs 30-day campaigns for homeowners to test buyer intent, gather interest, and even receive offers—before they ever hit the open market.
-                            <br /><br />
-                            As an agent, you can cut the line. Add your own prospects into Premarket and stay in control of the conversation all the way through.
+                           We first set an achieveable "Go to market goal" for each prospect. Then we hook them into a powerful set of value packed tools and services which keeps them on track to their goal.
                         </p>
 
                         <div className="mt-8 text-left max-w-2xl mx-auto text-lg leading-relaxed">
-                            <h4 className="text-2xl font-bold mb-2">How it works:</h4>
-                            <ul className="list-disc list-inside space-y-2 text-sm">
-                                <li><strong>We guide homeowners</strong> through adding their property to the Premarket platform.</li>
-                                <li><strong>You track every prospect</strong> inside the Premarket app in real time—no more cold leads disappearing.</li>
-                                <li><strong>Engage directly with buyers:</strong> chat, negotiate soft offers, and build urgency before your vendor even lists.</li>
-                            </ul>
-
-                            {/* <h4 className="text-2xl font-bold mt-6 mb-2">Why it matters:</h4> */}
-                            <h4 className="text-2xl font-bold mt-6 mb-2">That's massive for agents because they can now...</h4>
+                            <h4 className="text-2xl font-bold mb-2">What you get</h4>
                             <ul className="list-disc list-inside space-y-2 text-sm">
                                 <li><strong>Stay connected</strong> to every homeowner you've ever spoken to.</li>
                                 <li><strong>Build momentum</strong> with warm buyers before listings go live.</li>
                                 <li><strong>Show real proof of demand</strong> to help vendors list faster and with confidence.</li>
                                 <li><strong>Win back time</strong> by letting Premarket handle the busy work—while you close deals.</li>
                             </ul>
+
+                            {/* <h4 className="text-2xl font-bold mt-6 mb-2">Why it matters:</h4> */}
+                            <h4 className="text-2xl font-bold mt-6 mb-2">What your prospects get</h4>
+                            <div className="list-disc list-inside space-y-2 text-sm">
+                                <strong>Entry into our 30 day campaigns</strong><br /><br />
+                                <strong>Access to our Premarket community</strong> <br />Packed with podcasts, valuable content and direct communication with other home owners, investors and buyers.<br /><br />
+                                <strong>Access to Masterclasses</strong> <br />Geared to help prepare homeowners for sale<br /><br />
+                                <strong>Initate email funnel</strong> Designed to keep prospects on track with their "go to market goal"
+                            </div>
                         </div>
                     </div>
 
@@ -267,6 +268,12 @@ const handleSubscribe = async (priceId) => {
                             )}
                         </div>
                     </div>
+
+                     <img
+                        src='/assets/agentApp.png'
+                        alt="Premakret for agents"
+                        className="w-full object-cover"
+                        />
 
 
 
@@ -359,11 +366,15 @@ const handleSubscribe = async (priceId) => {
                     </div>
 
                     {clientSecret && (
-                        <div className="h-screen w-full fixed top-0 left-0 z-50 bg-gray-300">
+                        <div className="h-screen w-full fixed top-0 left-0 z-50 bg-white">
+                            
+                          
                             <div className="w-full h-full bg-white p-20 overflow-y-scroll relative">
                                 <div onClick={() => setClientSecret(null)} className="text-3xl absolute top-0 right-0 m-4 cursor-pointer text-2xl font-bold">
   ×
 </div>
+
+  <img src='https://firebasestorage.googleapis.com/v0/b/premarket-homes.firebasestorage.app/o/agents%2Fsneakpeek%20(1).png?alt=media&token=54065973-ddba-4be8-9052-b8c4c696337a' className='mx-auto w-56 mb-4' />
                                 <App fetchClientSecret={clientSecret} />
                             </div>
                         </div>
@@ -422,18 +433,10 @@ const handleSubscribe = async (priceId) => {
                     </div>
 
 
-                    <h3 className="text-lg sm:text-5xl mt-10 font-semibold" style={{ color: secondaryColor }}>
+                    <h3 className="text-center text-lg sm:text-5xl mt-10 font-semibold" style={{ color: secondaryColor }}>
                         Don't get left behind, join hundreds of Aussie agents already using Premarket.
                     </h3>
 
-                    <Image
-                        src={qrcode}
-                        alt="QR Code"
-                        width={160}
-                        height={160}
-                        className="sm:block hidden border-4 mx-auto shadow-lg mt-4 border-white rounded-xl"
-                        unoptimized
-                    />
 
 
 
