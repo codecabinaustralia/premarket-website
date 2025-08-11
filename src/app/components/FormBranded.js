@@ -32,9 +32,9 @@ const STEPS = {
   PRICE: 5,
   DETAILS: 6,
   IMAGES: 7,
-  TITLE_DESC: 8,
-  ACCOUNT: 9,
-  COMPLETE: 10,
+  // TITLE_DESC: 8,
+  ACCOUNT: 8,
+  COMPLETE: 9,
 };
 
 export default function PropertyFormModal() {
@@ -471,7 +471,7 @@ export default function PropertyFormModal() {
         )}
 
         {/* Header */}
-        {step < STEPS.TITLE_DESC && (
+        
           <div className="h-20 w-full flex items-center" style={{ backgroundColor: headerBg }}>
             <div className="container mx-auto flex">
               <div className="flex-grow">
@@ -490,7 +490,7 @@ export default function PropertyFormModal() {
               </button>
             </div>
           </div>
-        )}
+      
 
         {/* Body */}
         <div className="w-full max-w-5xl mx-auto py-10 px-10 sm:px-20 relative">
@@ -714,7 +714,7 @@ export default function PropertyFormModal() {
             </div>
           )}
 
-          {/* Step 8 */}
+          {/* Step 8
           {step === STEPS.TITLE_DESC && (
             <div>
               <h2 className="text-2xl font-semibold mb-4">Add a Title and Description</h2>
@@ -732,7 +732,7 @@ export default function PropertyFormModal() {
                 className="w-full p-3 border rounded text-lg"
               />
             </div>
-          )}
+          )} */}
 
           {/* Step 9 */}
           {step === STEPS.ACCOUNT && (
@@ -773,7 +773,7 @@ export default function PropertyFormModal() {
                 </button>
 
                 {/* Synthesia */}
-                <div
+                {/* <div
                   className="sm:h-72 mb-10 text-center flex-shrink mx-auto relative flex items-center justify-center"
                   style={{ overflow: 'hidden', aspectRatio: '1920 / 1080' }}
                 >
@@ -817,17 +817,18 @@ export default function PropertyFormModal() {
                       borderRadius: '12px',
                     }}
                   />
-                </div>
+                </div> */}
 
                 <h2 className="text-xl sm:text-3xl font-semibold text-gray-900 mb-4">Property Submitted</h2>
                 <p className="text-base sm:text-lg inter text-gray-700 max-w-xl mx-auto mb-6 leading-tight">
-                  Your property has been submitted for approval. Campaigns run every 30 days. We want to give you the best shot,
-                  so we’ll let you know if there’s anything you can do to improve your success.
+                  We’ve received your property details. If we need any additional information, our team will be in touch. In the meantime, we’ll use the information you’ve provided to connect with qualified buyers in our network.
+
+We’ll keep you updated on market activity and any interest in your property as things progress.
                   <br />
                   {startDate && (
                     <>
                       {' '}
-                      Entries will close at{' '}
+                      The next Premarket campaign will start on {' '}
                       <strong>
                         {startDate.toLocaleString('en-AU', {
                           day: '2-digit',
