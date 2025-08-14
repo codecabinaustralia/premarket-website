@@ -35,7 +35,9 @@ export default function Hero() {
           <div className="items-center flex w-full">
             <div className="w-full sm:w-2/3 mx-auto justify-start py-20">
 
-            <span className='text-xs bg-amber-600 rounded-full text-white px-2 py-1 inter hidden sm:block'>Fastest Growing App for Australian Real Estate Agents</span>
+    <div className=' hidden sm:flex flex justify-center'>
+            <span className='text-xs bg-amber-600 rounded-full text-white px-2 py-1 inter'>Fastest Growing App for Australian Real Estate Agents</span>
+            </div>
             <span className='text-xs bg-amber-600 rounded-full text-white px-2 py-1 inter sm:hidden'>#1 App for Aussie Real Estate Agents</span>
 
               {/* Gradient text with cursor-based background position */}

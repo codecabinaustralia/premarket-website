@@ -14,25 +14,25 @@ const stages = [
     tag: "Distribute",
     title: "Put Your Brand in Every Doorstep & Newsfeed",
     text: "Send your unique QR code to your community—drop it in letterboxes, print it on flyers, stick it on your office door, or text it straight to your database. It’s your gift to homeowners: a free way to test the market while you position yourself as their go-to agent.",
-    image: "/assets/screenshots/1.png"
+    image: "/assets/screenshots/2.png"
   },
   {
     tag: "Manage prospect confidence",
     title: "Effortless Onboarding for Homeowners",
     text: "When a homeowner scans your code, they fill out a quick 2-minute form. Their property is instantly featured in the Premarket app. A simple marketing contract is agreed on, and you’re set to start engaging genuine buyers on their behalf—without the hassle of a formal listing.",
-    image: "/assets/screenshots/2.png"
+    image: "/assets/screenshots/3.png"
   },
   {
     tag: "Engage with buyers",
     title: "Engage Real Buyers Without the Red Tape",
     text: "Qualified buyers will start asking questions—and sometimes, they’ll submit handshake offers. You present these to your prospect, building excitement and trust. Premarket stays completely out of the transaction process, meaning no interference with your commission or contracts.",
-    image: "/assets/screenshots/3.png"
+    image: "/assets/screenshots/4.png"
   },
   {
     tag: "Win and convert",
     title: "Leverage Data to Win the Listing",
     text: "At the end of the campaign, you’ll receive a detailed performance report for each property—showing buyer activity, questions asked, and any offers made. This becomes powerful evidence to help you convert curious homeowners into committed sellers.",
-    image: "/assets/screenshots/4.png"
+    image: "/assets/screenshots/5.png"
   }
 ];
 
@@ -91,7 +91,7 @@ export default function CampaignStory() {
         </div>
 
         {/* Right Image Stack */}
-<div className="hidden sm:block w-full sm:w-1/2 relative h-full overflow-hidden">
+<div className=" w-full sm:w-1/2 relative h-full overflow-hidden">
   {stages.map((stage, i) => {
     const progress = useTransform(index, val => val - i * slideMultiplier);
     const y = useTransform(progress, [-1, 0, 1], ['100%', '0%', '-100%']); // bottom to top
@@ -100,7 +100,7 @@ export default function CampaignStory() {
     return (
       <motion.div
         key={i}
-        className="absolute top-0 left-0 w-full h-full flex items-center justify-center"
+        className="sm:absolute top-0 left-0 w-full h-full flex items-center justify-center"
         style={{ zIndex: i, opacity, y }} // removed scale
       >
         <div className="p-20 w-full h-full">
