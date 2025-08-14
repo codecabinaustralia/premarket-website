@@ -33,15 +33,16 @@ export default function Hero() {
       >
         <div className="container mx-auto px-4 text-center relative z-10 pointer-events-auto">
           <div className="items-center flex w-full">
-            <div className="w-2/3 mx-auto justify-start py-20">
+            <div className="w-full sm:w-2/3 mx-auto justify-start py-20">
 
-            <span className='text-xs bg-amber-600 rounded-full text-white px-2 py-1 inter'>Fastest Growing App for Australian Real Estate Agents</span>
+            <span className='text-xs bg-amber-600 rounded-full text-white px-2 py-1 inter hidden sm:block'>Fastest Growing App for Australian Real Estate Agents</span>
+            <span className='text-xs bg-amber-600 rounded-full text-white px-2 py-1 inter sm:hidden'>#1 App for Aussie Real Estate Agents</span>
 
               {/* Gradient text with cursor-based background position */}
               <h2
                 className="mt-8 leading-none text-5xl sm:text-[60px] interBold text-gray-800"
               >
-                We Turn Homeowners <br />Into Confident Sellers
+                We Turn Homeowners<br />Into Confident Sellers
               </h2>
 
 
@@ -55,7 +56,7 @@ export default function Hero() {
                     backgroundPositionX: gradientPos,
                   }}
                 >
-                  Gift your community a free ‘Premarket’ campaign<br />Earn their trust and be first in line when they’re ready to sell.
+                  Gift your community a free ‘Premarket’ campaign<br className='sm:block hidden' />Earn their trust and be first in line when they’re ready to sell.
                 </h2>
 
                 <div className="mt-10 flex flex-wrap justify-center gap-3">
@@ -75,18 +76,18 @@ export default function Hero() {
                 </div>
               </div>
 
-             <div className='bg-white w-full h-56 mt-10 rounded-xl shadow-xl grid grid-cols-3'>
-  <div className='col-span-1 border-r border-gray-200 text-left p-10'>
+             <div className='bg-white w-full sm:h-56 mt-10 rounded-xl shadow-xl grid grid-cols-1 sm:grid-cols-3'>
+  <div className='col-span-1 border-b sm:border-r border-gray-200 text-center sm:text-left p-10'>
     <h2 className='inter text-gray-800 text-xl'>Share your custom link or QR code</h2>
     <div className='mt-2 inter text-gray-500 text-sm'>Homeowners add their property and accept a marketing agreement.</div>
   </div>
 
-  <div className='col-span-1 border-r border-gray-200 text-left p-10'>
+  <div className='col-span-1 border-b sm:border-r border-gray-200 text-center sm:text-left p-10'>
     <h2 className='inter text-gray-800 text-xl'>We run their free 30day campaign</h2>
     <div className='mt-2 inter text-gray-500 text-sm'>You stay in control, talking directly to interested buyers and getting real buyer intent.</div>
   </div>
 
-  <div className='col-span-1 text-left p-10'>
+  <div className='col-span-1 text-center sm:text-left p-10'>
     <h2 className='inter text-gray-800 text-xl'>Turn homeowners into confident sellers</h2>
     <div className='mt-2 inter text-gray-500 text-sm'>Show campaign results and give them the confidence to list with you.</div>
   </div>

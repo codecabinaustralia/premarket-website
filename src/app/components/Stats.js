@@ -26,7 +26,7 @@ export default function StatBox() {
 
             <div className="container flex flex-wrap sm:flex-nowrap mx-auto px-4">
                 <div className='w-full sm:w-2/3 flex items-center'>
-                    <div className='p-4 text-left flex space-x-10 items-center'>
+                    <div className='p-4 text-left sm:flex sm:flex- sm:space-x-10 items-center'>
 
                         <div>
                             <p className="tracking-tight text-6xl sm:text-7xl leading-tight interBold tracking-tight text-amber-700 leading-tight">
@@ -47,7 +47,7 @@ export default function StatBox() {
 
                 <div className='w-full sm:w-1/3 flex flex-col items-center sm:justify-center sm:border-l border-gray-200'>
 
-                    <div className='p-10 text-left  my-2'>
+                    <div className='p-4 sm:p-10 text-left  my-2'>
 
                         <p className="tracking-tight text-4xl leading-tight interBold tracking-tight text-amber-700 leading-tight">
                             54%

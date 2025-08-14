@@ -6,16 +6,16 @@ export default function Pricing() {
   return (
     <div className="bg-gray-100">
         <div className=" sm:p-20 container mx-auto">
-        <div className="text-4xl sm:text-7xl font-extrabold text-gray-900 mb-2 text-center p-10 sm:p-0">
-            Turn your community into sellers
-            <div className="mt-6 text-xl inter text-gray-500">Supercharged automated engine that turns prospects into real clients</div>
+        <div className="text-4xl sm:text-7xl font-extrabold text-gray-900 mb-2 text-center pt-10 sm:pt-0 px-6 sm:px-0">
+            Turn community into sellers
+            <div className="mt-3 sm:mt-6 text-sm sm:text-xl inter text-gray-500">Supercharged automated engine that turns prospects into real clients</div>
             </div>
-<div className="p-10 sm:p-0 flex-wrap sm:flex-wrap-none flex items-center justify-center space-x-0 mt-10">
+<div className="p-10 sm:p-0 flex-wrap sm:flex-wrap-none flex items-center justify-center space-x-0 sm:mt-10">
 
-  <div className="w-full sm:w-96 bg-white shadow-2xl p-8 rounded-l-lg py-20 my-10 sm:mb-0">
+  <div className="w-full sm:w-96 bg-white shadow-2xl p-8 rounded-l-lg sm:py-20 sm:my-10 sm:mb-0">
     <h2 className="text-3xl font-bold mb-2 text-gray-900">Small Agent</h2>
-    <div className="text-3xl font-extrabold text-gray-900 mb-2">$199<span className="text-sm interBold font-normal">/month</span></div>
-    <div><span className="text-sm inter bg-amber-600 text-white rounded-full py-2 px-3 font-normal">Paid annually $2,388</span></div>
+    <div className="text-3xl font-extrabold text-gray-900 mb-2">$249<span className="text-sm interBold font-normal">/month</span></div>
+    <div><span className="text-sm inter bg-amber-600 text-white rounded-full py-2 px-3 font-normal">Paid annually $2,988</span></div>
     
     <ul className="space-y-2 mt-4 mb-6 text-gray-700 inter">
       <li>Single login to Premarket app</li>
@@ -31,7 +31,7 @@ export default function Pricing() {
     </button>
   </div>
   
-  <div className="w-full sm:w-96 bg-white shadow-2xl p-8 rounded-lg py-20 mb-6 sm:mb-0">
+  <div className="w-full mt-6 sm:mt-0 sm:w-96 bg-white shadow-2xl p-8 rounded-lg py-20 mb-6 sm:mb-0">
     <h2 className="text-3xl font-bold mb-2 text-gray-900">Agent Pro</h2>
     <div className="text-5xl font-extrabold text-gray-900 mb-2">$499<span className="text-sm interBold font-normal">/month</span></div>
     <div><span className="text-sm inter bg-amber-600 text-white rounded-full py-2 px-3 font-normal">Paid annually $5,988</span></div>
