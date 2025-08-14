@@ -26,9 +26,9 @@ export default function Pricing() {
       <li>Handshake offers</li>
       <li>End of campaign report cards</li>
     </ul>
-    <button onClick={() => setShowModal(true)} className="border-2 border-amber-600 hover:bg-gray-100 text-amber-600 font-bold py-4 cursor-pointer px-4 rounded w-full">
+    <a target="_blank" href="https://calendly.com/knockknock-premarket/30min?month=2025-08" className="border-2 border-amber-600 hover:bg-gray-100 text-amber-600 font-bold py-4 cursor-pointer px-4 rounded w-full">
       Book a demo
-    </button>
+    </a>
   </div>
   
   <div className="w-full mt-6 sm:mt-0 sm:w-96 bg-white shadow-2xl p-8 rounded-lg py-20 mb-6 sm:mb-0">
@@ -46,9 +46,9 @@ export default function Pricing() {
       <li>Handshake offers</li>
       <li>End of campaign report cards</li>
     </ul>
-    <button onClick={() => setShowModal(true)} className="bg-amber-600 hover:bg-amber-700 text-white font-bold py-4 cursor-pointer px-4 rounded w-full">
+    <a target="_blank" href="https://calendly.com/knockknock-premarket/30min?month=2025-08" className="bg-amber-600 hover:bg-amber-700 text-white font-bold py-4 cursor-pointer px-4 rounded w-full">
       Book a demo
-    </button>
+    </a>
   </div>
 
   <div className="w-full sm:w-56 bg-gray-900 p-8 rounded sm:rounded-r-lg">
@@ -62,9 +62,9 @@ export default function Pricing() {
       <li>First Class Support</li>
     </ul>
 
-     <button onClick={() => setShowModal(true)} className="bg-amber-600 hover:bg-amber-700 text-white font-bold py-4 cursor-pointer px-4 rounded w-full">
+     <a target="_blank" href="https://calendly.com/knockknock-premarket/30min?month=2025-08" className="bg-amber-600 hover:bg-amber-700 text-white font-bold py-4 cursor-pointer px-4 rounded w-full">
       Book a demo
-    </button>
+    </a>
    
 </div>
 </div>

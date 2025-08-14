@@ -18,11 +18,11 @@ export default function Hero() {
         <div className='max-w-5xl mx-auto bg-white  py-4 px-10 flex items-center py-2'>
           <img src="./assets/logo.png" className='h-6' />
 
-          <button
+          <a targe="_blank" href="https://calendly.com/knockknock-premarket/30min?month=2025-08"
             className="px-4 py-3 ml-auto  rounded-lg text-white font-semibold text-sm cursor-pointer bg-gradient-to-r from-[#c64500ff] to-[#e48900] hover:opacity-90 transition"
           >
             Book a Demo
-          </button>
+          </a>
 
         </div>
       </div>
@@ -63,18 +63,18 @@ export default function Hero() {
 
                 <div className="mt-10 flex flex-wrap justify-center gap-3">
                   {/* Book a Demo - Solid Gradient */}
-                  <button
+                  <a targe="_blank" href="https://calendly.com/knockknock-premarket/30min?month=2025-08"
                     className="px-6 py-5 rounded-lg text-white font-semibold text-lg cursor-pointer bg-gradient-to-r from-[#c64500ff] to-[#e48900] hover:opacity-90 transition"
                   >
-                    Book a Demo
-                  </button>
+                    Book a Sales Call
+                  </a>
 
                   {/* How it works - Outline */}
-                  <button
+                  {/* <button
                     className="px-6 py-5 bg-white rounded-lg font-semibold text-lg cursor-pointer border-2 border-[#e48900] text-[#e48900] bg-transparent hover:bg-[#e48900] hover:text-white transition"
                   >
                     Learn More
-                  </button>
+                  </button> */}
                 </div>
               </div>
 
