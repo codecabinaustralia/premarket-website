@@ -5,31 +5,37 @@ import { useScroll, useTransform, motion } from 'framer-motion';
 
 const stages = [
   {
-    title: "It takes just minutes to prepare your campaign",
-    text: "Add your property, images and we'll do the rest. It's up to use to get buyers ready as they prepare to express real interest on your properties. ",
+    tag: "Your Mission",
+    title: "Turn Prospects Into Confident Sellers",
+    text: "Premarket gives you a fresh way to meet homeowners before they meet your competitors. With zero advertising spend, you can nurture them from ‘just curious’ to committed sellers — while holding all the cards on commission, contract terms, and client relationship.",
     image: "/assets/screenshots/1.png"
   },
   {
-    title: "Campaign Launch",
-    text: "Your campaign goes live. Buyers are circling like seagulls on a hot chip — they can now see your property and if we've done our job right you'll start getting real offers.",
+    tag: "Distribute",
+    title: "Put Your Brand in Every Doorstep & Newsfeed",
+    text: "Send your unique QR code to your community—drop it in letterboxes, print it on flyers, stick it on your office door, or text it straight to your database. It’s your gift to homeowners: a free way to test the market while you position yourself as their go-to agent.",
+    image: "/assets/screenshots/1.png"
+  },
+  {
+    tag: "Manage prospect confidence",
+    title: "Effortless Onboarding for Homeowners",
+    text: "When a homeowner scans your code, they fill out a quick 2-minute form. Their property is instantly featured in the Premarket app. A simple marketing contract is agreed on, and you’re set to start engaging genuine buyers on their behalf—without the hassle of a formal listing.",
     image: "/assets/screenshots/2.png"
   },
   {
-    title: "Start collecting your own valuable data",
-    text: "Receive real-time insights on buyer interest, agent opinions, engagement, and market trends. This data is invaluable for deciding when the time is right to sell or to hold.",
+    tag: "Engage with buyers",
+    title: "Engage Real Buyers Without the Red Tape",
+    text: "Qualified buyers will start asking questions—and sometimes, they’ll submit handshake offers. You present these to your prospect, building excitement and trust. Premarket stays completely out of the transaction process, meaning no interference with your commission or contracts.",
     image: "/assets/screenshots/3.png"
   },
   {
-    title: "Accept or decline offers with zero obligation",
-    text: "If you receive an offer that meets your expectations, you can accept it and proceed with the sale using our Premarket Edge services or you can hire a vetted agent in your area. If not, you can continue to gather data and insights.",
+    tag: "Win and convert",
+    title: "Leverage Data to Win the Listing",
+    text: "At the end of the campaign, you’ll receive a detailed performance report for each property—showing buyer activity, questions asked, and any offers made. This becomes powerful evidence to help you convert curious homeowners into committed sellers.",
     image: "/assets/screenshots/4.png"
-  },
-  {
-    title: "Campaign End",
-    text: "Your report card includes everything you need — popularity, buyer intent, pricing insights, and market trends. Whether you sell now or keep testing demand, you’ll be making smart, informed moves with Premarket.",
-    image: "/assets/screenshots/5.png"
   }
 ];
+
 
 export default function CampaignStory() {
   const containerRef = useRef(null);
@@ -64,7 +70,7 @@ export default function CampaignStory() {
         </div>
 
         {/* Left Text Section */}
-        <div className="w-full sm:w-1/2 flex mt-20 sm:mt-0 sm:items-center justify-center p-12 relative h-full">
+        <div className="w-full sm:w-1/2 flex mt-20 sm:mt-0 sm:items-center justify-center relative h-full">
         
           {stages.map((stage, i) => {
             const progress = useTransform(index, val => val - i * slideMultiplier);
@@ -72,8 +78,10 @@ export default function CampaignStory() {
             return (
               
               <motion.div key={i} className="absolute max-w-lg" style={{ opacity }}>
-                <div className='relative top-0 left-0 mb-4'><span className='whitespace-nowrap bg-purple-900 text-white rounded-full p-2'>What to expect from your campaign</span></div>
-                <h2 className="text-3xl sm:text-5xl leading-tight font-bold tracking-tight text-gray-900 mb-4 leading-tight">
+                <span className='whitespace-nowrap bg-amber-600 text-white rounded-full p-2'>
+                  {stage.tag}
+                </span>
+                <h2 className="mt-2 text-3xl sm:text-5xl leading-tight font-bold tracking-tight text-gray-900 mb-4 leading-tight">
                   {stage.title}
                 </h2>
                 <p className="text-lg text-gray-600">{stage.text}</p>

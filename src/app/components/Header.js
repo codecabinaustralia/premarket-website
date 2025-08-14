@@ -33,7 +33,7 @@ export default function Header() {
         <div className="flex items-center space-x-4">
           {/* Logo */}
           <Link href="/">
-          <img src="./iconFull.png" className="w-10 h-10 rounded-lg" />
+          <img src="./assets/logo.png" className="h-6 rounded-lg" />
           </Link>
 
           {/* Desktop nav */}

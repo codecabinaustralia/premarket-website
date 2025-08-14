@@ -26,47 +26,40 @@ export default function StatBox() {
 
             <div className="container flex flex-wrap sm:flex-nowrap mx-auto px-4">
                 <div className='w-full sm:w-2/3 flex items-center'>
-                    <div className='p-4 text-left '>
+                    <div className='p-4 text-left flex space-x-10 items-center'>
 
-                        <p className="tracking-tight text-6xl sm:text-7xl leading-tight interBold tracking-tight text-blue-700 leading-tight">
-                            $1.3 billion
-                        </p>
-                        <p className="text-3xl sm:text-5xl tracking-tight leading-tight font-bold tracking-tight text-gray-900 leading-tight">
-                            Wasted every year by Aussie homeowners listing their homes and not selling.
-                        </p>
+                        <div>
+                            <p className="tracking-tight text-6xl sm:text-7xl leading-tight interBold tracking-tight text-amber-700 leading-tight">
+                                71%
+                            </p>
+                        </div>
+                        <div>
+                            <p className="text-3xl sm:text-4xl tracking-tight leading-tight font-bold tracking-tight text-gray-900 leading-tight">
+                                of homeowners would sell today… if they got the right price.</p>
 
 
-                        <div className='text-gray-600 text-sm italic mt-2'>
-                            All because they didn't have Premarket
+                            <div className='text-gray-600 text-sm italic mt-2'>
+                                They just lack confidence to go to market
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div className='w-full sm:w-1/3 flex flex-col items-center sm:justify-center p-10'>
+                <div className='w-full sm:w-1/3 flex flex-col items-center sm:justify-center sm:border-l border-gray-200'>
 
-                    <div className='p-4 text-left sm:border-l-2 border-gray-900 my-2'>
+                    <div className='p-10 text-left  my-2'>
 
-                        <p className="tracking-tight text-4xl leading-tight interBold tracking-tight text-blue-700 leading-tight">
-                            45,205 years
+                        <p className="tracking-tight text-4xl leading-tight interBold tracking-tight text-amber-700 leading-tight">
+                            54%
                         </p>
 
                         <p className="text-base  text-gray-900 leading-tight">
-                            of collective seller time… flushed
+                            of owners are “interested but hesitant” because they’re unsure about buyer demand.
                         </p>
 
                     </div>
 
-                    <div className='p-4 text-left sm:border-l-2 border-gray-900 my-2'>
 
-                        <p className="tracking-tight text-4xl leading-tight interBold tracking-tight text-blue-700 leading-tight">
-                            33%
-                        </p>
-
-                        <p className="text-base  text-gray-900 leading-tight">
-                            Homes don't sell first time round
-                        </p>
-
-                    </div>
 
 
 

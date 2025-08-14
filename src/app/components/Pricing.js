@@ -7,49 +7,66 @@ export default function Pricing() {
     <div className="bg-gray-100">
         <div className=" sm:p-20 container mx-auto">
         <div className="text-4xl sm:text-7xl font-extrabold text-gray-900 mb-2 text-center p-10 sm:p-0">
-            Join the next campaign 
-            <div className="mt-6 text-xl inter text-gray-500">Present your property to hundreds of keen buyers instantly</div>
+            Turn your community into sellers
+            <div className="mt-6 text-xl inter text-gray-500">Supercharged automated engine that turns prospects into real clients</div>
             </div>
 <div className="p-10 sm:p-0 flex-wrap sm:flex-wrap-none flex items-center justify-center space-x-0 mt-10">
 
-  <div className="w-full sm:w-96 bg-white shadow-2xl p-8 rounded-lg py-20 mb-6 sm:mb-0">
-    <h2 className="text-3xl font-bold mb-2 text-gray-900">First Campaign</h2>
-    <div className="text-5xl font-extrabold text-gray-900 mb-2">Free</div>
+  <div className="w-full sm:w-96 bg-white shadow-2xl p-8 rounded-l-lg py-20 my-10 sm:mb-0">
+    <h2 className="text-3xl font-bold mb-2 text-gray-900">Small Agent</h2>
+    <div className="text-3xl font-extrabold text-gray-900 mb-2">$199<span className="text-sm interBold font-normal">/month</span></div>
+    <div><span className="text-sm inter bg-amber-600 text-white rounded-full py-2 px-3 font-normal">Paid annually $2,388</span></div>
     
-    <ul className="space-y-2 mb-6 text-gray-700 inter">
-        <li>30 Day Campaign</li>
-        <li>Property Report Card</li>
-      <li>Exposure to buyer database</li>
-      <li>Property and region insights</li>
-      <li>In app messenger</li>      
-      <li>Accept or reject offers</li>      
-      <li>Go to market options*</li>      
+    <ul className="space-y-2 mt-4 mb-6 text-gray-700 inter">
+      <li>Single login to Premarket app</li>
+      <li>Upto 20 prospect each month per team</li>
+      <li>View buyer interest</li>
+      <li>Property demand</li>
+      <li>Direct buyer chat</li>
+      <li>Handshake offers</li>
+      <li>End of campaign report cards</li>
     </ul>
-    <button onClick={() => setShowModal(true)} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full">
-      Start your free campaign
+    <button onClick={() => setShowModal(true)} className="border-2 border-amber-600 hover:bg-gray-100 text-amber-600 font-bold py-4 cursor-pointer px-4 rounded w-full">
+      Book a demo
     </button>
-    <span className="block text-sm text-gray-500 mt-4">No credit card required</span>
+  </div>
+  
+  <div className="w-full sm:w-96 bg-white shadow-2xl p-8 rounded-lg py-20 mb-6 sm:mb-0">
+    <h2 className="text-3xl font-bold mb-2 text-gray-900">Agent Pro</h2>
+    <div className="text-5xl font-extrabold text-gray-900 mb-2">$499<span className="text-sm interBold font-normal">/month</span></div>
+    <div><span className="text-sm inter bg-amber-600 text-white rounded-full py-2 px-3 font-normal">Paid annually $5,988</span></div>
+    
+    <ul className="space-y-2 mt-4 mb-6 text-gray-700 inter">
+      <li><span className='interBold'>Premarket Kit </span>- includes prospect QRcode cards and door stickers</li>
+      <li>Team Access to Premarket app</li>
+      <li>Upto 100 prospect each month per team</li>
+      <li>View buyer interest</li>
+      <li>Property demand</li>
+      <li>Direct buyer chat</li>
+      <li>Handshake offers</li>
+      <li>End of campaign report cards</li>
+    </ul>
+    <button onClick={() => setShowModal(true)} className="bg-amber-600 hover:bg-amber-700 text-white font-bold py-4 cursor-pointer px-4 rounded w-full">
+      Book a demo
+    </button>
   </div>
 
-  <div className="w-full sm:w-80 bg-gray-900 p-8 rounded sm:rounded-r-lg">
-    <h2 className="text-3xl font-bold mb-2 text-white">Buyer</h2>
-    <div className="text-5xl font-extrabold text-white mb-2">$199<span className="text-sm interBold font-normal">/year</span></div>
-    <ul className="space-y-2 mb-6 text-white inter">
-      <li>Exclusive access to properties not on the market yet</li>
-      <li>Make unlimited handshake offers on all properties</li>
-      <li>Priority support for any deals</li>
-      <li>Notifications and alerts</li>
+  <div className="w-full sm:w-56 bg-gray-900 p-8 rounded sm:rounded-r-lg">
+    <h2 className="text-3xl font-bold text-white">Custom</h2>
+    <div className="text-white mt-2"><span className="text-sm inter bg-gray-700 text-white rounded-full py-2 px-3 font-normal">Paid based on scale</span></div>
+    <ul className="space-y-2 mb-6 text-white inter mt-6">
+      <li>Add multiple teams</li>
+      <li>Add unlimted prospects</li>
+      <li>Extend trial campaigns</li>
+      <li>Custom Design</li>
+      <li>First Class Support</li>
     </ul>
-    <div className="">
-      <p className="space-y-2 mt-6 text-xs interBold text-white">Buyers download</p>
-                <a href="https://apps.apple.com/au/app/premarket-homes/id6742205449">
-                  <img src="./apple.png" className="mt-3 w-36" />
-                </a>
-                <a href="https://play.google.com/store/apps/details?id=com.premarkethomes.app&hl=en_AU">
-                  <img src="./play.png" className="-ml-3 h-18" />
-                </a>
-              </div>
-  </div>
+
+     <button onClick={() => setShowModal(true)} className="bg-amber-600 hover:bg-amber-700 text-white font-bold py-4 cursor-pointer px-4 rounded w-full">
+      Book a demo
+    </button>
+   
+</div>
 </div>
 </div>
     </div>

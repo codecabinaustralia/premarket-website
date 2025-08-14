@@ -13,7 +13,7 @@ export default function Features() {
   return (
     <section className="bg-white py-20 border-b border-t border-gray-200">
       <div className="container mx-auto px-4">
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-8 items-center justify-center">
+        <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-8 items-center justify-center">
           {logos.map((logo, index) => (
             <div key={index} className="flex justify-center items-center">
               <img

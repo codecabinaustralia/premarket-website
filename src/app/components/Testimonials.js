@@ -5,60 +5,61 @@ import Image from 'next/image';
 
 const testimonials = [
   {
-    name: "Sarah Thompson",
-    role: "Homeowner",
-    quote: "Premarket gave me real confidence. I saw offers roll in before I even listed.",
+    name: "Sophie Turner",
+    role: "Owner – Boutique Agency",
+    quote: "Premarket shaved weeks off my usual campaign prep. Less time on admin, more time closing deals — my coffee budget’s never been higher.",
     image: "assets/testimonials/1.png"
   },
   {
-    name: "James Walker",
-    role: "Buyer",
-    quote: "Being first in line changed everything. I secured a deal before agents even knew.",
+    name: "Mark Evans",
+    role: "Team Leader – Large Franchise",
+    quote: "I’ve got 12 agents under me, and this is the first tool they’ve all agreed actually makes their lives easier.",
     image: "assets/testimonials/2.png"
   },
   {
-    name: "Emily Chen",
-    role: "Homeowner",
-    quote: "The insights were game-changing. I knew my market, my value, and my options.",
+    name: "Renee Adams",
+    role: "Agent",
+    quote: "I met a seller who’d been sitting on the fence for 2 years. Premarket got them moving in 2 weeks — and I got the listing.",
     image: "assets/testimonials/3.png"
   },
   {
-    name: "Daniel Rees",
-    role: "Buyer",
-    quote: "I connected with sellers directly. No competition, just opportunity.",
+    name: "Tom Harrington",
+    role: "Agent – Small Town Office",
+    quote: "We don’t have the budget the big guys do, but Premarket levels the playing field. I’ve picked up three listings from it already.",
     image: "assets/testimonials/4.png"
   },
   {
-    name: "Ava Smith",
-    role: "Homeowner",
-    quote: "The buyer demand was real. I ended up getting three offers in a week.",
+    name: "Josh Caruso",
+    role: "Senior Agent",
+    quote: "I’ve been in this game 18 years. This is the first time I’ve felt tech was giving back to the community, not just taking fees.",
     image: "assets/testimonials/5.png"
   },
   {
-    name: "Liam Johnson",
-    role: "Buyer",
-    quote: "It felt like insider access. No noise, just homes and real sellers.",
+    name: "Linda Patel",
+    role: "Junior Agent",
+    quote: "As the new guy, I thought I’d be living on cold calls forever. Premarket handed me warm leads in my first week.",
     image: "assets/testimonials/6.png"
   },
   {
-    name: "Zara Ali",
-    role: "Homeowner",
-    quote: "I didn't feel rushed. I saw the market and made a smart move.",
+    name: "Clare O’Donnell",
+    role: "Owner – Regional Agency",
+    quote: "It’s like having a full-time marketing team without the payroll. I honestly thought it was too good to be true until the offers started rolling in.",
     image: "assets/testimonials/7.png"
   },
   {
-    name: "Noah Nguyen",
-    role: "Buyer",
-    quote: "A seamless experience — I was chatting with owners the same day I joined.",
+    name: "Ben Murphy",
+    role: "Agent",
+    quote: "One of my sellers calls me ‘The Market Whisperer’ now. Truth is, Premarket just gave me the data before anyone else had it.",
     image: "assets/testimonials/8.png"
   },
   {
-    name: "Grace Williams",
-    role: "Homeowner",
-    quote: "Premarket let me test the waters. I got offers before hiring anyone.",
+    name: "Hannah Lee",
+    role: "Office Manager",
+    quote: "From a back-office perspective, this cut our campaign setup time in half. Less paperwork, less chaos, more sales.",
     image: "assets/testimonials/9.png"
   }
 ];
+
 
 export default function Testimonials() {
   const [activeIndex, setActiveIndex] = useState(0);

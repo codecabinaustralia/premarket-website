@@ -15,7 +15,6 @@ import Welcome from './components/Welcome';
 import Pricing from './components/Pricing';
 import PropertyFormModal from './components/Form';
 import { useModal } from './context/ModalContext';
-import Countdown from './components/Countdown';
 
 export default function Home() {
   const { showModal } = useModal();
@@ -26,25 +25,21 @@ export default function Home() {
         <title>Premarket Homes</title>
         <meta name="description" content="Premarket Homes - Test the market before you sell." />
       </Head>
-      {/* <Header /> */}
-        {/* <div className="fixed top-0 left-0 w-full z-50">
-              <Countdown />
-            </div> */}
-      
+      <Header />
       <PropertyFormModal />
       
         <main>
        
         <Hero />
-        {/* <Logos /> */}
+        <Logos />
         <Welcome />
         <Features />
         <StatBox />
-        {/* <Roles /> */}
+        <Roles />
         <Testimonials />
         <Pricing />
      
-        {/* <CallToAction /> */}
+        <CallToAction />
       </main>
       <Footer />
     </>
