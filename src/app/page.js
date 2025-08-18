@@ -31,7 +31,7 @@ export default function Home() {
               <Countdown />
             </div> */}
       
-      <PropertyFormModal />
+      {/* <PropertyFormModal /> */}
       
         <main>
        

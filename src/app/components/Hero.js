@@ -58,7 +58,7 @@ export default function Hero() {
                     backgroundPositionX: gradientPos,
                   }}
                 >
-                  Gift your community a free ‘Premarket’ campaign<br className='sm:block hidden' />Earn their trust and be first in line when they’re ready to sell.
+                  Gift your community a free ‘Premarket’ campaign<br className='sm:block hidden' /> Earn their trust and be first in line when they’re ready to sell.
                 </h2>
 
                 <div className="mt-10 flex flex-wrap justify-center gap-3">
@@ -85,7 +85,7 @@ export default function Hero() {
   </div>
 
   <div className='col-span-1 border-b sm:border-r border-gray-200 text-center sm:text-left p-10'>
-    <h2 className='inter text-gray-800 text-xl'>We run their free 30day campaign</h2>
+    <h2 className='inter text-gray-800 text-xl'>We run their free 30 day campaign</h2>
     <div className='mt-2 inter text-gray-500 text-sm'>You stay in control, talking directly to interested buyers and getting real buyer intent.</div>
   </div>
 

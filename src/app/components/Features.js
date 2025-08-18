@@ -36,7 +36,6 @@ const stages = [
   }
 ];
 
-
 export default function CampaignStory() {
   const containerRef = useRef(null);
   const { scrollYProgress } = useScroll({
@@ -50,14 +49,14 @@ export default function CampaignStory() {
 
   return (
     <section className="relative w-full h-[600vh] bg-white" ref={containerRef}>
-      <div className="sticky top-0 h-screen w-full flex flex-wrap sm:flex-nowrap p-10 sm:p-0">
+      <div className="sticky top-0 h-screen w-full flex flex-col sm:flex-row p-6 sm:p-0">
 
-        {/* Sidebar Navigation */}
-        <div className="hidden w-20 sm:flex flex-col justify-center items-center pl-4">
+        {/* Sidebar Navigation (desktop only) */}
+        <div className="hidden sm:flex w-20 flex-col justify-center items-center pl-4">
           {stages.map((stage, i) => {
             const isActive = useTransform(index, val => Math.round(val / slideMultiplier) === i);
-            const dotColor = useTransform(isActive, v => v ? "#111827" : "#D1D5DB");
-            const dotScale = useTransform(isActive, v => v ? 1.4 : 1);
+            const dotColor = useTransform(isActive, v => (v ? "#111827" : "#D1D5DB"));
+            const dotScale = useTransform(isActive, v => (v ? 1.4 : 1));
             return (
               <motion.div key={i} className="flex flex-col items-center">
                 <motion.div
@@ -70,18 +69,16 @@ export default function CampaignStory() {
         </div>
 
         {/* Left Text Section */}
-        <div className="w-full sm:w-1/2 flex mt-20 sm:mt-0 sm:items-center justify-center relative h-full">
-        
+        <div className="w-full sm:w-1/2 flex mt-8 sm:mt-0 sm:items-center justify-center relative min-h-[50vh] sm:h-full">
           {stages.map((stage, i) => {
             const progress = useTransform(index, val => val - i * slideMultiplier);
             const opacity = useTransform(progress, [-0.5, 0, 0.5], [0, 1, 0]);
             return (
-              
               <motion.div key={i} className="absolute max-w-lg" style={{ opacity }}>
-                <span className='whitespace-nowrap bg-amber-600 text-white rounded-full p-2'>
+                <span className="whitespace-nowrap bg-amber-600 text-white rounded-full px-3 py-1">
                   {stage.tag}
                 </span>
-                <h2 className="mt-2 text-3xl sm:text-5xl leading-tight font-bold tracking-tight text-gray-900 mb-4 leading-tight">
+                <h2 className="mt-2 text-3xl sm:text-5xl font-bold tracking-tight text-gray-900 mb-4 leading-tight">
                   {stage.title}
                 </h2>
                 <p className="text-lg text-gray-600">{stage.text}</p>
@@ -90,30 +87,31 @@ export default function CampaignStory() {
           })}
         </div>
 
-        {/* Right Image Stack */}
-<div className=" w-full sm:w-1/2 relative h-full overflow-hidden">
-  {stages.map((stage, i) => {
-    const progress = useTransform(index, val => val - i * slideMultiplier);
-    const y = useTransform(progress, [-1, 0, 1], ['100%', '0%', '-100%']); // bottom to top
-    const opacity = useTransform(progress, [-0.5, 0, 0.5], [0, 1, 0]); // fade in/out
+        {/* Right Image Stack (mobile: under text) */}
+        <div className="w-full sm:w-1/2 relative overflow-hidden mt-6 sm:mt-0 h-[50vh] sm:h-full">
+          {stages.map((stage, i) => {
+            const progress = useTransform(index, val => val - i * slideMultiplier);
+            const y = useTransform(progress, [-1, 0, 1], ['100%', '0%', '-100%']);
+            const opacity = useTransform(progress, [-0.5, 0, 0.5], [0, 1, 0]);
 
-    return (
-      <motion.div
-        key={i}
-        className="sm:absolute top-0 left-0 w-full h-full flex items-center justify-center"
-        style={{ zIndex: i, opacity, y }} // removed scale
-      >
-        <div className="p-20 w-full h-full">
-          <img
-            src={stage.image}
-            alt={`Stage ${i + 1}`}
-            className="w-full h-full object-cover rounded-xl"
-          />
+            return (
+              <motion.div
+                key={i}
+                className="absolute inset-0 w-full h-full flex items-center justify-center"
+                style={{ zIndex: i, opacity, y }}
+              >
+                <div className="p-4 sm:p-20 w-full h-full">
+                  <img
+                    src={stage.image}
+                    alt={`Stage ${i + 1}`}
+                    className="w-full h-full object-cover rounded-xl"
+                    loading={i === 0 ? 'eager' : 'lazy'}
+                  />
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
-      </motion.div>
-    );
-  })}
-</div>
 
       </div>
     </section>
