@@ -42,7 +42,7 @@ export default function Home() {
         <StatBox />
         {/* <Roles /> */}
         <Testimonials />
-        <Pricing />
+        {/* <Pricing /> */}
      
         {/* <CallToAction /> */}
       </main>
