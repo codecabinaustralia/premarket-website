@@ -114,7 +114,7 @@ export default function AgentLanding() {
           {logo && (
             <Image src={logo} alt="logo" width={160} height={160} className="rounded" unoptimized />
           )}
-          <div className="ml-auto flex space-x-3 items-center">
+          <div className=" hidden ml-auto flex space-x-3 items-center">
             {photo && (
               <Image
                 src={photo}
