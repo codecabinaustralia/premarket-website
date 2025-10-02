@@ -1,11 +1,12 @@
 'use client';
+
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { db } from '../firebase/clientApp';
 import { doc, getDoc } from 'firebase/firestore';
 import Image from 'next/image';
 
-export default function PropertyPage() {
+export default function PropertyPageClient() {
   const searchParams = useSearchParams();
   const propertyId = searchParams.get('propertyId');
 
@@ -67,7 +68,7 @@ export default function PropertyPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 font-sans">
-      {/* Header with Logo */}
+      {/* Header */}
       <div className="p-4 flex items-center justify-between bg-white shadow">
         <Image
           src="https://premarket.homes/assets/logo.png"
@@ -78,7 +79,7 @@ export default function PropertyPage() {
         />
       </div>
 
-      {/* Video or Image Gallery */}
+      {/* Video or Image */}
       <div className="relative w-full max-h-[500px] overflow-hidden">
         {videoUrl ? (
           <video
@@ -90,16 +91,14 @@ export default function PropertyPage() {
             loop
           />
         ) : imageUrls.length > 0 ? (
-          <div className="w-full h-[500px]">
-            <Image
-              src={imageUrls[0]}
-              alt={title}
-              width={1200}
-              height={500}
-              className="w-full h-full object-cover"
-              unoptimized
-            />
-          </div>
+          <Image
+            src={imageUrls[0]}
+            alt={title}
+            width={1200}
+            height={500}
+            className="w-full h-[500px] object-cover"
+            unoptimized
+          />
         ) : (
           <div className="w-full h-[400px] bg-gray-200 flex items-center justify-center">
             <span className="text-gray-500">No Media Available</span>
@@ -107,32 +106,16 @@ export default function PropertyPage() {
         )}
       </div>
 
-      {/* Main Property Card */}
+      {/* Property Details */}
       <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-lg -mt-12 relative z-10">
         <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
         <p className="text-gray-600 mt-1">{address}</p>
 
-        <div className="flex flex-wrap space-x-3 mt-4">
-          {bedrooms && (
-            <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full">
-              🛏 {bedrooms} Beds
-            </span>
-          )}
-          {bathrooms && (
-            <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full">
-              🛁 {bathrooms} Baths
-            </span>
-          )}
-          {carSpaces && (
-            <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full">
-              🚗 {carSpaces} Cars
-            </span>
-          )}
-          {squareFootage && (
-            <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full">
-              📐 {squareFootage} m²
-            </span>
-          )}
+        <div className="flex flex-wrap gap-2 mt-4">
+          {bedrooms && <span className="tag">🛏 {bedrooms} Beds</span>}
+          {bathrooms && <span className="tag">🛁 {bathrooms} Baths</span>}
+          {carSpaces && <span className="tag">🚗 {carSpaces} Cars</span>}
+          {squareFootage && <span className="tag">📐 {squareFootage} m²</span>}
         </div>
 
         {price && (
@@ -162,7 +145,7 @@ export default function PropertyPage() {
         </button>
       </div>
 
-      {/* Exclusive CTA */}
+      {/* CTA Section */}
       <div className="max-w-4xl mx-auto mt-12 bg-teal-600 text-white rounded-lg shadow-lg p-8 text-center">
         <h2 className="text-3xl font-bold mb-4">Exclusive on Premarket</h2>
         <p className="text-lg mb-6">
