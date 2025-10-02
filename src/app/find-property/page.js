@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import PropertyPageClient from '../../components/PropertyPageClient';
+import PropertyPageClient from '../components/PropertyPageClient';
 
 export default function FindPropertyPage() {
   return (
