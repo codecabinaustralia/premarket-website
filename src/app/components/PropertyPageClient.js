@@ -111,7 +111,7 @@ export default function PropertyPageClient() {
         <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
         <p className="text-gray-600 mt-1">{address}</p>
 
-        <div className="flex flex-wrap gap-2 mt-4">
+        <div className="flex flex-wrap gap-2 mt-4 text-gray-700">
           {bedrooms && <span className="tag">🛏 {bedrooms} Beds</span>}
           {bathrooms && <span className="tag">🛁 {bathrooms} Baths</span>}
           {carSpaces && <span className="tag">🚗 {carSpaces} Cars</span>}
@@ -153,7 +153,7 @@ export default function PropertyPageClient() {
         </p>
 
         <div className="flex justify-center space-x-4">
-          <a href="https://apps.apple.com/" target="_blank" rel="noopener noreferrer">
+          <a href="https://apps.apple.com/au/app/premarket-homes/id6742205449" target="_blank" rel="noopener noreferrer">
             <Image
               src="https://www.airtasker.com/images/homepage/apple-store-2022.svg"
               alt="Download on the App Store"
@@ -161,7 +161,7 @@ export default function PropertyPageClient() {
               height={50}
             />
           </a>
-          <a href="https://play.google.com/" target="_blank" rel="noopener noreferrer">
+          <a href="https://play.google.com/store/apps/details?id=com.premarkethomes.app&hl=en" target="_blank" rel="noopener noreferrer">
             <Image
               src="https://www.airtasker.com/images/homepage/google-play-2022.svg"
               alt="Get it on Google Play"
