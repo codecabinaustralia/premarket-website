@@ -462,6 +462,8 @@ export default function PropertyFormModal() {
         clientName,
         clientEmail,
         clientPhone,
+        vendorUploaded: true,
+        agentManaged: true,
         clientId: user.uid,
         userId: agentData.id,
       };
