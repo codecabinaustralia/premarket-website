@@ -197,7 +197,7 @@ export default function PropertyPageClient() {
           )}
         </div>
         <button
-          className="text-teal-600 mt-2 font-semibold"
+          className="text-amber-600 mt-2 font-semibold"
           onClick={() => setShowFullDescription(!showFullDescription)}
         >
           {showFullDescription ? 'Show Less' : 'Read More'}
@@ -205,8 +205,8 @@ export default function PropertyPageClient() {
       </div>
 
       {/* CTA Section */}
-      <div className="max-w-4xl mx-auto mt-12 bg-teal-600 text-white rounded-lg shadow-lg p-8 text-center">
-        <h2 className="text-3xl font-bold mb-4">Exclusive on Premarket</h2>
+      <div className="max-w-4xl mx-auto mt-12 bg-amber-600 text-white rounded-lg shadow-lg p-8 text-center">
+        <h2 className="text-xl font-bold mb-4">Exclusive on Premarket</h2>
         <p className="text-lg mb-6">
           Download the Premarket app and see properties, videos and images before they even hit the market.
         </p>
