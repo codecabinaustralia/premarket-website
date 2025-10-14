@@ -513,7 +513,7 @@ export default function PropertyFormModal() {
                   <img
                     onClick={closeModal}
                     src={agentData?.logo || './iconFull.png'}
-                    className="mr-6 w-6 h-6 sm:w-16 sm:h-16 rounded sm:rounded-lg mb-4 sm:mb-0"
+                    className="mr-6 sm:w-16 sm:h-16 rounded sm:rounded-lg mb-4 sm:mb-0"
                     alt="agent-logo"
                   />
                 </h2>
@@ -524,14 +524,13 @@ export default function PropertyFormModal() {
               </button>
             </div>
           </div>
-      
 
         {/* Body */}
         <div className="w-full max-w-5xl mx-auto py-10 px-10 sm:px-20 relative">
           {/* Step 1 */}
           {step === STEPS.INTRO && (
             <div className="px-0 sm:px-40">
-              <h2 className="text-base font-semibold mb-4">
+              <h2 className="text-small mb-4">
                 Hi, I'm {agentData?.fullName} from {agentData?.companyName}. Welcome to the family. We've poured time and energy
                 into building a space dedicated to our local community. If you haven’t heard yet, Premarket runs regular campaigns
                 that give us the chance to showcase your property to serious buyers before it hits the market. To take advantage
