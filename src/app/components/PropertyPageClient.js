@@ -164,7 +164,7 @@ export default function PropertyPageClient() {
                 <span>{formatPrice(maxPrice.toString())}</span>
               </div>
               <p className="text-center mt-4 font-bold text-white drop-shadow">
-                Give your evaluation by downloading Premarket
+                Give your price opinion and register your interest before the crowd. Download Premarket Free.
               </p>
             </div>
           )}
