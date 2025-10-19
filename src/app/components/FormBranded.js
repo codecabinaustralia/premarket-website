@@ -509,14 +509,7 @@ export default function PropertyFormModal() {
           <div className="h-20 w-full flex items-center" style={{ backgroundColor: headerBg }}>
             <div className="container mx-auto flex">
               <div className="flex-grow">
-                <h2 className="px-10 sm:px-0 my-8 leading-none text-2xl inter text-white flex flex-wrap sm:flex-nowrap">
-                  <img
-                    onClick={closeModal}
-                    src={agentData?.logo || './iconFull.png'}
-                    className="mr-6 sm:w-16 sm:h-16 rounded sm:rounded-lg mb-4 sm:mb-0"
-                    alt="agent-logo"
-                  />
-                </h2>
+               
               </div>
               <button className="absolute top-0 right-0 m-3 sm:m-0 sm:relative cursor-pointer sm:right-4 text-white hover:text-gray-200">
                 <X size={50} className="sm:block hidden" onClick={closeModal} />
