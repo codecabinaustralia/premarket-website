@@ -61,9 +61,33 @@ export default function Hero() {
 
               {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row justify-center lg:justify-start gap-1 mb-8">
-                <img src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83" className='h-14 mt-3' />
-                <img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" className='h-20' />
-
+               
+ <a
+                href="https://apps.apple.com/au/app/premarket-homes/id6742205449"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="transition-transform hover:scale-105"
+              >
+                <Image
+                  src="https://www.airtasker.com/images/homepage/apple-store-2022.svg"
+                  alt="Download on the App Store"
+                  width={190}
+                  height={40}
+                />
+              </a>
+              <a
+                href="https://play.google.com/store/apps/details?id=com.premarkethomes.app&hl=en"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="transition-transform hover:scale-105"
+              >
+                <Image
+                  src="https://www.airtasker.com/images/homepage/google-play-2022.svg"
+                  alt="Get it on Google Play"
+                  width={190}
+                  height={40}
+                />
+              </a>
                 
               </div>
 

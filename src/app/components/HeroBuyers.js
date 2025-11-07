@@ -61,10 +61,32 @@ export default function Hero() {
 
               {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row justify-center lg:justify-start gap-1 mb-8">
-                <img src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83" className='h-14 mt-3' />
-                <img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" className='h-20' />
-
-                
+                <a
+                               href="https://apps.apple.com/au/app/premarket-homes/id6742205449"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               className="transition-transform hover:scale-105"
+                             >
+                               <Image
+                                 src="https://www.airtasker.com/images/homepage/apple-store-2022.svg"
+                                 alt="Download on the App Store"
+                                 width={190}
+                                 height={40}
+                               />
+                             </a>
+                             <a
+                               href="https://play.google.com/store/apps/details?id=com.premarkethomes.app&hl=en"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               className="transition-transform hover:scale-105"
+                             >
+                               <Image
+                                 src="https://www.airtasker.com/images/homepage/google-play-2022.svg"
+                                 alt="Get it on Google Play"
+                                 width={190}
+                                 height={40}
+                               />
+                             </a>
               </div>
 
               {/* Trust Indicators */}
@@ -82,13 +104,7 @@ export default function Hero() {
                   onClick={() => setVideoOpen(true)}
                   className="relative w-full mx-auto overflow-hidden h-full cursor-pointer"
                 >
-                  <Image
-                    src="https://premarketvideos.b-cdn.net/assets/a8bd2fa39b584f0f6f262f37b4956625_1762477434.png"
-                    alt="Premarket App Preview"
-                    fill
-                    className="object-cover w-full h-full"
-                    unoptimized
-                  />
+            <video className='mt-40' src="https://premarketvideos.b-cdn.net/assets/5badab39e809a1e4d4c041e672dd084b_1762505250.mp4" controls="false" autoPlay="true" loop="true"/>
                   
                   {/* Play Button */}
                   <div className="absolute inset-0 flex items-center justify-center">
@@ -99,10 +115,7 @@ export default function Hero() {
                     </div>
                   </div>
 
-                  {/* Duration Badge */}
-                  <div className="absolute bottom-4 right-4 bg-black/70 text-white px-3 py-1 rounded-full text-sm font-semibold">
-                    2:30
-                  </div>
+        
                 </div>
 
                 {/* Decorative Elements */}

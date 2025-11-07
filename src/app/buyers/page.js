@@ -5,7 +5,7 @@ import Head from 'next/head';
 import Header from '../components/Header';
 import HeroBuyers from '../components/HeroBuyers';
 import Logos from '../components/Logos';
-import Features from '../components/Features';
+import FeaturesBuyers from '../components/FeaturesBuyers';
 import Roles from '../components/Roles';
 import CallToAction from '../components/CallToAction';
 import FooterLarge from '../components/FooterLarge';
@@ -38,7 +38,7 @@ export default function Home() {
         <HeroBuyers />
         {/* <Logos /> */}
         {/* <Welcome /> */}
-        <Features />
+        <FeaturesBuyers />
         <StatBox />
         {/* <Roles /> */}
         <Testimonials />
