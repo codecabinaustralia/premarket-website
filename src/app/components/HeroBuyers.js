@@ -29,19 +29,19 @@ export default function Hero() {
                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-50 to-orange-50 rounded-full border border-amber-200">
           
                   <span className="text-xs sm:text-sm font-bold text-amber-700">
-                    <span className="hidden sm:inline">The #1 app home owners and buyers wish they had</span>
+                    <span className="hidden sm:inline">It's like fishing up stream</span>
                   </span>
                 </div>
               </div>
 
               {/* Main Heading */}
               <h1 className="text-4xl sm:text-4xl leading-none lg:text-[90px] tracking-tight interBold text-gray-900 mb-6">
-                Your wish is my command
+                Find homes exclusively on Premarket
             
               </h1>
 
                <h1 className="text-4xl sm:text-3xl leading-none lg:text-2xl interMedium text-gray-900 mb-6">
-                Try Premarket before going to an agent
+                Express your interest before the crowds
             
               </h1>
 
@@ -55,7 +55,7 @@ export default function Hero() {
                     backgroundPositionX: gradientPos,
                   }}
                 >
-                  Either save money or make money by running a free premarket campaign on your home. Get real buyer feedback and interest giving you the confidence to go to market or stay put. No open homes, no fees, no risk.
+                  Give your price opinions on homes you like or express your interest on homes you love. When the homes go to market you'll be the first to see.
                 </h2>
               </div>
 
@@ -83,7 +83,7 @@ export default function Hero() {
                   className="relative w-full mx-auto overflow-hidden h-full cursor-pointer"
                 >
                   <Image
-                    src="https://premarketvideos.b-cdn.net/assets/3aced1e85be83ef4d175c65f13600f8e_1762474032.png"
+                    src="https://premarketvideos.b-cdn.net/assets/a8bd2fa39b584f0f6f262f37b4956625_1762477434.png"
                     alt="Premarket App Preview"
                     fill
                     className="object-cover w-full h-full"
@@ -219,7 +219,7 @@ export default function Hero() {
             onClick={(e) => e.stopPropagation()}
           >
             <video
-              src="https://premarketvideos.b-cdn.net/assets/final.mp4"
+              src="https://premarketvideos.b-cdn.net/assets/e4e0906e-2a30-4ae6-b425-c6a86583f695.mp4"
               className="w-full h-full rounded-2xl shadow-2xl"
               controls
               autoPlay
