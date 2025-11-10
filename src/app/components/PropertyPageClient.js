@@ -4,7 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { db } from '../firebase/clientApp';
-import { doc, getDoc, addDoc, collection, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, addDoc, setDoc, collection, serverTimestamp, updateDoc, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
 import Image from 'next/image';
 import FooterLarge from '../components/FooterLarge';
 import Nav from '../components/Nav';
@@ -36,6 +36,7 @@ export default function PropertyPageClient() {
   const [lastName, setLastName] = useState('');
   const [password, setPassword] = useState('');
   const [signupError, setSignupError] = useState('');
+  const [showThankYou, setShowThankYou] = useState(false);
 
   useEffect(() => {
     if (!propertyId) return;
@@ -47,11 +48,13 @@ export default function PropertyPageClient() {
           const data = { id: docSnap.id, ...docSnap.data() };
           setProperty(data);
           
-          // Calculate price range
-          const { min, max, mid } = computeInitialRange(data);
+          // Calculate price range based on property.price
+          const { min, max } = computeInitialRange(data);
           setMinPrice(min);
           setMaxPrice(max);
-          setPriceOpinion(mid);
+          
+          // Fetch previous offer to set initial slider value
+          await fetchPreviousOffer(propertyId, min, max);
         }
       } catch (err) {
         console.error('Error fetching property:', err);
@@ -61,6 +64,38 @@ export default function PropertyPageClient() {
     };
     fetchProperty();
   }, [propertyId]);
+
+  const fetchPreviousOffer = async (propId, min, max) => {
+    try {
+      const offersQuery = query(
+        collection(db, 'offers'),
+        where('propertyId', '==', propId),
+        orderBy('createdAt', 'desc'),
+        limit(1)
+      );
+      
+      const querySnapshot = await getDocs(offersQuery);
+      
+      if (!querySnapshot.empty) {
+        const previousOffer = querySnapshot.docs[0].data();
+        if (previousOffer.offerAmount) {
+          // Round to nearest thousand
+          const roundedOffer = Math.round(previousOffer.offerAmount / 1000) * 1000;
+          setPriceOpinion(roundedOffer);
+          return;
+        }
+      }
+      
+      // If no previous offer found, use midpoint
+      const mid = Math.round(((min + max) / 2) / 1000) * 1000;
+      setPriceOpinion(mid);
+    } catch (error) {
+      console.error('Error fetching previous offer:', error);
+      // Fallback to midpoint if error
+      const mid = Math.round(((min + max) / 2) / 1000) * 1000;
+      setPriceOpinion(mid);
+    }
+  };
 
   const computeInitialRange = (data) => {
     const toDouble = (v) => {
@@ -73,34 +108,33 @@ export default function PropertyPageClient() {
       return 0;
     };
 
-    // Try to get from propertyJob first
-    const priceEstimate = data.propertyJob?.price_estimate;
-    if (priceEstimate) {
-      const low = toDouble(priceEstimate.low);
-      const high = toDouble(priceEstimate.high);
-      const mid = toDouble(priceEstimate.mid);
-      if (low > 0 && high > 0) {
-        return { min: low, max: high, mid: mid > 0 ? mid : (low + high) / 2 };
+    // Get the base price from property.price
+    let basePrice = toDouble(data.price);
+    
+    // If no price, try other sources
+    if (basePrice === 0) {
+      const priceEstimate = data.propertyJob?.price_estimate;
+      if (priceEstimate) {
+        basePrice = toDouble(priceEstimate.mid) || 
+                    toDouble(priceEstimate.high) || 
+                    toDouble(priceEstimate.low);
       }
     }
+    
+    if (basePrice === 0) {
+      basePrice = toDouble(data.priceGuide);
+    }
+    
+    // Default to 1M if still no price
+    if (basePrice === 0) {
+      basePrice = 1000000;
+    }
 
-    const price = toDouble(data.price);
-    const guide = toDouble(data.priceGuide);
-    const toPrice = toDouble(data.toPrice);
-    const minField = toDouble(data.priceMin);
-    const maxField = toDouble(data.priceMax);
+    // Calculate min and max as 25% either side
+    const min = Math.round((basePrice * 0.75) / 1000) * 1000;
+    const max = Math.round((basePrice * 1.25) / 1000) * 1000;
 
-    const min = minField > 0 ? minField :
-                guide > 0 ? guide * 0.85 :
-                price > 0 ? price * 0.9 : 900000;
-
-    const max = maxField > 0 ? maxField :
-                toPrice > 0 ? toPrice :
-                guide > 0 ? guide * 1.15 :
-                price > 0 ? price * 1.1 : 1100000;
-
-    const mid = (min + max) / 2;
-    return { min: Math.round(min), max: Math.round(max), mid: Math.round(mid) };
+    return { min, max };
   };
 
   const formatMoney = (val) => {
@@ -191,16 +225,18 @@ export default function PropertyPageClient() {
       const userId = userCredential.user.uid;
 
       // Create user document
-      await addDoc(collection(db, 'users'), {
-        email: email.trim().toLowerCase(),
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        pro: false,
-        created: serverTimestamp(),
-        tags: ['new'],
-        avatar: '',
-        uid: userId,
-      });
+      await setDoc(doc(db, "users", userId), {
+  uid: userId,
+  email: email.trim().toLowerCase(),
+  firstName: firstName.trim(),
+  lastName: lastName.trim(),
+  phone: "",
+  pro: false,
+  agent: false,
+  created: serverTimestamp(),
+  tags: ["new"],
+  avatar: "https://premarketvideos.b-cdn.net/assets/icon.png",
+});
 
       // Update the saved offer with userId
       if (savedOfferId) {
@@ -211,9 +247,8 @@ export default function PropertyPageClient() {
         });
       }
 
-      // Success - redirect or show success message
-      alert('Account created successfully! Download the app to see more properties.');
-      setShowSignupModal(false);
+      // Success - show thank you message
+      setShowThankYou(true);
     } catch (error) {
       console.error('Signup error:', error);
       setSignupError(error.message || 'Failed to create account');
@@ -225,7 +260,7 @@ export default function PropertyPageClient() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-50">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-teal-600"></div>
+        <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-orange-600"></div>
       </div>
     );
   }
@@ -266,11 +301,11 @@ export default function PropertyPageClient() {
                               propertyData?.property_type || 'Property';
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
       <Nav />
 
       {/* Full Width Pre-Market Header */}
-      <div className="bg-gradient-to-r from-teal-600 to-cyan-600 py-24">
+      <div className="bg-gradient-to-r from-orange-600 to-amber-600 py-24">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full mb-4 border border-white/30">
             <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -423,7 +458,7 @@ export default function PropertyPageClient() {
 
               {/* Big Price Display */}
               <div className="text-center mb-8">
-                <div className="text-5xl font-bold text-teal-600">
+                <div className="text-5xl font-bold text-orange-600">
                   {formatMoney(priceOpinion)}
                 </div>
               </div>
@@ -458,7 +493,7 @@ export default function PropertyPageClient() {
                 <label className="flex items-center justify-between cursor-pointer">
                   <div className="flex items-center gap-3">
                     <div className="flex-shrink-0">
-                      <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                       </svg>
                     </div>
@@ -471,7 +506,7 @@ export default function PropertyPageClient() {
                     type="checkbox"
                     checked={registerInterest}
                     onChange={(e) => setRegisterInterest(e.target.checked)}
-                    className="w-5 h-5 text-teal-600 rounded focus:ring-2 focus:ring-teal-500"
+                    className="w-5 h-5 text-orange-600 rounded focus:ring-2 focus:ring-orange-500"
                   />
                 </label>
               </div>
@@ -480,7 +515,7 @@ export default function PropertyPageClient() {
               <button
                 onClick={handleSubmitOpinion}
                 disabled={submitting}
-                className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-4 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {submitting ? (
                   <>
@@ -528,7 +563,7 @@ export default function PropertyPageClient() {
             {description && description.length > 300 && (
               <button
                 onClick={() => setShowFullDescription(!showFullDescription)}
-                className="text-teal-600 font-semibold mt-4 hover:text-teal-700 transition-colors inline-flex items-center gap-1"
+                className="text-orange-600 font-semibold mt-4 hover:text-orange-700 transition-colors inline-flex items-center gap-1"
               >
                 {showFullDescription ? (
                   <>
@@ -554,7 +589,7 @@ export default function PropertyPageClient() {
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-slate-200">
               <div className="p-6 border-b border-slate-200">
                 <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                  <svg className="w-5 h-5 text-teal-600" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-5 h-5 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                   </svg>
                   Location
@@ -608,7 +643,7 @@ export default function PropertyPageClient() {
                   {priceEstimate.price_growth_since_last_sold !== undefined && (
                     <div className="bg-white/70 rounded-lg p-4">
                       <div className="text-sm text-purple-700 mb-1">Growth Since Purchase</div>
-                      <div className={`text-2xl font-bold ${priceEstimate.price_growth_since_last_sold >= 0 ? 'text-teal-600' : 'text-red-600'}`}>
+                      <div className={`text-2xl font-bold ${priceEstimate.price_growth_since_last_sold >= 0 ? 'text-orange-600' : 'text-red-600'}`}>
                         {priceEstimate.price_growth_since_last_sold >= 0 ? '+' : ''}{priceEstimate.price_growth_since_last_sold.toFixed(1)}%
                       </div>
                     </div>
@@ -616,7 +651,7 @@ export default function PropertyPageClient() {
                   {priceEstimate.price_growth_since_last_month !== undefined && (
                     <div className="bg-white/70 rounded-lg p-4">
                       <div className="text-sm text-purple-700 mb-1">Monthly Growth</div>
-                      <div className={`text-2xl font-bold ${priceEstimate.price_growth_since_last_month >= 0 ? 'text-teal-600' : 'text-red-600'}`}>
+                      <div className={`text-2xl font-bold ${priceEstimate.price_growth_since_last_month >= 0 ? 'text-orange-600' : 'text-red-600'}`}>
                         {priceEstimate.price_growth_since_last_month >= 0 ? '+' : ''}{priceEstimate.price_growth_since_last_month.toFixed(1)}%
                       </div>
                     </div>
@@ -676,7 +711,7 @@ export default function PropertyPageClient() {
                     {areaStats.past_12_month_growth !== undefined && (
                       <div className="bg-white/70 rounded-lg p-3">
                         <div className="text-xs text-blue-700 mb-1">12mo Growth</div>
-                        <div className="text-lg font-bold text-teal-600">
+                        <div className="text-lg font-bold text-orange-600">
                           {areaStats.past_12_month_growth >= 0 ? '+' : ''}{areaStats.past_12_month_growth.toFixed(1)}%
                         </div>
                       </div>
@@ -755,12 +790,12 @@ export default function PropertyPageClient() {
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-teal-100 rounded-full mb-6">
-                <svg className="w-5 h-5 text-teal-600" fill="currentColor" viewBox="0 0 20 20">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-orange-100 rounded-full mb-6">
+                <svg className="w-5 h-5 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
                   <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z" />
                 </svg>
-                <span className="text-sm font-bold text-teal-600">EXCLUSIVE ACCESS</span>
+                <span className="text-sm font-bold text-orange-600">EXCLUSIVE ACCESS</span>
               </div>
               <h2 className="text-4xl font-bold text-slate-900 mb-6">
                 Discover Properties Before They Hit The Market
@@ -771,8 +806,8 @@ export default function PropertyPageClient() {
               
               <div className="space-y-4 mb-8">
                 <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center">
-                    <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="flex-shrink-0 w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                    <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
@@ -782,8 +817,8 @@ export default function PropertyPageClient() {
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center">
-                    <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="flex-shrink-0 w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                    <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
@@ -793,8 +828,8 @@ export default function PropertyPageClient() {
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center">
-                    <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="flex-shrink-0 w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                    <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
@@ -847,7 +882,7 @@ export default function PropertyPageClient() {
                     poster={imageUrls[0] || ''}
                   />
                 ) : (
-                  <div className="w-full aspect-[9/16] bg-gradient-to-br from-teal-600 to-cyan-600 flex items-center justify-center">
+                  <div className="w-full aspect-[9/16] bg-gradient-to-br from-orange-600 to-amber-600 flex items-center justify-center">
                     <Image
                       src="https://premarket.homes/assets/logo.png"
                       alt="Premarket"
@@ -859,21 +894,24 @@ export default function PropertyPageClient() {
                   </div>
                 )}
               </div>
-              <div className="absolute -bottom-6 -right-6 w-72 h-72 bg-teal-200 rounded-full blur-3xl opacity-30" />
-              <div className="absolute -top-6 -left-6 w-72 h-72 bg-cyan-200 rounded-full blur-3xl opacity-30" />
+              <div className="absolute -bottom-6 -right-6 w-72 h-72 bg-orange-200 rounded-full blur-3xl opacity-30" />
+              <div className="absolute -top-6 -left-6 w-72 h-72 bg-amber-200 rounded-full blur-3xl opacity-30" />
             </div>
           </div>
         </div>
       </div>
 
       {/* CTA Section */}
-      <div className="bg-gradient-to-r from-teal-600 to-cyan-600 py-16">
+      <div className="bg-gradient-to-r from-orange-600 to-amber-600 py-16">
         <div className="max-w-4xl mx-auto px-4 text-center text-white">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Ready to Find Your Dream Home?
+            View More Exclusive Properties at Premarket
           </h2>
-          <p className="text-xl mb-8 text-white/90">
-            Join thousands of buyers discovering exclusive pre-market properties
+          <p className="text-xl mb-2 text-white/90">
+            Get in first before they go to market
+          </p>
+          <p className="text-lg mb-8 text-white/80">
+            100% free to use • No hidden fees • Access thousands of pre-market listings
           </p>
 
           <div className="flex flex-col sm:flex-row justify-center gap-4">
@@ -913,9 +951,12 @@ export default function PropertyPageClient() {
       {/* Signup Modal */}
       {showSignupModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative max-h-[90vh] overflow-y-auto">
             <button
-              onClick={() => setShowSignupModal(false)}
+              onClick={() => {
+                setShowSignupModal(false);
+                setShowThankYou(false);
+              }}
               className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -923,97 +964,151 @@ export default function PropertyPageClient() {
               </svg>
             </button>
 
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h3 className="text-2xl font-bold text-slate-800 mb-2">
-                Opinion Submitted!
-              </h3>
-              <p className="text-slate-600">
-                Create your account to unlock exclusive pre-market properties
-              </p>
-            </div>
-
-            <form onSubmit={handleSignup} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    First Name
-                  </label>
-                  <input
-                    type="text"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    required
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
-                    placeholder="John"
-                  />
+            {showThankYou ? (
+              <div className="text-center">
+                <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-10 h-10 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    Last Name
-                  </label>
-                  <input
-                    type="text"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    required
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
-                    placeholder="Doe"
-                  />
+                <h3 className="text-3xl font-bold text-slate-800 mb-3">
+                  Thank You!
+                </h3>
+                <p className="text-lg text-slate-600 mb-6">
+                  Your account has been created successfully. Download the app to discover more exclusive pre-market properties.
+                </p>
+
+                <div className="bg-orange-50 border border-orange-200 rounded-xl p-6 mb-6">
+                  <h4 className="font-bold text-slate-800 mb-3">Download Premarket App</h4>
+                  <div className="flex flex-col gap-3">
+                    <a
+                      href="https://apps.apple.com/au/app/premarket-homes/id6742205449"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block mx-auto"
+                    >
+                      <Image
+                        src="https://www.airtasker.com/images/homepage/apple-store-2022.svg"
+                        alt="Download on the App Store"
+                        width={160}
+                        height={53}
+                      />
+                    </a>
+                    <a
+                      href="https://play.google.com/store/apps/details?id=com.premarkethomes.app&hl=en"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block mx-auto"
+                    >
+                      <Image
+                        src="https://www.airtasker.com/images/homepage/google-play-2022.svg"
+                        alt="Get it on Google Play"
+                        width={160}
+                        height={53}
+                      />
+                    </a>
+                  </div>
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
-                  placeholder="john@example.com"
-                />
+                <p className="text-sm text-slate-500">
+                  Access thousands of exclusive properties before they hit the market
+                </p>
               </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={6}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
-                  placeholder="••••••••"
-                />
-              </div>
-
-              {signupError && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                  {signupError}
+            ) : (
+              <>
+                <div className="text-center mb-6">
+                  <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <h3 className="text-2xl font-bold text-slate-800 mb-2">
+                    Opinion Submitted!
+                  </h3>
+                  <p className="text-slate-600">
+                    Create your account to unlock exclusive pre-market properties
+                  </p>
                 </div>
-              )}
 
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {submitting ? 'Creating Account...' : 'Create Account'}
-              </button>
-            </form>
+                <form onSubmit={handleSignup} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">
+                        First Name
+                      </label>
+                      <input
+                        type="text"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        required
+                        className="text-gray-900 placeholder-gray-300 w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all"
+                        placeholder="John"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">
+                        Last Name
+                      </label>
+                      <input
+                        type="text"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        required
+                        className="text-gray-900 placeholder-gray-300 w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all"
+                        placeholder="Doe"
+                      />
+                    </div>
+                  </div>
 
-            <p className="text-xs text-center text-slate-500 mt-4">
-              By creating an account, you agree to our Terms of Service and Privacy Policy
-            </p>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="text-gray-900 placeholder-gray-300 w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all"
+                      placeholder="john@example.com"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                      Password
+                    </label>
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      minLength={6}
+                      className="text-gray-900 placeholder-gray-300 w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all"
+                      placeholder="••••••••"
+                    />
+                  </div>
+
+                  {signupError && (
+                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                      {signupError}
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {submitting ? 'Creating Account...' : 'Create Account'}
+                  </button>
+                </form>
+
+                <p className="text-xs text-center text-slate-500 mt-4">
+                  By creating an account, you agree to our Terms of Service and Privacy Policy
+                </p>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -1127,7 +1222,7 @@ export default function PropertyPageClient() {
           background: white;
           cursor: pointer;
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-          border: 3px solid #0d9488;
+          border: 3px solid #ea580c;
         }
 
         .slider-thumb::-moz-range-thumb {
@@ -1137,7 +1232,7 @@ export default function PropertyPageClient() {
           background: white;
           cursor: pointer;
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-          border: 3px solid #0d9488;
+          border: 3px solid #ea580c;
         }
       `}</style>
     </div>
