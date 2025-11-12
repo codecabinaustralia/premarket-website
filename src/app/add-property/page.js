@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { X } from 'lucide-react';
+import { X, FileText } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { LoadScript, Autocomplete } from '@react-google-maps/api';
@@ -14,7 +14,13 @@ import {
     collection,
     addDoc,
     updateDoc,
-    serverTimestamp, getDocs, orderBy, limit, query
+    serverTimestamp, 
+    getDocs, 
+    orderBy, 
+    limit, 
+    query,
+    doc,
+    getDoc
 } from 'firebase/firestore';
 import {
     ref,
@@ -44,6 +50,9 @@ export default function PropertyFormModal() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [errors, setErrors] = useState({});
+    const [termsAccepted, setTermsAccepted] = useState(false);
+    const [termsContent, setTermsContent] = useState({ vendor: '', agent: '' });
+    const [showTermsModal, setShowTermsModal] = useState(false);
 
     const homeTypes = ['House', 'Apartment', 'Villa', 'Townhouse', 'Acreage'];
     const homeFeatures = [
@@ -68,6 +77,24 @@ export default function PropertyFormModal() {
         fetchStartDate();
     }, []);
 
+    // Fetch terms and conditions
+    useEffect(() => {
+        async function fetchTerms() {
+            try {
+                const vendorDoc = await getDoc(doc(db, 'settings', 'addPropertyTermsVendor'));
+                const agentDoc = await getDoc(doc(db, 'settings', 'addPropertyTermsAgent'));
+                
+                setTermsContent({
+                    vendor: vendorDoc.exists() ? vendorDoc.data().body : '',
+                    agent: agentDoc.exists() ? agentDoc.data().body : ''
+                });
+            } catch (err) {
+                console.error('Error fetching terms:', err);
+            }
+        }
+
+        fetchTerms();
+    }, []);
 
     const toggleFeature = (feature) => {
         setFeatures((prev) => ({ ...prev, [feature]: !prev[feature] }));
@@ -114,13 +141,13 @@ export default function PropertyFormModal() {
         setEmail('');
         setPassword('');
         setErrors({});
+        setTermsAccepted(false);
     };
 
     const closeModal = () => {
         resetForm();
         setShowModal(false);
     };
-
 
     const validateStep = () => {
         const newErrors = {};
@@ -132,8 +159,9 @@ export default function PropertyFormModal() {
         if (step === 6 && (!title || !description)) newErrors.step = 'Please enter a title and description.';
         if (step === 7) {
             if (!email || !password) newErrors.step = 'Please enter an email and password.';
-            if (!email.includes('@')) newErrors.step = 'Please enter a valid email address.';
-            if (password.length < 6) newErrors.step = 'Password must be at least 6 characters.';
+            else if (!email.includes('@')) newErrors.step = 'Please enter a valid email address.';
+            else if (password.length < 6) newErrors.step = 'Password must be at least 6 characters.';
+            else if (!termsAccepted) newErrors.step = 'Please accept the terms and conditions to continue.';
         }
 
         setErrors(newErrors);
@@ -211,6 +239,7 @@ export default function PropertyFormModal() {
                 isEager: 80,
                 propertyType: type,
                 wantsPremiumListing: false,
+                termsAcceptedAt: serverTimestamp(),
             };
 
             await updateDoc(docRef, propertyData);
@@ -224,6 +253,11 @@ export default function PropertyFormModal() {
         }
     };
 
+    // Format terms text with line breaks
+    const formatTermsText = (text) => {
+        if (!text) return '';
+        return text.split('\\n').join('\n');
+    };
 
     return (
         <div className={isHidden ? 'hidden' : 'fixed overflow-hidden z-50 w-full z-90 top-0 left-0 h-screen bg-white'}>
@@ -233,7 +267,7 @@ export default function PropertyFormModal() {
                 <motion.div
                     className="absolute top-0 left-0 h-1 bg-red-700"
                     initial={{ width: 0 }}
-                    animate={{ width: `${(step / 6) * 100}%` }}
+                    animate={{ width: `${(step / 7) * 100}%` }}
                     transition={{ duration: 0.4 }}
                 />
 
@@ -249,19 +283,16 @@ export default function PropertyFormModal() {
                                 </h2>
 
                                 {errors.step && (
-                                    <p className="text-sm text-red-800 bg-red-100 p-2 rounded-full mb-4">
+                                    <p className="text-sm text-red-800 bg-red-100 p-2 rounded-full mb-4 mx-10 sm:mx-0">
                                         {errors.step}
                                     </p>
                                 )}
-
-
                             </div>
                             <button className="absolute top-0 right-0 m-3 sm:m-0 sm:relative cursor-pointer sm:right-4 text-white hover:text-black">
                                 <X size={50} className='sm:block hidden' onClick={closeModal} />
                                 <X size={20} className='block sm:hidden' onClick={closeModal} />
                             </button>
                         </div>
-
                     </div>
                 )}
 
@@ -320,7 +351,6 @@ export default function PropertyFormModal() {
                                     setPriceRaw(numeric);
                                 }}
                             />
-
                         </div>
                     )}
 
@@ -433,6 +463,7 @@ export default function PropertyFormModal() {
                         </div>
                     )}
 
+                    {/* Step 7 - Account Creation & Terms */}
                     {step === 7 && (
                         <div>
                             <h2 className="text-2xl font-semibold mb-4">Create your account</h2>
@@ -445,24 +476,73 @@ export default function PropertyFormModal() {
                             />
                             <input
                                 type="password"
-                                placeholder="Password"
+                                placeholder="Password (min. 6 characters)"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="w-full p-3 border rounded mb-4 text-lg"
+                                className="w-full p-3 border rounded mb-6 text-lg"
                             />
-                            <div className="flex items-center text-sm mt-2">
-                                <label>
-                                    <input type="checkbox" className="mr-2" required />
-                                    I agree to the{' '}
-                                    <a
-                                        href="/terms"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-blue-600 underline"
-                                    >
-                                        terms and conditions
-                                    </a>
+
+                            {/* Terms and Conditions */}
+                            <div className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 rounded-xl p-6 mb-6">
+                                <div className="flex items-start mb-4">
+                                    <FileText className="text-red-700 mr-3 mt-1 flex-shrink-0" size={24} />
+                                    <div className="flex-grow">
+                                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Terms and Conditions</h3>
+                                        <p className="text-sm text-gray-600 mb-3">
+                                            Please review and accept our terms to continue
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Terms Preview Box */}
+                                <div className="bg-white border border-gray-300 rounded-lg p-4 mb-4 max-h-48 overflow-y-auto">
+                                    <div className="space-y-4">
+                                        {termsContent.vendor && (
+                                            <div>
+                                                <h4 className="font-semibold text-sm text-gray-900 mb-2">Vendor Terms:</h4>
+                                                <p className="text-xs text-gray-700 whitespace-pre-line leading-relaxed">
+                                                    {formatTermsText(termsContent.vendor).substring(0, 300)}...
+                                                </p>
+                                            </div>
+                                        )}
+                                        {termsContent.agent && (
+                                            <div>
+                                                <h4 className="font-semibold text-sm text-gray-900 mb-2">Agent Terms:</h4>
+                                                <p className="text-xs text-gray-700 whitespace-pre-line leading-relaxed">
+                                                    {formatTermsText(termsContent.agent).substring(0, 300)}...
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* View Full Terms Button */}
+                                <button
+                                    type="button"
+                                    onClick={() => setShowTermsModal(true)}
+                                    className="w-full mb-4 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium"
+                                >
+                                    View Full Terms & Conditions
+                                </button>
+
+                                {/* Acceptance Checkbox */}
+                                <label className="flex items-start cursor-pointer group">
+                                    <input
+                                        type="checkbox"
+                                        checked={termsAccepted}
+                                        onChange={(e) => setTermsAccepted(e.target.checked)}
+                                        className="mt-1 mr-3 w-5 h-5 text-red-700 border-gray-300 rounded focus:ring-red-500 cursor-pointer"
+                                    />
+                                    <span className="text-sm text-gray-700 group-hover:text-gray-900">
+                                        I have read and agree to the <span className="font-semibold">Terms and Conditions</span> for both vendors and agents, and I understand my obligations under these agreements.
+                                    </span>
                                 </label>
+
+                                {errors.step && !termsAccepted && (
+                                    <div className="mt-3 text-xs text-red-600 bg-red-50 p-2 rounded">
+                                        ⚠ You must accept the terms to continue
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
@@ -475,62 +555,60 @@ export default function PropertyFormModal() {
                                 </button>
 
                                 {/* Synthesia Video Embed */}
-            <div
-             className='sm:h-72 mb-10 text-center flex-shrink mx-auto relative flex items-center justify-center'
-                style={{
-                    overflow: 'hidden',
-                    aspectRatio: '1920 / 1080',
-                }}
-            >
-                <iframe
-                    src="https://share.synthesia.io/embeds/videos/9d09d0b1-57eb-4835-81d8-2a3f231d37af"
-                    loading="lazy"
-                    title="Synthesia video player - Property Submitted"
-                    allowFullScreen
-                    className='mx-auto hidden sm:block'
-                    allow="encrypted-media; fullscreen;"
-                    style={{
-                        position: 'absolute',
-                        width: '500px',
-                        height: '280px',
-                        top: 0,
-                        left: 0,
-                        border: 'none',
-                        padding: 0,
-                        margin: 'auto',
-                        overflow: 'hidden',
-                        borderRadius: '12px',
-                    }}
-                />
+                                <div
+                                    className='sm:h-72 mb-10 text-center flex-shrink mx-auto relative flex items-center justify-center'
+                                    style={{
+                                        overflow: 'hidden',
+                                        aspectRatio: '1920 / 1080',
+                                    }}
+                                >
+                                    <iframe
+                                        src="https://share.synthesia.io/embeds/videos/9d09d0b1-57eb-4835-81d8-2a3f231d37af"
+                                        loading="lazy"
+                                        title="Synthesia video player - Property Submitted"
+                                        allowFullScreen
+                                        className='mx-auto hidden sm:block'
+                                        allow="encrypted-media; fullscreen;"
+                                        style={{
+                                            position: 'absolute',
+                                            width: '500px',
+                                            height: '280px',
+                                            top: 0,
+                                            left: 0,
+                                            border: 'none',
+                                            padding: 0,
+                                            margin: 'auto',
+                                            overflow: 'hidden',
+                                            borderRadius: '12px',
+                                        }}
+                                    />
 
+                                    <iframe
+                                        src="https://share.synthesia.io/embeds/videos/9d09d0b1-57eb-4835-81d8-2a3f231d37af"
+                                        loading="lazy"
+                                        title="Synthesia video player - Property Submitted"
+                                        allowFullScreen
+                                        className='mx-auto sm:hidden block'
+                                        allow="encrypted-media; fullscreen;"
+                                        style={{
+                                            position: 'absolute',
+                                            width: '100%',
+                                            height: '180px',
+                                            top: 0,
+                                            left: 0,
+                                            border: 'none',
+                                            padding: 0,
+                                            margin: 'auto',
+                                            overflow: 'hidden',
+                                            borderRadius: '12px',
+                                        }}
+                                    />
+                                </div>
 
-                <iframe
-                    src="https://share.synthesia.io/embeds/videos/9d09d0b1-57eb-4835-81d8-2a3f231d37af"
-                    loading="lazy"
-                    title="Synthesia video player - Property Submitted"
-                    allowFullScreen
-                    className='mx-auto sm:hidden block'
-                    allow="encrypted-media; fullscreen;"
-                    style={{
-                        position: 'absolute',
-                        width: '100%',
-                        height: '180px',
-                        top: 0,
-                        left: 0,
-                        border: 'none',
-                        padding: 0,
-                        margin: 'auto',
-                        overflow: 'hidden',
-                        borderRadius: '12px',
-                    }}
-                />
-            </div>
-                                
-                                
                                 <h2 className="text-xl sm:text-3xl font-semibold text-gray-900 mb-4">Property Submitted</h2>
                                 <p className="text-base sm:text-lg  inter text-gray-700 max-w-xl mx-auto mb-6 leading-tight">
                                     Your property has been submitted for approval. Campaigns run every 30 days.
-                                    We want to give you the best shot, so we’ll let you know if there’s anything you can do to improve your success.
+                                    We want to give you the best shot, so we'll let you know if there's anything you can do to improve your success.
                                     <br />{startDate && (
                                         <> Entries will close at <strong>{startDate.toLocaleString('en-AU', {
                                             day: '2-digit',
@@ -549,68 +627,132 @@ export default function PropertyFormModal() {
                                     Be sure to download the Premarket App from the app stores:
                                 </p>
                                 <div className="sm:flex space-x-1 justify-center">
-
-                            
-                                     <a href="https://apps.apple.com/au/app/premarket-homes/id6742205449">
+                                    <a href="https://apps.apple.com/au/app/premarket-homes/id6742205449">
                                         <img src="./apple.png" className="mt-4 sm:mt-3 w-36 mx-auto" />
                                     </a>
-                                   <a href="https://play.google.com/store/apps/details?id=com.premarkethomes.app&hl=en_AU">
+                                    <a href="https://play.google.com/store/apps/details?id=com.premarkethomes.app&hl=en_AU">
                                         <img src="./play.png" className="h-18 mx-auto -mt-4 sm:mt-0" />
                                     </a>
                                 </div>
                             </div>
-
                         </div>
                     ) : (
                         <div className=" w-full max-w-3xl py-10  px-20 relative h-[90vh] overflow-y-auto">
                             {/* Steps as before */}
                         </div>
                     )}
-
-
-
                 </div>
             </div>
 
-            {/* Nav Buttons */}
-            {step < 8 && (
-            <div className="mt-6 z-50 flex justify-between fixed bottom-0 w-full p-4 sm:p-20">
-                {step > 1 && step < 8 && (
-                    <button
-                        onClick={() => setStep((s) => s - 1)}
-                        className="cursor-pointer text-gray-700 hover:underline px-6 py-3 bg-gray-100 rounded-lg"
-                    >
-                        Back Step
-                    </button>
-                )}
-                {step < 8 ? (
-                    <button
-                        onClick={() => setStep((s) => s + 1)}
-                        className="ml-auto bg-red-700 cursor-pointer text-white px-6 py-3 rounded-lg hover:bg-red-800"
-                    >
-                        Next Step
-                    </button>
-                ) : step == 7 && (
-                    <button
-                        onClick={() => handleSubmit()}
-                        className="ml-auto bg-red-700 cursor-pointer text-white px-6 py-3 rounded-lg hover:bg-red-800"
-                    >
-                        Create Your Campaign
-                    </button>
+            {/* Full Terms Modal */}
+            {showTermsModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-50 p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[80vh] flex flex-col">
+                        {/* Modal Header */}
+                        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                            <div className="flex items-center">
+                                <FileText className="text-red-700 mr-3" size={28} />
+                                <h2 className="text-2xl font-bold text-gray-900">Terms & Conditions</h2>
+                            </div>
+                            <button
+                                onClick={() => setShowTermsModal(false)}
+                                className="text-gray-400 hover:text-gray-900 transition-colors"
+                            >
+                                <X size={28} />
+                            </button>
+                        </div>
 
-                )}
+                        {/* Modal Content */}
+                        <div className="p-6 overflow-y-auto flex-grow">
+                            {termsContent.vendor && (
+                                <div className="mb-8">
+                                    <div className="bg-red-50 border-l-4 border-red-700 p-4 mb-4">
+                                        <h3 className="text-xl font-bold text-gray-900 mb-1">Vendor Terms</h3>
+                                        <p className="text-xs text-gray-600">Please read carefully</p>
+                                    </div>
+                                    <div className="prose prose-sm max-w-none">
+                                        <p className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">
+                                            {formatTermsText(termsContent.vendor)}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
 
-                {isSubmitting && (
-                    <div className="fixed inset-0 z-100 flex items-center justify-center">
-                        <div className="bg-white p-20 rounded-lg border border-gray-200 shadow-xl text-center">
-                            <img onClick={closeModal} src="./iconFull.png" className="mx-auto mb-4 w-10 h-10 rounded-lg" />
-                            <h2 className="text-xl text-gray-900 font-semibold mb-2">Uploading your property...</h2>
-                            <p className="text-sm text-gray-600">Please wait while we upload your images and save your listing.</p>
+                            {termsContent.agent && (
+                                <div className="mb-6">
+                                    <div className="bg-blue-50 border-l-4 border-blue-700 p-4 mb-4">
+                                        <h3 className="text-xl font-bold text-gray-900 mb-1">Agent Terms</h3>
+                                        <p className="text-xs text-gray-600">Please read carefully</p>
+                                    </div>
+                                    <div className="prose prose-sm max-w-none">
+                                        <p className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">
+                                            {formatTermsText(termsContent.agent)}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="p-6 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
+                            <button
+                                onClick={() => {
+                                    setShowTermsModal(false);
+                                    setTermsAccepted(true);
+                                }}
+                                className="w-full bg-red-700 text-white px-6 py-3 rounded-lg hover:bg-red-800 transition-colors font-semibold"
+                            >
+                                I Accept These Terms
+                            </button>
                         </div>
                     </div>
-                )}
-            </div>
-             )}
+                </div>
+            )}
+
+            {/* Nav Buttons */}
+            {step < 8 && (
+                <div className="mt-6 z-50 flex justify-between fixed bottom-0 w-full p-4 sm:p-20">
+                    {step > 1 && step < 8 && (
+                        <button
+                            onClick={() => setStep((s) => s - 1)}
+                            className="cursor-pointer text-gray-700 hover:underline px-6 py-3 bg-gray-100 rounded-lg"
+                        >
+                            Back Step
+                        </button>
+                    )}
+                    {step < 7 && (
+                        <button
+                            onClick={nextStep}
+                            className="ml-auto bg-red-700 cursor-pointer text-white px-6 py-3 rounded-lg hover:bg-red-800"
+                        >
+                            Next Step
+                        </button>
+                    )}
+                    {step === 7 && (
+                        <button
+                            onClick={handleSubmit}
+                            disabled={!termsAccepted || isSubmitting}
+                            className={`ml-auto px-6 py-3 rounded-lg font-semibold transition-all ${
+                                termsAccepted && !isSubmitting
+                                    ? 'bg-red-700 text-white hover:bg-red-800 cursor-pointer'
+                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            }`}
+                        >
+                            {isSubmitting ? 'Creating...' : 'Create Your Campaign'}
+                        </button>
+                    )}
+
+                    {isSubmitting && (
+                        <div className="fixed inset-0 z-100 flex items-center justify-center bg-black bg-opacity-50">
+                            <div className="bg-white p-20 rounded-lg border border-gray-200 shadow-xl text-center">
+                                <img onClick={closeModal} src="./iconFull.png" className="mx-auto mb-4 w-10 h-10 rounded-lg" />
+                                <h2 className="text-xl text-gray-900 font-semibold mb-2">Uploading your property...</h2>
+                                <p className="text-sm text-gray-600">Please wait while we upload your images and save your listing.</p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 }

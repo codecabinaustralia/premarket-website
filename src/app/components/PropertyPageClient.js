@@ -15,6 +15,14 @@ export default function PropertyPageClient() {
   const propertyId = searchParams.get('propertyId');
   const auth = getAuth();
 
+  const [showQualificationModal, setShowQualificationModal] = useState(false);
+  const [qualificationData, setQualificationData] = useState({
+    isFirstHomeBuyer: false,
+    isInvestor: false,
+    buyerType: '',
+    seriousnessLevel: '',
+  });
+
   const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showFullDescription, setShowFullDescription] = useState(false);
@@ -179,10 +187,9 @@ export default function PropertyPageClient() {
     setCurrentImageIndex((prev) => (prev - 1 + imageUrls.length) % imageUrls.length);
   };
 
-  const handleSubmitOpinion = async () => {
+ const handleSubmitOpinion = async () => {
     setSubmitting(true);
     try {
-      // Save the offer without userId
       const offerData = {
         type: 'opinion',
         propertyId: propertyId,
@@ -192,15 +199,17 @@ export default function PropertyPageClient() {
         fromWeb: true,
       };
 
-      if (registerInterest) {
-        offerData.registerInterest = true;
-      }
-
+      // Save without userId first
       const docRef = await addDoc(collection(db, 'offers'), offerData);
       setSavedOfferId(docRef.id);
 
-      // Show signup modal
-      setShowSignupModal(true);
+      // If registerInterest is checked, show qualification modal first
+      if (registerInterest) {
+        setShowQualificationModal(true);
+      } else {
+        // Otherwise show signup modal directly
+        setShowSignupModal(true);
+      }
     } catch (error) {
       console.error('Error submitting opinion:', error);
       alert('Failed to submit opinion. Please try again.');
@@ -209,13 +218,24 @@ export default function PropertyPageClient() {
     }
   };
 
+  const handleQualificationSubmit = () => {
+    // Validate qualification data
+    if (!qualificationData.buyerType || !qualificationData.seriousnessLevel) {
+      alert('Please complete all required fields');
+      return;
+    }
+
+    // Close qualification modal and open signup modal
+    setShowQualificationModal(false);
+    setShowSignupModal(true);
+  };
+
   const handleSignup = async (e) => {
     e.preventDefault();
     setSignupError('');
     setSubmitting(true);
 
     try {
-      // Create Firebase auth user
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email.trim().toLowerCase(),
@@ -224,30 +244,41 @@ export default function PropertyPageClient() {
 
       const userId = userCredential.user.uid;
 
-      // Create user document
       await setDoc(doc(db, "users", userId), {
-  uid: userId,
-  email: email.trim().toLowerCase(),
-  firstName: firstName.trim(),
-  lastName: lastName.trim(),
-  phone: "",
-  pro: false,
-  agent: false,
-  created: serverTimestamp(),
-  tags: ["new"],
-  avatar: "https://premarketvideos.b-cdn.net/assets/icon.png",
-});
+        uid: userId,
+        email: email.trim().toLowerCase(),
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        phone: "",
+        pro: false,
+        agent: false,
+        created: serverTimestamp(),
+        tags: ["new"],
+        avatar: "https://premarketvideos.b-cdn.net/assets/icon.png",
+        activeCampaigns: 0,
+        availableCampaigns: 1
+      });
 
-      // Update the saved offer with userId
+      // Update the saved offer with userId and qualification data if registered interest
       if (savedOfferId) {
-        const offerRef = doc(db, 'offers', savedOfferId);
-        await updateDoc(offerRef, {
+        const updateData = {
           userId: userId,
           updatedAt: serverTimestamp(),
-        });
+        };
+
+        // Add qualification data if register interest was checked
+        if (registerInterest) {
+          updateData.serious = true;
+          updateData.isFirstHomeBuyer = qualificationData.isFirstHomeBuyer;
+          updateData.isInvestor = qualificationData.isInvestor;
+          updateData.buyerType = qualificationData.buyerType;
+          updateData.seriousnessLevel = qualificationData.seriousnessLevel;
+        }
+
+        const offerRef = doc(db, 'offers', savedOfferId);
+        await updateDoc(offerRef, updateData);
       }
 
-      // Success - show thank you message
       setShowThankYou(true);
     } catch (error) {
       console.error('Signup error:', error);
@@ -256,6 +287,8 @@ export default function PropertyPageClient() {
       setSubmitting(false);
     }
   };
+
+
 
   if (loading) {
     return (
@@ -948,6 +981,140 @@ export default function PropertyPageClient() {
       {/* Footer */}
       <FooterLarge />
 
+      {showQualificationModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => {
+                setShowQualificationModal(false);
+                setRegisterInterest(false);
+              }}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold text-slate-800 mb-2">
+                You expressed your interest
+              </h3>
+              <p className="text-slate-600">
+               Help us understand your circumstance to better faciliate
+              </p>
+            </div>
+
+            <div className="space-y-6">
+              {/* First Home Buyer Toggle */}
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                <label className="flex items-center justify-between cursor-pointer">
+                  <span className="text-sm font-semibold text-slate-800">
+                    Are you a first home buyer?
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={qualificationData.isFirstHomeBuyer}
+                    onChange={(e) => setQualificationData({
+                      ...qualificationData,
+                      isFirstHomeBuyer: e.target.checked
+                    })}
+                    className="w-5 h-5 text-orange-600 rounded focus:ring-2 focus:ring-orange-500"
+                  />
+                </label>
+              </div>
+
+              {/* Investor Toggle */}
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                <label className="flex items-center justify-between cursor-pointer">
+                  <span className="text-sm font-semibold text-slate-800">
+                    Are you an investor?
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={qualificationData.isInvestor}
+                    onChange={(e) => setQualificationData({
+                      ...qualificationData,
+                      isInvestor: e.target.checked
+                    })}
+                    className="w-5 h-5 text-orange-600 rounded focus:ring-2 focus:ring-orange-500"
+                  />
+                </label>
+              </div>
+
+              {/* Buyer Type */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-800 mb-3">
+                  Are you a cash buyer or have approved finance? *
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { value: 'cash', label: 'Cash Buyer' },
+                    { value: 'approved_finance', label: 'Approved Finance' },
+                    { value: 'pre_approval', label: 'Pre-Approval' },
+                    { value: 'not_yet', label: 'Not Yet' }
+                  ].map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setQualificationData({
+                        ...qualificationData,
+                        buyerType: option.value
+                      })}
+                      className={`px-4 py-3 rounded-lg border-2 text-sm font-semibold transition-all ${
+                        qualificationData.buyerType === option.value
+                          ? 'border-orange-600 bg-orange-50 text-orange-600'
+                          : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Seriousness Level */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-800 mb-3">
+                  How serious are you about this property? *
+                </label>
+                <select
+                  value={qualificationData.seriousnessLevel}
+                  onChange={(e) => setQualificationData({
+                    ...qualificationData,
+                    seriousnessLevel: e.target.value
+                  })}
+                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all text-slate-800"
+                >
+                  <option value="">Select your interest level</option>
+                  <option value="just_browsing">Just Browsing</option>
+                  <option value="interested">Interested</option>
+                  <option value="very_interested">Very Interested</option>
+                  <option value="ready_to_buy">Ready to Buy</option>
+                </select>
+              </div>
+
+              {/* Continue Button */}
+              <button
+                onClick={handleQualificationSubmit}
+                disabled={!qualificationData.buyerType || !qualificationData.seriousnessLevel}
+                className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Continue</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Signup Modal */}
       {showSignupModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -966,17 +1133,32 @@ export default function PropertyPageClient() {
 
             {showThankYou ? (
               <div className="text-center">
-                <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                {/* <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
                   <svg className="w-10 h-10 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                </div>
+                </div> */}
                 <h3 className="text-3xl font-bold text-slate-800 mb-3">
                   Thank You!
                 </h3>
                 <p className="text-lg text-slate-600 mb-6">
                   Your account has been created successfully. Download the app to discover more exclusive pre-market properties.
                 </p>
+
+                <div className="bg-teal-50 mb-6 text-left text-teal-700 rounded-lg p-4 text-sm leading-relaxed">
+  <strong className="block text-lg mb-1">Are you a homeowner/ investor?</strong>
+  <p className="mb-3 text-xs">
+    Did you know you can run your own <strong>Premarket campaign for FREE</strong>?  
+    Get the confidence you need before committing to an agent.
+  </p>
+
+  <ul className="list-disc text-xs list-inside space-y-1">
+    <li className="mb-3 "><strong>Leasing a property?</strong> No worries — Premarket means no intrusive marketing and no scaring tenants.</li>
+    <li className="mb-3 "><strong>Curious about your property’s true value?</strong> Skip the generic market reports and get real interest directly from buyers.</li>
+    <li className="mb-3 "><strong>Completely free.</strong> Set up and go live in minutes with your own premarket campaign.</li>
+  </ul>
+</div>
+
 
                 <div className="bg-orange-50 border border-orange-200 rounded-xl p-6 mb-6">
                   <h4 className="font-bold text-slate-800 mb-3">Download Premarket App</h4>
@@ -1011,7 +1193,7 @@ export default function PropertyPageClient() {
                 </div>
 
                 <p className="text-sm text-slate-500">
-                  Access thousands of exclusive properties before they hit the market
+                  Access exclusive properties before they hit the market
                 </p>
               </div>
             ) : (
