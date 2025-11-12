@@ -10,6 +10,7 @@ import FooterLarge from '../components/FooterLarge';
 import Nav from '../components/Nav';
 
 
+
 export default function PropertyPageClient() {
   const searchParams = useSearchParams();
   const propertyId = searchParams.get('propertyId');
@@ -45,6 +46,46 @@ export default function PropertyPageClient() {
   const [password, setPassword] = useState('');
   const [signupError, setSignupError] = useState('');
   const [showThankYou, setShowThankYou] = useState(false);
+
+   const trackEvent = (eventName, eventParams = {}) => {
+    if (typeof window !== 'undefined' && window.dataLayer) {
+      window.dataLayer.push({
+        event: eventName,
+        ...eventParams
+      });
+    }
+  };
+
+  // Track page view when component mounts
+  useEffect(() => {
+    if (property) {
+      trackEvent('property_view', {
+        property_id: propertyId,
+        property_title: property.title,
+        property_address: property.address,
+        property_price: property.price,
+        page_path: window.location.pathname
+      });
+    }
+  }, [property, propertyId]);
+
+
+  // Track price opinion slider changes (debounced)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (priceOpinion > 0) {
+        trackEvent('price_opinion_adjusted', {
+          property_id: propertyId,
+          opinion_amount: priceOpinion,
+          min_price: minPrice,
+          max_price: maxPrice
+        });
+      }
+    }, 1000); // Wait 1 second after user stops sliding
+
+    return () => clearTimeout(timer);
+  }, [priceOpinion]);
+  
 
   useEffect(() => {
     if (!propertyId) return;
@@ -187,8 +228,17 @@ export default function PropertyPageClient() {
     setCurrentImageIndex((prev) => (prev - 1 + imageUrls.length) % imageUrls.length);
   };
 
- const handleSubmitOpinion = async () => {
+// Update handleSubmitOpinion to include tracking
+  const handleSubmitOpinion = async () => {
     setSubmitting(true);
+    
+    // Track the submit action
+    trackEvent('price_opinion_submitted', {
+      property_id: propertyId,
+      opinion_amount: Math.round(priceOpinion),
+      register_interest: registerInterest
+    });
+
     try {
       const offerData = {
         type: 'opinion',
@@ -199,15 +249,12 @@ export default function PropertyPageClient() {
         fromWeb: true,
       };
 
-      // Save without userId first
       const docRef = await addDoc(collection(db, 'offers'), offerData);
       setSavedOfferId(docRef.id);
 
-      // If registerInterest is checked, show qualification modal first
       if (registerInterest) {
         setShowQualificationModal(true);
       } else {
-        // Otherwise show signup modal directly
         setShowSignupModal(true);
       }
     } catch (error) {
@@ -218,18 +265,30 @@ export default function PropertyPageClient() {
     }
   };
 
+
+// Update handleQualificationSubmit to include tracking
   const handleQualificationSubmit = () => {
-    // Validate qualification data
     if (!qualificationData.buyerType || !qualificationData.seriousnessLevel) {
       alert('Please complete all required fields');
       return;
     }
 
-    // Close qualification modal and open signup modal
+    // Track qualification form submission
+    trackEvent('qualification_form_submitted', {
+      property_id: propertyId,
+      is_first_home_buyer: qualificationData.isFirstHomeBuyer,
+      is_investor: qualificationData.isInvestor,
+      buyer_type: qualificationData.buyerType,
+      seriousness_level: qualificationData.seriousnessLevel
+    });
+
     setShowQualificationModal(false);
     setShowSignupModal(true);
   };
 
+
+
+// Update handleSignup to include tracking
   const handleSignup = async (e) => {
     e.preventDefault();
     setSignupError('');
@@ -259,14 +318,21 @@ export default function PropertyPageClient() {
         availableCampaigns: 1
       });
 
-      // Update the saved offer with userId and qualification data if registered interest
+      // Track successful signup
+      trackEvent('signup_completed', {
+        property_id: propertyId,
+        user_id: userId,
+        registered_interest: registerInterest,
+        signup_method: 'email'
+      });
+
+      // Update the saved offer with userId and qualification data
       if (savedOfferId) {
         const updateData = {
           userId: userId,
           updatedAt: serverTimestamp(),
         };
 
-        // Add qualification data if register interest was checked
         if (registerInterest) {
           updateData.serious = true;
           updateData.isFirstHomeBuyer = qualificationData.isFirstHomeBuyer;
@@ -283,10 +349,27 @@ export default function PropertyPageClient() {
     } catch (error) {
       console.error('Signup error:', error);
       setSignupError(error.message || 'Failed to create account');
+      
+      // Track signup error
+      trackEvent('signup_error', {
+        property_id: propertyId,
+        error_message: error.message
+      });
     } finally {
       setSubmitting(false);
     }
   };
+
+  // Track when register interest checkbox is toggled
+  const handleRegisterInterestToggle = (checked) => {
+    setRegisterInterest(checked);
+    trackEvent('register_interest_toggled', {
+      property_id: propertyId,
+      checked: checked
+    });
+  };
+
+
 
 
 
@@ -538,7 +621,7 @@ export default function PropertyPageClient() {
                   <input
                     type="checkbox"
                     checked={registerInterest}
-                    onChange={(e) => setRegisterInterest(e.target.checked)}
+                    onChange={(e) => handleRegisterInterestToggle(e.target.checked)}
                     className="w-5 h-5 text-orange-600 rounded focus:ring-2 focus:ring-orange-500"
                   />
                 </label>
