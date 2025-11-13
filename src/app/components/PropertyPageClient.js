@@ -4,12 +4,10 @@ import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { db } from '../firebase/clientApp';
-import { doc, getDoc, addDoc, setDoc, collection, serverTimestamp, updateDoc, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
+import { doc, getDoc, addDoc, setDoc, collection, serverTimestamp, updateDoc, query, where, orderBy, limit, getDocs, increment } from 'firebase/firestore';
 import Image from 'next/image';
 import FooterLarge from '../components/FooterLarge';
 import Nav from '../components/Nav';
-
-
 
 export default function PropertyPageClient() {
   const searchParams = useSearchParams();
@@ -47,7 +45,7 @@ export default function PropertyPageClient() {
   const [signupError, setSignupError] = useState('');
   const [showThankYou, setShowThankYou] = useState(false);
 
-   const trackEvent = (eventName, eventParams = {}) => {
+  const trackEvent = (eventName, eventParams = {}) => {
     if (typeof window !== 'undefined' && window.dataLayer) {
       window.dataLayer.push({
         event: eventName,
@@ -69,7 +67,6 @@ export default function PropertyPageClient() {
     }
   }, [property, propertyId]);
 
-
   // Track price opinion slider changes (debounced)
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -84,9 +81,8 @@ export default function PropertyPageClient() {
     }, 1000); // Wait 1 second after user stops sliding
 
     return () => clearTimeout(timer);
-  }, [priceOpinion]);
+  }, [priceOpinion, propertyId, minPrice, maxPrice]);
   
-
   useEffect(() => {
     if (!propertyId) return;
     const fetchProperty = async () => {
@@ -104,6 +100,9 @@ export default function PropertyPageClient() {
           
           // Fetch previous offer to set initial slider value
           await fetchPreviousOffer(propertyId, min, max);
+
+          // Increment the view count
+          await incrementPropertyViews(propertyId);
         }
       } catch (err) {
         console.error('Error fetching property:', err);
@@ -113,6 +112,23 @@ export default function PropertyPageClient() {
     };
     fetchProperty();
   }, [propertyId]);
+
+  const incrementPropertyViews = async (propId) => {
+    try {
+      const docRef = doc(db, 'properties', propId);
+      
+      // Use increment to atomically increase the views count
+      await updateDoc(docRef, {
+        'stats.views': increment(1),
+        'stats.lastViewed': serverTimestamp()
+      });
+      
+      console.log('Property view count incremented');
+    } catch (error) {
+      console.error('Error incrementing property views:', error);
+      // Don't throw error - view counting shouldn't block page load
+    }
+  };
 
   const fetchPreviousOffer = async (propId, min, max) => {
     try {
@@ -228,7 +244,7 @@ export default function PropertyPageClient() {
     setCurrentImageIndex((prev) => (prev - 1 + imageUrls.length) % imageUrls.length);
   };
 
-// Update handleSubmitOpinion to include tracking
+  // Update handleSubmitOpinion to include tracking
   const handleSubmitOpinion = async () => {
     setSubmitting(true);
     
@@ -265,8 +281,7 @@ export default function PropertyPageClient() {
     }
   };
 
-
-// Update handleQualificationSubmit to include tracking
+  // Update handleQualificationSubmit to include tracking
   const handleQualificationSubmit = () => {
     if (!qualificationData.buyerType || !qualificationData.seriousnessLevel) {
       alert('Please complete all required fields');
@@ -286,9 +301,7 @@ export default function PropertyPageClient() {
     setShowSignupModal(true);
   };
 
-
-
-// Update handleSignup to include tracking
+  // Update handleSignup to include tracking
   const handleSignup = async (e) => {
     e.preventDefault();
     setSignupError('');
@@ -368,10 +381,6 @@ export default function PropertyPageClient() {
       checked: checked
     });
   };
-
-
-
-
 
   if (loading) {
     return (
@@ -661,8 +670,6 @@ export default function PropertyPageClient() {
 
       {/* Property Details Section */}
       <div className="max-w-7xl mx-auto px-4 py-12">
-   
-
         {/* About Property and Map Side by Side */}
         <div className="grid lg:grid-cols-2 gap-8 mb-12">
           {/* About This Property */}
@@ -897,8 +904,6 @@ export default function PropertyPageClient() {
             )}
           </div>
         )}
-
-        
       </div>
 
       {/* About Premarket App Section */}
@@ -957,8 +962,8 @@ export default function PropertyPageClient() {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4">
-                <a
-                  href="https://apps.apple.com/au/app/premarket-homes/id6742205449"
+                
+                  <a href="https://apps.apple.com/au/app/premarket-homes/id6742205449"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-block"
@@ -970,8 +975,8 @@ export default function PropertyPageClient() {
                     height={53}
                   />
                 </a>
-                <a
-                  href="https://play.google.com/store/apps/details?id=com.premarkethomes.app&hl=en"
+                
+                  <a href="https://play.google.com/store/apps/details?id=com.premarkethomes.app&hl=en"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-block"
@@ -1031,8 +1036,8 @@ export default function PropertyPageClient() {
           </p>
 
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <a
-              href="https://apps.apple.com/au/app/premarket-homes/id6742205449"
+            
+              <a href="https://apps.apple.com/au/app/premarket-homes/id6742205449"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-block"
@@ -1044,8 +1049,8 @@ export default function PropertyPageClient() {
                 height={53}
               />
             </a>
-            <a
-              href="https://play.google.com/store/apps/details?id=com.premarkethomes.app&hl=en"
+            
+              <a href="https://play.google.com/store/apps/details?id=com.premarkethomes.app&hl=en"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-block"
@@ -1216,11 +1221,6 @@ export default function PropertyPageClient() {
 
             {showThankYou ? (
               <div className="text-center">
-                {/* <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <svg className="w-10 h-10 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div> */}
                 <h3 className="text-3xl font-bold text-slate-800 mb-3">
                   Thank You!
                 </h3>
@@ -1229,25 +1229,24 @@ export default function PropertyPageClient() {
                 </p>
 
                 <div className="bg-teal-50 mb-6 text-left text-teal-700 rounded-lg p-4 text-sm leading-relaxed">
-  <strong className="block text-lg mb-1">Are you a homeowner/ investor?</strong>
-  <p className="mb-3 text-xs">
-    Did you know you can run your own <strong>Premarket campaign for FREE</strong>?  
-    Get the confidence you need before committing to an agent.
-  </p>
+                  <strong className="block text-lg mb-1">Are you a homeowner/ investor?</strong>
+                  <p className="mb-3 text-xs">
+                    Did you know you can run your own <strong>Premarket campaign for FREE</strong>?  
+                    Get the confidence you need before committing to an agent.
+                  </p>
 
-  <ul className="list-disc text-xs list-inside space-y-1">
-    <li className="mb-3 "><strong>Leasing a property?</strong> No worries — Premarket means no intrusive marketing and no scaring tenants.</li>
-    <li className="mb-3 "><strong>Curious about your property’s true value?</strong> Skip the generic market reports and get real interest directly from buyers.</li>
-    <li className="mb-3 "><strong>Completely free.</strong> Set up and go live in minutes with your own premarket campaign.</li>
-  </ul>
-</div>
-
+                  <ul className="list-disc text-xs list-inside space-y-1">
+                    <li className="mb-3 "><strong>Leasing a property?</strong> No worries — Premarket means no intrusive marketing and no scaring tenants.</li>
+                    <li className="mb-3 "><strong>Curious about your property's true value?</strong> Skip the generic market reports and get real interest directly from buyers.</li>
+                    <li className="mb-3 "><strong>Completely free.</strong> Set up and go live in minutes with your own premarket campaign.</li>
+                  </ul>
+                </div>
 
                 <div className="bg-orange-50 border border-orange-200 rounded-xl p-6 mb-6">
                   <h4 className="font-bold text-slate-800 mb-3">Download Premarket App</h4>
                   <div className="flex flex-col gap-3">
-                    <a
-                      href="https://apps.apple.com/au/app/premarket-homes/id6742205449"
+                    
+                      <a href="https://apps.apple.com/au/app/premarket-homes/id6742205449"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-block mx-auto"
@@ -1259,8 +1258,8 @@ export default function PropertyPageClient() {
                         height={53}
                       />
                     </a>
-                    <a
-                      href="https://play.google.com/store/apps/details?id=com.premarkethomes.app&hl=en"
+                    
+                      <a href="https://play.google.com/store/apps/details?id=com.premarkethomes.app&hl=en"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-block mx-auto"
