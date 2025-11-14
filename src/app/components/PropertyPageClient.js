@@ -9,6 +9,18 @@ import Image from 'next/image';
 import FooterLarge from '../components/FooterLarge';
 import Nav from '../components/Nav';
 
+// Generate a session ID for tracking price opinions
+const getSessionId = () => {
+  if (typeof window === 'undefined') return null;
+  
+  let sessionId = sessionStorage.getItem('premarketSessionId');
+  if (!sessionId) {
+    sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+    sessionStorage.setItem('premarketSessionId', sessionId);
+  }
+  return sessionId;
+};
+
 export default function PropertyPageClient() {
   const searchParams = useSearchParams();
   const propertyId = searchParams.get('propertyId');
@@ -32,10 +44,12 @@ export default function PropertyPageClient() {
   const [priceOpinion, setPriceOpinion] = useState(0);
   const [minPrice, setMinPrice] = useState(0);
   const [maxPrice, setMaxPrice] = useState(0);
+  const [showPriceOpinionModal, setShowPriceOpinionModal] = useState(false);
   const [showSignupModal, setShowSignupModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [registerInterest, setRegisterInterest] = useState(false);
   const [savedOfferId, setSavedOfferId] = useState(null);
+  const [isSliding, setIsSliding] = useState(false);
   
   // Signup form state
   const [email, setEmail] = useState('');
@@ -67,21 +81,12 @@ export default function PropertyPageClient() {
     }
   }, [property, propertyId]);
 
-  // Track price opinion slider changes (debounced)
+  // Save price opinion when slider is released
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (priceOpinion > 0) {
-        trackEvent('price_opinion_adjusted', {
-          property_id: propertyId,
-          opinion_amount: priceOpinion,
-          min_price: minPrice,
-          max_price: maxPrice
-        });
-      }
-    }, 1000); // Wait 1 second after user stops sliding
-
-    return () => clearTimeout(timer);
-  }, [priceOpinion, propertyId, minPrice, maxPrice]);
+    if (!isSliding && priceOpinion > 0 && propertyId) {
+      savePriceOpinion();
+    }
+  }, [isSliding]);
   
   useEffect(() => {
     if (!propertyId) return;
@@ -132,26 +137,30 @@ export default function PropertyPageClient() {
 
   const fetchPreviousOffer = async (propId, min, max) => {
     try {
-      const offersQuery = query(
+      const sessionId = getSessionId();
+      
+      // First try to find a session-based offer
+      const sessionQuery = query(
         collection(db, 'offers'),
         where('propertyId', '==', propId),
-        orderBy('createdAt', 'desc'),
+        where('sessionId', '==', sessionId),
+        orderBy('updatedAt', 'desc'),
         limit(1)
       );
       
-      const querySnapshot = await getDocs(offersQuery);
+      const sessionSnapshot = await getDocs(sessionQuery);
       
-      if (!querySnapshot.empty) {
-        const previousOffer = querySnapshot.docs[0].data();
-        if (previousOffer.offerAmount) {
-          // Round to nearest thousand
-          const roundedOffer = Math.round(previousOffer.offerAmount / 1000) * 1000;
+      if (!sessionSnapshot.empty) {
+        const previousOffer = sessionSnapshot.docs[0];
+        setSavedOfferId(previousOffer.id);
+        if (previousOffer.data().offerAmount) {
+          const roundedOffer = Math.round(previousOffer.data().offerAmount / 1000) * 1000;
           setPriceOpinion(roundedOffer);
           return;
         }
       }
       
-      // If no previous offer found, use midpoint
+      // If no session offer found, use midpoint
       const mid = Math.round(((min + max) / 2) / 1000) * 1000;
       setPriceOpinion(mid);
     } catch (error) {
@@ -159,6 +168,49 @@ export default function PropertyPageClient() {
       // Fallback to midpoint if error
       const mid = Math.round(((min + max) / 2) / 1000) * 1000;
       setPriceOpinion(mid);
+    }
+  };
+
+  const savePriceOpinion = async () => {
+    try {
+      const sessionId = getSessionId();
+      
+      const offerData = {
+        type: 'opinion',
+        propertyId: propertyId,
+        sessionId: sessionId,
+        offerAmount: Math.round(priceOpinion),
+        updatedAt: serverTimestamp(),
+        fromWeb: true,
+      };
+
+      if (savedOfferId) {
+        // Update existing offer
+        const offerRef = doc(db, 'offers', savedOfferId);
+        await updateDoc(offerRef, offerData);
+        
+        trackEvent('price_opinion_updated', {
+          property_id: propertyId,
+          opinion_amount: Math.round(priceOpinion),
+          session_id: sessionId
+        });
+      } else {
+        // Create new offer
+        offerData.createdAt = serverTimestamp();
+        const docRef = await addDoc(collection(db, 'offers'), offerData);
+        setSavedOfferId(docRef.id);
+        
+        trackEvent('price_opinion_created', {
+          property_id: propertyId,
+          opinion_amount: Math.round(priceOpinion),
+          session_id: sessionId
+        });
+      }
+
+      // Show the modal
+      setShowPriceOpinionModal(true);
+    } catch (error) {
+      console.error('Error saving price opinion:', error);
     }
   };
 
@@ -244,44 +296,6 @@ export default function PropertyPageClient() {
     setCurrentImageIndex((prev) => (prev - 1 + imageUrls.length) % imageUrls.length);
   };
 
-  // Update handleSubmitOpinion to include tracking
-  const handleSubmitOpinion = async () => {
-    setSubmitting(true);
-    
-    // Track the submit action
-    trackEvent('price_opinion_submitted', {
-      property_id: propertyId,
-      opinion_amount: Math.round(priceOpinion),
-      register_interest: registerInterest
-    });
-
-    try {
-      const offerData = {
-        type: 'opinion',
-        propertyId: propertyId,
-        offerAmount: Math.round(priceOpinion),
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        fromWeb: true,
-      };
-
-      const docRef = await addDoc(collection(db, 'offers'), offerData);
-      setSavedOfferId(docRef.id);
-
-      if (registerInterest) {
-        setShowQualificationModal(true);
-      } else {
-        setShowSignupModal(true);
-      }
-    } catch (error) {
-      console.error('Error submitting opinion:', error);
-      alert('Failed to submit opinion. Please try again.');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  // Update handleQualificationSubmit to include tracking
   const handleQualificationSubmit = () => {
     if (!qualificationData.buyerType || !qualificationData.seriousnessLevel) {
       alert('Please complete all required fields');
@@ -301,7 +315,6 @@ export default function PropertyPageClient() {
     setShowSignupModal(true);
   };
 
-  // Update handleSignup to include tracking
   const handleSignup = async (e) => {
     e.preventDefault();
     setSignupError('');
@@ -373,12 +386,13 @@ export default function PropertyPageClient() {
     }
   };
 
-  // Track when register interest checkbox is toggled
-  const handleRegisterInterestToggle = (checked) => {
-    setRegisterInterest(checked);
-    trackEvent('register_interest_toggled', {
-      property_id: propertyId,
-      checked: checked
+  const handleRegisterInterest = () => {
+    setRegisterInterest(true);
+    setShowPriceOpinionModal(false);
+    setShowQualificationModal(true);
+    
+    trackEvent('register_interest_clicked', {
+      property_id: propertyId
     });
   };
 
@@ -429,26 +443,99 @@ export default function PropertyPageClient() {
     <div className="min-h-screen bg-gray-50 overflow-x-hidden">
       <Nav />
 
-      {/* Full Width Pre-Market Header */}
-      <div className="bg-gradient-to-r from-orange-600 to-amber-600 py-24">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full mb-4 border border-white/30">
-            <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
-            </svg>
-            <span className="text-sm font-bold text-white">PRE-MARKET EXCLUSIVE</span>
+      {/* Hero Video Section */}
+      <div className="relative bg-gray-900">
+        <div className="max-w-s mx-auto">
+          <div className="relative sm:aspect-video h-screen sm:h-auto">
+            <video
+              src="https://premarketvideos.b-cdn.net/manualVideos/6b98cc64-ae9e-472c-8b3e-6e4fd08a55e0.mp4"
+              className="sm:block hidden blur-lg w-full h-full object-cover"
+              autoPlay
+              muted
+              loop
+              playsInline
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+            
+            {/* Overlay Text */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center px-4 max-w-4xl">
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600/90 backdrop-blur-sm rounded-full mb-4 border border-orange-400">
+                  <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-sm font-bold text-white">EXCLUSIVE PRE-MARKET PROPERTIES</span>
+                </div>
+                <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 leading-tight drop-shadow-lg">
+                  Properties Not Found On Any Other Website
+                </h1>
+
+                <video
+              src="https://premarketvideos.b-cdn.net/manualVideos/6b98cc64-ae9e-472c-8b3e-6e4fd08a55e0.mp4"
+              className="w-full sm:w-1/2 mx-auto rounded-lg shadow-lg my-4"
+              autoPlay
+         controls
+              playsInline
+            />
+
+                <p className="text-3xl md:text-2xl text-white/95 mb-6 drop-shadow-md">
+                  No Domain. No Realestate.com.au. Just Exclusive Pre-Market Listings.
+                </p>
+                <p className="text-base text-white/90 drop-shadow-md">
+                  Leave your opinion • No obligation • Nobody will hassle you
+                </p>
+              </div>
+            </div>
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 leading-tight">
-            See Properties Before They Hit the Market
-          </h1>
-          <p className="text-lg md:text-xl text-white/90 max-w-3xl mx-auto">
-            This property is available exclusively on Premarket. Download the app to discover more hidden gems.
-          </p>
+        </div>
+      </div>
+
+      {/* Trust Indicators */}
+      <div className="bg-white border-b border-slate-200 py-8">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="grid md:grid-cols-4 gap-6 text-center">
+            <div className="flex flex-col items-center">
+              <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-3">
+                <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+              <h3 className="font-bold text-slate-800 mb-1">EXCLUSIVE PROPERTIES</h3>
+              <p className="text-sm text-slate-600">Not found anywhere else</p>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-3">
+                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h3 className="font-bold text-slate-800 mb-1">No Obligation</h3>
+              <p className="text-sm text-slate-600">Just leave an opinion and browse</p>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-3">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                </svg>
+              </div>
+              <h3 className="font-bold text-slate-800 mb-1">No Sales Calls</h3>
+              <p className="text-sm text-slate-600">We don't every contact you</p>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mb-3">
+                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <h3 className="font-bold text-slate-800 mb-1">Early Access</h3>
+              <p className="text-sm text-slate-600">See properties before anyone else does</p>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Property Info and Price Opinion Container */}
-      <div className="max-w-7xl mx-auto px-4 -mt-8 mb-12">
+      <div className="max-w-7xl mx-auto px-4 py-12">
         <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
           <div className="grid lg:grid-cols-2">
             {/* Left: Property Details */}
@@ -457,7 +544,13 @@ export default function PropertyPageClient() {
                 <span className="text-xs font-semibold text-slate-700">{displayPropertyType}</span>
               </div>
               
-              <h2 className="text-3xl md:text-4xl font-bold mb-3 leading-tight text-slate-900">
+              <h2 className="text-xl md:text-xl bg-orange-100 rounded-xl p-4 font-bold mb-3 leading-tight text-orange-700">
+                Leave your price opinion on the home
+              </h2>
+
+              <img src={imageUrls[0]} className='rounded-lg object-cover w-full h-56 my-4' />
+              
+              <h2 className="text-2xl md:text-3xl font-bold mb-3 leading-tight text-slate-900">
                 {title}
               </h2>
               
@@ -597,6 +690,10 @@ export default function PropertyPageClient() {
                   step={1000}
                   value={priceOpinion}
                   onChange={(e) => setPriceOpinion(Number(e.target.value))}
+                  onMouseDown={() => setIsSliding(true)}
+                  onMouseUp={() => setIsSliding(false)}
+                  onTouchStart={() => setIsSliding(true)}
+                  onTouchEnd={() => setIsSliding(false)}
                   className="w-full h-3 bg-gradient-to-r from-orange-400 via-yellow-400 to-green-500 rounded-lg appearance-none cursor-pointer slider-thumb"
                 />
                 
@@ -613,55 +710,8 @@ export default function PropertyPageClient() {
                 </div>
               </div>
 
-              {/* Register Interest Toggle */}
-              <div className="mb-6 bg-white rounded-xl p-4 border border-slate-200">
-                <label className="flex items-center justify-between cursor-pointer">
-                  <div className="flex items-center gap-3">
-                    <div className="flex-shrink-0">
-                      <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                      </svg>
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-sm font-semibold text-slate-800">Register your interest</div>
-                      <div className="text-xs text-slate-600">Get notified when this property goes to market</div>
-                    </div>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={registerInterest}
-                    onChange={(e) => handleRegisterInterestToggle(e.target.checked)}
-                    className="w-5 h-5 text-orange-600 rounded focus:ring-2 focus:ring-orange-500"
-                  />
-                </label>
-              </div>
-
-              {/* Submit Button */}
-              <button
-                onClick={handleSubmitOpinion}
-                disabled={submitting}
-                className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {submitting ? (
-                  <>
-                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    <span>Submitting...</span>
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span>Submit Opinion</span>
-                  </>
-                )}
-              </button>
-
-              <p className="text-xs text-center text-slate-500 mt-4">
-                Submit your opinion to unlock exclusive pre-market properties
+              <p className="text-xs text-center text-slate-500 mt-4 bg-white/50 rounded-lg p-3 border border-slate-200">
+                💡 <strong>Move the slider</strong> to leave your price opinion. No signup required to browse!
               </p>
             </div>
           </div>
@@ -962,8 +1012,7 @@ export default function PropertyPageClient() {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4">
-                
-                  <a href="https://apps.apple.com/au/app/premarket-homes/id6742205449"
+                <a href="https://apps.apple.com/au/app/premarket-homes/id6742205449"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-block"
@@ -975,8 +1024,7 @@ export default function PropertyPageClient() {
                     height={53}
                   />
                 </a>
-                
-                  <a href="https://play.google.com/store/apps/details?id=com.premarkethomes.app&hl=en"
+                <a href="https://play.google.com/store/apps/details?id=com.premarkethomes.app&hl=en"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-block"
@@ -1026,7 +1074,7 @@ export default function PropertyPageClient() {
       <div className="bg-gradient-to-r from-orange-600 to-amber-600 py-16">
         <div className="max-w-4xl mx-auto px-4 text-center text-white">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            View More Exclusive Properties at Premarket
+            View More Exclusive Properties on Premarket
           </h2>
           <p className="text-xl mb-2 text-white/90">
             Get in first before they go to market
@@ -1036,8 +1084,7 @@ export default function PropertyPageClient() {
           </p>
 
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            
-              <a href="https://apps.apple.com/au/app/premarket-homes/id6742205449"
+            <a href="https://apps.apple.com/au/app/premarket-homes/id6742205449"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-block"
@@ -1049,8 +1096,7 @@ export default function PropertyPageClient() {
                 height={53}
               />
             </a>
-            
-              <a href="https://play.google.com/store/apps/details?id=com.premarkethomes.app&hl=en"
+            <a href="https://play.google.com/store/apps/details?id=com.premarkethomes.app&hl=en"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-block"
@@ -1069,6 +1115,99 @@ export default function PropertyPageClient() {
       {/* Footer */}
       <FooterLarge />
 
+      {/* Price Opinion Modal */}
+      {showPriceOpinionModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-8 relative max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => setShowPriceOpinionModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <div className="text-center mb-6">
+              <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-10 h-10 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h3 className="text-3xl font-bold text-slate-800 mb-3">
+                Opinion Saved!
+              </h3>
+              <div className="text-5xl font-bold text-orange-600 mb-4">
+                {formatMoney(priceOpinion)}
+              </div>
+              <p className="text-slate-600 mb-6">
+                You've left a price opinion for this property
+              </p>
+            </div>
+
+            <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl p-6 mb-6 border border-orange-200">
+              <h4 className="font-bold text-slate-800 mb-3 flex items-center gap-2">
+                <svg className="w-5 h-5 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+                Want to See More Exclusive Properties?
+              </h4>
+              <p className="text-sm text-slate-700 mb-4">
+                Download the Premarket app to view <strong>exclusive properties not found on Domain, Realestate.com.au or anywhere else</strong>. No obligation, completely free!
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <a href="https://apps.apple.com/au/app/premarket-homes/id6742205449"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block"
+                >
+                  <Image
+                    src="https://www.airtasker.com/images/homepage/apple-store-2022.svg"
+                    alt="Download on the App Store"
+                    width={140}
+                    height={47}
+                  />
+                </a>
+                <a href="https://play.google.com/store/apps/details?id=com.premarkethomes.app&hl=en"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block"
+                >
+                  <Image
+                    src="https://www.airtasker.com/images/homepage/google-play-2022.svg"
+                    alt="Get it on Google Play"
+                    width={140}
+                    height={47}
+                  />
+                </a>
+              </div>
+            </div>
+
+            <div className="border-t border-slate-200 pt-6">
+              <h4 className="font-bold text-slate-800 mb-3 text-center">
+                Seriously Interested in This Property?
+              </h4>
+              <p className="text-sm text-slate-600 mb-4 text-center">
+                Register your interest to be <strong>first in line</strong> when they decide to go to market
+              </p>
+              <button
+                onClick={handleRegisterInterest}
+                className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                <span>Register My Interest</span>
+              </button>
+              <p className="text-xs text-center text-slate-500 mt-3">
+                Optional • We'll only notify you about this specific property
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Qualification Modal */}
       {showQualificationModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative max-h-[90vh] overflow-y-auto">
@@ -1091,10 +1230,10 @@ export default function PropertyPageClient() {
                 </svg>
               </div>
               <h3 className="text-2xl font-bold text-slate-800 mb-2">
-                You expressed your interest
+                You Expressed Your Interest
               </h3>
               <p className="text-slate-600">
-               Help us understand your circumstance to better faciliate
+                Help us understand your circumstance to better facilitate
               </p>
             </div>
 
@@ -1229,24 +1368,23 @@ export default function PropertyPageClient() {
                 </p>
 
                 <div className="bg-teal-50 mb-6 text-left text-teal-700 rounded-lg p-4 text-sm leading-relaxed">
-                  <strong className="block text-lg mb-1">Are you a homeowner/ investor?</strong>
+                  <strong className="block text-lg mb-1">Are you a homeowner/investor?</strong>
                   <p className="mb-3 text-xs">
                     Did you know you can run your own <strong>Premarket campaign for FREE</strong>?  
                     Get the confidence you need before committing to an agent.
                   </p>
 
                   <ul className="list-disc text-xs list-inside space-y-1">
-                    <li className="mb-3 "><strong>Leasing a property?</strong> No worries — Premarket means no intrusive marketing and no scaring tenants.</li>
-                    <li className="mb-3 "><strong>Curious about your property's true value?</strong> Skip the generic market reports and get real interest directly from buyers.</li>
-                    <li className="mb-3 "><strong>Completely free.</strong> Set up and go live in minutes with your own premarket campaign.</li>
+                    <li className="mb-3"><strong>Leasing a property?</strong> No worries — Premarket means no intrusive marketing and no scaring tenants.</li>
+                    <li className="mb-3"><strong>Curious about your property's true value?</strong> Skip the generic market reports and get real interest directly from buyers.</li>
+                    <li className="mb-3"><strong>Completely free.</strong> Set up and go live in minutes with your own premarket campaign.</li>
                   </ul>
                 </div>
 
                 <div className="bg-orange-50 border border-orange-200 rounded-xl p-6 mb-6">
                   <h4 className="font-bold text-slate-800 mb-3">Download Premarket App</h4>
                   <div className="flex flex-col gap-3">
-                    
-                      <a href="https://apps.apple.com/au/app/premarket-homes/id6742205449"
+                    <a href="https://apps.apple.com/au/app/premarket-homes/id6742205449"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-block mx-auto"
@@ -1258,8 +1396,7 @@ export default function PropertyPageClient() {
                         height={53}
                       />
                     </a>
-                    
-                      <a href="https://play.google.com/store/apps/details?id=com.premarkethomes.app&hl=en"
+                    <a href="https://play.google.com/store/apps/details?id=com.premarkethomes.app&hl=en"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-block mx-auto"
@@ -1287,10 +1424,10 @@ export default function PropertyPageClient() {
                     </svg>
                   </div>
                   <h3 className="text-2xl font-bold text-slate-800 mb-2">
-                    Opinion Submitted!
+                    Create Your Account
                   </h3>
                   <p className="text-slate-600">
-                    Create your account to unlock exclusive pre-market properties
+                    Get notified when this property goes to market
                   </p>
                 </div>
 
