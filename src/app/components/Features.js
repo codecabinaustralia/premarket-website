@@ -7,55 +7,42 @@ const stages = [
   {
     tag: "For Homeowners",
     title: "Test The Market Risk-Free",
-    text: "Premarket gives homeowners confidence to make informed decisions. Test the market before committing to an agent—no open homes, no marketing spend, no pressure.",
+    text: "Changing real estate. Experience the new way. Get confidence from real buyers—no guestimates from banks or agents. The price of a property is what buyers are willing to pay.",
     benefits: [
-      "Save thousands on unnecessary marketing costs",
-      "Make money by getting accurate market valuations",
-      "Zero commitment until you're ready to sell",
-      "Complete control over your property information"
+      "Get real feedback from genuine buyers, not estimates",
+      "Understand true market demand before committing",
+      "No pressure, no obligation—test the market your way",
+      "Make informed decisions with actual buyer interest"
     ],
-    image: "https://premarketvideos.b-cdn.net/assets/1.png",
+    image: "https://premarketvideos.b-cdn.net/assets/j1.jpeg",
     gradient: "from-teal-500 to-cyan-600"
   },
   {
-    tag: "For Buyers & Investors",
-    title: "Access Exclusive Off-Market Properties",
-    text: "Forget competitive platforms like realestate.com.au and domain.com.au. Get first access to properties before they hit the market.",
+    tag: "For Homeowners",
+    title: "Take Your Own Photos",
+    text: "No need for professional photos. Get live in minutes, get feedback in hours—not months. Skip the traditional hassle and test your property the modern way.",
     benefits: [
-      "Discover hidden gems not found anywhere else",
-      "Give your price opinion on properties you like",
-      "Express genuine interest before the competition",
-      "Make offers before properties go public"
+      "Upload photos yourself and go live instantly",
+      "Start receiving buyer feedback within hours",
+      "Skip the wait and expense of professional staging",
+      "Test the market on your timeline, not an agent's"
     ],
-    image: "https://premarketvideos.b-cdn.net/assets/d209f92b32b172368fb3da2a8bcfb315_1762476048.png",
+    image: "https://premarketvideos.b-cdn.net/assets/j2.jpeg",
     gradient: "from-orange-500 to-amber-600"
   },
   {
-    tag: "Powerful Reports",
-    title: "Real Data From Real Buyers",
-    text: "Homeowners receive comprehensive reports showing what buyers are actually willing to pay—not what agents or marketing materials claim.",
+    tag: "For Homeowners",
+    title: "Save Thousands & Stay In Control",
+    text: "Save thousands and countless hours of open homes. Choose an agent when you're ready, or stay put and try again another time. No obligation. Free.",
     benefits: [
-      "Understand true market demand for your property",
-      "Connect with genuine, pre-qualified buyers",
-      "Cut costs by eliminating unnecessary open homes",
-      "Save time with targeted, interested buyers only"
+      "Avoid expensive marketing costs and open homes",
+      "Only commit to an agent when you're confident",
+      "Try the market without any financial risk",
+      "Stay put if the timing isn't right—it's your choice"
     ],
-    image: "https://premarketvideos.b-cdn.net/assets/9298ea3a6ad1f132a9df763bbb32931a_1762476464.png",
+    image: "https://premarketvideos.b-cdn.net/assets/j3.jpeg",
     gradient: "from-purple-500 to-indigo-600"
   },
-  // {
-  //   tag: "For Agents",
-  //   title: "Partner With Pre-Qualified Sellers",
-  //   text: "We connect you with homeowners who are ready to sell. No more paying for leads with zero results—only work with motivated sellers.",
-  //   benefits: [
-  //     "Access homeowners with buyer interest already established",
-  //     "Provide trusted, price-appropriate service",
-  //     "Facilitate deals with transparent data",
-  //     "Build your reputation as the go-to local expert"
-  //   ],
-  //   image: "/assets/screenshots/4.png",
-  //   gradient: "from-rose-500 to-pink-600"
-  // }
 ];
 
 export default function CampaignStory() {
@@ -70,7 +57,7 @@ export default function CampaignStory() {
   const index = useTransform(scrollYProgress, [0, 1], [0, extendedRange]);
 
   return (
-    <section className="relative w-full bg-gradient-to-b from-white via-gray-50 to-white" ref={containerRef} style={{ height: `${stages.length * 100}vh` }}>
+    <section className=" my-10 relative w-full bg-gradient-to-b from-white via-gray-50 to-white" ref={containerRef} style={{ height: `${stages.length * 100}vh` }}>
       <div className="sticky top-0 h-screen w-full flex flex-col lg:flex-row items-center">
 
         {/* Progress Indicator (Desktop) */}

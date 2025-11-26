@@ -11,7 +11,7 @@ export default function Nav() {
   const navLinks = [
     { name: 'For Home Owners', href: '/' },
     { name: 'For Buyers/Investors', href: '/buyers' },
-    // { name: 'For Agents', href: '#agents' },
+    { name: 'For Agents', href: '/agents' },
     { name: 'How it Works', href: '/how-it-works' },
   ];
 

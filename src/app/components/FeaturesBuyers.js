@@ -5,44 +5,44 @@ import { useScroll, useTransform, motion } from 'framer-motion';
 
 const stages = [
   {
-    tag: "Early Access",
-    title: "See Properties Before They Go Public",
-    text: "Premarket lets you discover homes before anyone else. These properties are testing the market before going live with an agent or big campaign—giving you a first look at real opportunities.",
+    tag: "For Buyers",
+    title: "Access Exclusive Properties",
+    text: "Discover properties not found anywhere else. Get first access to homes before they hit realestate.com.au or domain.com.au. See what's available before the competition.",
     benefits: [
-      "Get early access to properties before they hit the major sites",
-      "Be first in line to make offers or express interest",
-      "Understand seller motivation before the crowd does",
-      "Avoid bidding wars by acting early"
+      "Browse exclusive off-market properties first",
+      "No competition from other platforms",
+      "Discover hidden opportunities early",
+      "Connect directly with motivated sellers"
     ],
-    image: "https://premarketvideos.b-cdn.net/assets/a1.jpeg",
-    gradient: "from-orange-500 to-amber-600"
-  },
-  {
-    tag: "For Active Buyers & Investors",
-    title: "Get Alerts for New Premarket Listings",
-    text: "When a homeowner lists their property on Premarket, you’ll be the first to know. Give your price opinion, register your interest, and get ahead of the competition.",
-    benefits: [
-      "Receive instant alerts when new off-market homes are listed",
-      "Share your price opinions on properties you like",
-      "Register your interest before they go public",
-      "Engage directly with genuine, motivated sellers"
-    ],
-    image: "https://premarketvideos.b-cdn.net/assets/a2.jpeg",
+    image: "https://premarketvideos.b-cdn.net/assets/k1.jpeg",
     gradient: "from-teal-500 to-cyan-600"
   },
   {
-    tag: "Exclusive Advantage",
-    title: "Be the First to See Real Opportunity",
-    text: "Premarket gives you priority access to genuine opportunities—homes that aren’t yet on realestate.com.au or domain.com.au. Be proactive and make smarter investment decisions.",
+    tag: "For Buyers",
+    title: "Share Your Price Opinion",
+    text: "Give your price opinions on properties you like and register your interest on properties you love. Let sellers know what you're willing to pay before the market rush.",
     benefits: [
-      "See properties before public advertising begins",
-      "Spot undervalued or unlisted opportunities early",
-      "Connect directly with homeowners testing the market",
-      "Stay ahead with data-driven insights on local activity"
+      "Express genuine interest without commitment",
+      "Share what you'd actually pay for a property",
+      "Stand out by engaging early",
+      "Build rapport before formal negotiations"
     ],
-    image: "https://premarketvideos.b-cdn.net/assets/a3.jpeg",
+    image: "https://premarketvideos.b-cdn.net/assets/k2.jpeg",
+    gradient: "from-orange-500 to-amber-600"
+  },
+  {
+    tag: "For Buyers",
+    title: "Be First In Line",
+    text: "Be first in line when properties go to market. Get notified the moment sellers decide to list, giving you the ultimate advantage over other buyers.",
+    benefits: [
+      "First to know when properties officially list",
+      "Early access before public marketing begins",
+      "Skip the crowds at open homes",
+      "Negotiate from a position of strength"
+    ],
+    image: "https://premarketvideos.b-cdn.net/assets/k3.jpeg",
     gradient: "from-purple-500 to-indigo-600"
-  }
+  },
 ];
 
 
@@ -58,7 +58,7 @@ export default function CampaignStory() {
   const index = useTransform(scrollYProgress, [0, 1], [0, extendedRange]);
 
   return (
-    <section className="relative w-full bg-gradient-to-b from-white via-gray-50 to-white" ref={containerRef} style={{ height: `${stages.length * 100}vh` }}>
+    <section className="my-10 relative w-full bg-gradient-to-b from-white via-gray-50 to-white" ref={containerRef} style={{ height: `${stages.length * 100}vh` }}>
       <div className="sticky top-0 h-screen w-full flex flex-col lg:flex-row items-center">
 
         {/* Progress Indicator (Desktop) */}

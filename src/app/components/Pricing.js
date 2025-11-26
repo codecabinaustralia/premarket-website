@@ -1,75 +1,157 @@
 // components/Features.js
 import { useModal } from '../context/ModalContext';
+
 export default function Pricing() {
   const { setShowModal } = useModal();
   
   return (
-    <div className="bg-gray-100">
-        <div className=" sm:p-20 container mx-auto">
-        <div className="text-4xl sm:text-7xl font-extrabold text-gray-900 mb-2 text-center pt-10 sm:pt-0 px-6 sm:px-0">
-            Turn community into sellers
-            <div className="mt-3 sm:mt-6 text-sm sm:text-xl inter text-gray-500">Supercharged automated engine that turns prospects into real clients</div>
+    <div className="bg-gray-50 py-16 sm:py-24">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="text-center mb-12 sm:mb-16">
+          <h2 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-gray-900 mb-4 sm:mb-6 leading-tight">
+            Agents using Premarket are winning 10x more listings
+          </h2>
+          <p className="text-base sm:text-xl text-gray-600 max-w-4xl mx-auto">
+            Then paying 10x less on non-measurable marketing strategies such as bus stops, billboards and magazine ads.
+          </p>
+        </div>
+
+        {/* Pricing Cards */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
+          
+          {/* Agent Basic */}
+          <div className="bg-white rounded-xl shadow-lg hover:shadow-2xl transition-shadow p-8 flex flex-col">
+            <div className="mb-6">
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">Agent Basic</h3>
+              <div className="flex items-baseline mb-2">
+                <span className="text-5xl font-extrabold text-gray-900">$233</span>
+                <span className="text-gray-500 ml-2">/month</span>
+              </div>
+              <span className="inline-block bg-amber-600 text-white text-sm rounded-full py-2 px-4">
+                Paid annually $2,796
+              </span>
             </div>
-<div className="p-10 sm:p-0 flex-wrap sm:flex-wrap-none flex items-center justify-center space-x-0 sm:mt-10">
+            
+            <ul className="space-y-3 mb-8 flex-grow text-gray-700">
+              <li className="flex items-start">
+                <svg className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                </svg>
+                <span>
+                  Add unlimited prospects{' '}
+                  <span className="bg-teal-100 text-teal-700 text-xs px-2 py-1 rounded-full">
+                    Limited Offer
+                  </span>
+                </span>
+              </li>
+              <li className="flex items-start">
+                <svg className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                </svg>
+                <span>Receive buyer contact details</span>
+              </li>
+              <li className="flex items-start">
+                <svg className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                </svg>
+                <span>Receive price opinions</span>
+              </li>
+              <li className="flex items-start">
+                <svg className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                </svg>
+                <span>Run 1 live campaign at a time</span>
+              </li>
+            </ul>
+            
+            
+              <a target="_blank"
+              rel="noopener noreferrer"
+              href="https://calendly.com/knockknock-premarket/30min?month=2025-08"
+              className="block text-center bg-white hover:bg-amber-700 hover:text-white text-amber-700 border-2 border-amber-700 font-bold py-4 px-6 rounded-lg transition-colors"
+            >
+              TRY FREE
+            </a>
+          </div>
 
-  <div className="w-full sm:w-96 bg-white shadow-2xl p-8 rounded-l-lg sm:py-20 sm:my-10 sm:mb-0">
-    <h2 className="text-3xl font-bold mb-2 text-gray-900">Small Agent</h2>
-    <div className="text-3xl font-extrabold text-gray-900 mb-2">$249<span className="text-sm interBold font-normal">/month</span></div>
-    <div><span className="text-sm inter bg-amber-600 text-white rounded-full py-2 px-3 font-normal">Paid annually $2,988</span></div>
-    
-    <ul className="space-y-2 mt-4 mb-6 text-gray-700 inter">
-      <li>Single login to Premarket app</li>
-      <li>Upto 20 prospect each month per team</li>
-      <li>View buyer interest</li>
-      <li>Property demand</li>
-      <li>Direct buyer chat</li>
-      <li>Handshake offers</li>
-      <li>End of campaign report cards</li>
-    </ul>
-    <a target="_blank" href="https://calendly.com/knockknock-premarket/30min?month=2025-08" className="border-2 border-amber-600 hover:bg-gray-100 text-amber-600 font-bold py-4 cursor-pointer px-4 rounded w-full">
-      Book a demo
-    </a>
-  </div>
-  
-  <div className="w-full mt-6 sm:mt-0 sm:w-96 bg-white shadow-2xl p-8 rounded-lg py-20 mb-6 sm:mb-0">
-    <h2 className="text-3xl font-bold mb-2 text-gray-900">Agent Pro</h2>
-    <div className="text-5xl font-extrabold text-gray-900 mb-2">$499<span className="text-sm interBold font-normal">/month</span></div>
-    <div><span className="text-sm inter bg-amber-600 text-white rounded-full py-2 px-3 font-normal">Paid annually $5,988</span></div>
-    
-    <ul className="space-y-2 mt-4 mb-6 text-gray-700 inter">
-      <li><span className='interBold'>Premarket Kit </span>- includes prospect QRcode cards and door stickers</li>
-      <li>Team Access to Premarket app</li>
-      <li>Upto 100 prospect each month per team</li>
-      <li>View buyer interest</li>
-      <li>Property demand</li>
-      <li>Direct buyer chat</li>
-      <li>Handshake offers</li>
-      <li>End of campaign report cards</li>
-    </ul>
-    <a target="_blank" href="https://calendly.com/knockknock-premarket/30min?month=2025-08" className="bg-amber-600 hover:bg-amber-700 text-white font-bold py-4 cursor-pointer px-4 rounded w-full">
-      Book a demo
-    </a>
-  </div>
+          {/* Agent Pro - Featured */}
+          <div className="bg-white rounded-xl shadow-2xl hover:shadow-3xl transition-shadow p-8 lg:scale-105 lg:-my-4 border-2 border-amber-500 flex flex-col relative">
+            <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+              <span className="bg-amber-500 text-white text-xs whitespace-nowrap font-bold px-6 py-2 rounded-full shadow-lg">
+                BEST RETURN ON INVESTMENT
+              </span>
+            </div>
+            
+            <div className="mb-6 mt-2">
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">Agent Pro</h3>
+              <div className="flex items-baseline mb-2">
+                <span className="text-5xl font-extrabold text-gray-900">$499</span>
+                <span className="text-gray-500 ml-2">/month</span>
+              </div>
+              <span className="inline-block bg-amber-600 text-white text-sm rounded-full py-2 px-4">
+                Paid annually $5,988
+              </span>
+            </div>
+            
+            <ul className="space-y-3 mb-8 flex-grow text-gray-700">
+              <li className="flex items-start">
+                <svg className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                </svg>
+                <span>
+                  <span className="font-bold">Premarket Lead Generator</span> — Become a recommended partner and be front and center in vendor reports
+                </span>
+              </li>
+              <li className="flex items-start">
+                <svg className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                </svg>
+                <span>Run unlimited campaigns simultaneously</span>
+              </li>
+              <li className="flex items-start">
+                <svg className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                </svg>
+                <span>All features from Agent Basic</span>
+              </li>
+            </ul>
+            
+            
+              <a target="_blank"
+              rel="noopener noreferrer"
+              href="https://calendly.com/knockknock-premarket/30min?month=2025-08"
+              className="block text-center bg-amber-600 hover:bg-amber-700 text-white font-bold py-4 px-6 rounded-lg transition-colors shadow-md"
+            >
+              TRY FREE
+            </a>
+          </div>
 
-  <div className="w-full sm:w-56 bg-gray-900 p-8 rounded sm:rounded-r-lg">
-    <h2 className="text-3xl font-bold text-white">Custom</h2>
-    <div className="text-white mt-2"><span className="text-sm inter bg-gray-700 text-white rounded-full py-2 px-3 font-normal">Paid based on scale</span></div>
-    <ul className="space-y-2 mb-6 text-white inter mt-6">
-      <li>Add multiple teams</li>
-      <li>Add unlimted prospects</li>
-      <li>Extend trial campaigns</li>
-      <li>Custom Design</li>
-      <li>First Class Support</li>
-    </ul>
+          {/* Custom Elite */}
+          <div className="bg-gray-900 rounded-xl shadow-lg hover:shadow-2xl transition-shadow p-8 flex flex-col">
+            <div className="mb-6">
+              <h3 className="text-2xl font-bold text-white mb-3">Custom Elite</h3>
+              <span className="inline-block bg-gray-700 text-white text-sm rounded-full py-2 px-4">
+                Paid based on scale
+              </span>
+            </div>
+            
+            <p className="text-gray-300 mb-8 flex-grow leading-relaxed">
+              Talk to our sales team about custom agency pricing, onboarding and membership for franchises and business owners.
+            </p>
+            
+            
+              <a target="_blank"
+              rel="noopener noreferrer"
+              href="https://calendly.com/knockknock-premarket/30min?month=2025-08"
+              className="block text-center bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-lg transition-colors"
+            >
+              Book a call
+            </a>
+          </div>
 
-     <a target="_blank" href="https://calendly.com/knockknock-premarket/30min?month=2025-08" className="bg-amber-600 hover:bg-amber-700 text-white font-bold py-4 cursor-pointer px-4 rounded w-full">
-      Book a demo
-    </a>
-   
-</div>
-</div>
-</div>
+        </div>
+      </div>
     </div>
-
   );
 }

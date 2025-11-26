@@ -1,14 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
-
+import FooterLarge from '../components/FooterLarge';
+import Nav from '../components/Nav';
 
 export default function PrivacyPolicy() {
   return (
     <div>
-    <Header />
+    <Nav />
     <div className="max-w-4xl mx-auto px-4 py-10 text-gray-900">
       <h1 className="text-4xl font-bold mb-6">Privacy Policy</h1>
       <p className="mb-4">Effective Date: July 21, 2025</p>
@@ -136,7 +135,7 @@ export default function PrivacyPolicy() {
         .
       </p>
     </div>
-    <Footer />
+    <FooterLarge />
     </div>
   );
 }

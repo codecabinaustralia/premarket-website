@@ -11,7 +11,7 @@ import CallToAction from './components/CallToAction';
 import FooterLarge from './components/FooterLarge';
 import Testimonials from './components/Testimonials';
 import StatBox from './components/Stats';
-import Welcome from './components/Welcome';
+import FAQHomeOwners from './components/FAQHomeOwners';
 import Pricing from './components/Pricing';
 import PropertyFormModal from './components/Form';
 import { useModal } from './context/ModalContext';
@@ -39,7 +39,7 @@ export default function Home() {
         {/* <Logos /> */}
         {/* <Welcome /> */}
         <Features />
-        <StatBox />
+        <FAQHomeOwners />
         {/* <Roles /> */}
         <Testimonials />
         {/* <Pricing /> */}

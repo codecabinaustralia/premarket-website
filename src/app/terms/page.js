@@ -1,7 +1,8 @@
 // pages/terms.js
 import Head from 'next/head';
 import Header from '../components/Header';
-import Footer from '../components/Footer';
+import FooterLarge from '../components/FooterLarge';
+import Nav from '../components/Nav';
 
 export default function Terms() {
     return (
@@ -10,7 +11,7 @@ export default function Terms() {
                 <title>Terms & Conditions – Premarket Australia</title>
             </Head>
  
-      <Header />
+      <Nav />
             <main className="inter text-sm px-4 sm:px-6 lg:px-8 py-10">
                 <div className="max-w-5xl mx-auto space-y-8">
                     <h1 className="inter text-smBold text-3xl text-gray-900">Terms &amp; Conditions</h1>
@@ -571,7 +572,7 @@ export default function Terms() {
                 </div>
             </main>
 
-            <Footer />
+            <FooterLarge />
         </>
     );
 }

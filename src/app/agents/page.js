@@ -1,40 +1,52 @@
-'use client';
 // pages/index.js
+'use client';
+
 import Head from 'next/head';
 import Header from '../components/Header';
-import Hero from '../components/HeroAgents';
+import HeroAgents from '../components/HeroAgents';
 import Logos from '../components/Logos';
-import Features from '../components/Features';
-// import Roles from '../components/Roles';
+import FeaturesAgents from '../components/FeaturesAgents';
+import Roles from '../components/Roles';
 import CallToAction from '../components/CallToAction';
-import Footer from '../components/Footer';
-import Testimonials from '../components/Testimonials';
-import StatBox from '../components/Stats';
-import WelcomeAgents from '../components/WelcomeAgents';
+import FooterLarge from '../components/FooterLarge';
+import TestimonialAgents from '../components/TestimonialsAgents';
+import FAQ from '../components/faq';
+import Welcome from '../components/Welcome';
 import Pricing from '../components/Pricing';
+import PropertyFormModal from '../components/Form';
+import { useModal } from '../context/ModalContext';
+import Countdown from '../components/Countdown';
 
 export default function Home() {
+  const { showModal } = useModal();
+
   return (
     <>
-      <Head>
+      <Head >
         <title>Premarket Homes</title>
         <meta name="description" content="Premarket Homes - Test the market before you sell." />
       </Head>
-      <Header />
-      <main>
-        <Hero />
-         {/* <Logos /> */}
-         <WelcomeAgents />
-       {/* <Welcome /> */}
-        {/* <Features /> */}
-        <StatBox />
-        {/* <Roles /> */}
-        <Testimonials />
-        {/* <Pricing /> */}
+      {/* <Header /> */}
+        {/* <div className="fixed top-0 left-0 w-full z-50">
+              <Countdown />
+            </div> */}
+      
+      {/* <PropertyFormModal /> */}
+      
+        <main>
+       
+        <HeroAgents />
+        {/* <Logos /> */}
+        {/* <Welcome /> */}
+        <FeaturesAgents />
+        {/* <StatBox /> */}
+        { <FAQ /> }
+        <TestimonialAgents />
+        <Pricing />
      
-        <CallToAction />
+        {/* <CallToAction /> */}
       </main>
-      {/* <Footer /> */}
+      <FooterLarge />
     </>
   );
 }
