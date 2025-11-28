@@ -6,7 +6,7 @@ import Link from 'next/link';
 import FooterLarge from '../components/FooterLarge';
 import Nav from '../components/Nav';
 
-export default function SubscriptionSuccess() {
+export default function SubscriptionCancelled() {
   const searchParams = useSearchParams();
   const [sessionId, setSessionId] = useState('');
 
@@ -21,11 +21,11 @@ export default function SubscriptionSuccess() {
     <div>
       <Nav />
       <div className="max-w-4xl mx-auto px-4 py-16 text-gray-900">
-        {/* Success Icon */}
+        {/* Cancelled Icon */}
         <div className="flex justify-center mb-8">
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
+          <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center">
             <svg
-              className="w-12 h-12 text-green-600"
+              className="w-12 h-12 text-orange-600"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -34,7 +34,7 @@ export default function SubscriptionSuccess() {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M5 13l4 4L19 7"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
               />
             </svg>
           </div>
@@ -42,66 +42,87 @@ export default function SubscriptionSuccess() {
 
         {/* Main Heading */}
         <h1 className="text-4xl md:text-5xl font-bold text-center mb-4">
-          Welcome to Premarket!
+          Subscription Not Completed
         </h1>
         
         <p className="text-xl text-center text-gray-600 mb-12">
-          Your subscription is now active
+          Your payment could not be processed
         </p>
 
-        {/* Success Message Card */}
-        <div className="bg-white rounded-lg shadow-lg p-8 mb-8 border border-gray-100">
+        {/* Info Message Card */}
+        <div className="bg-white rounded-lg shadow-lg p-8 mb-8 border border-gray-200">
           <h2 className="text-2xl font-semibold mb-4 text-gray-900">
-            Thank you for joining the change
+            What happened?
           </h2>
           <p className="text-lg text-gray-700 mb-4 leading-relaxed">
-            You're now part of an exclusive network of forward-thinking agents who are revolutionizing the way properties come to market.
+            It looks like your payment didn't go through. This can happen for a variety of reasons, such as:
           </p>
-          <p className="text-lg text-gray-700 mb-4 leading-relaxed">
-            With Premarket, you'll gain early access to motivated sellers, build your pipeline before properties hit the market, and close deals faster than ever before.
-          </p>
-          <p className="text-lg text-gray-700 leading-relaxed">
-            Let's work together to take your career to the next level.
-          </p>
-        </div>
-
-        {/* What's Next Section */}
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-8 mb-8">
-          <h3 className="text-xl font-semibold mb-4 text-gray-900">
-            What's next?
-          </h3>
-          <ul className="space-y-3">
-            <li className="flex items-start">
-              <svg className="w-6 h-6 text-blue-600 mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="text-gray-700">Start browsing pre-market properties in your area</span>
+          <ul className="space-y-2 mb-6 ml-4">
+            <li className="flex items-start text-gray-700">
+              <span className="text-orange-600 mr-2">•</span>
+              <span>Payment method was declined</span>
             </li>
-            <li className="flex items-start">
-              <svg className="w-6 h-6 text-blue-600 mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="text-gray-700">Connect with motivated sellers before the competition</span>
+            <li className="flex items-start text-gray-700">
+              <span className="text-orange-600 mr-2">•</span>
+              <span>Insufficient funds</span>
             </li>
-            <li className="flex items-start">
-              <svg className="w-6 h-6 text-blue-600 mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="text-gray-700">Access exclusive insights and market analytics</span>
+            <li className="flex items-start text-gray-700">
+              <span className="text-orange-600 mr-2">•</span>
+              <span>Billing information mismatch</span>
+            </li>
+            <li className="flex items-start text-gray-700">
+              <span className="text-orange-600 mr-2">•</span>
+              <span>Session expired or was cancelled</span>
             </li>
           </ul>
+          <p className="text-lg text-gray-700 leading-relaxed">
+            Don't worry - no charges were made to your account.
+          </p>
         </div>
 
-        {/* CTA Button */}
-        <div className="text-center">
+        {/* Next Steps Section */}
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-8 mb-8">
+          <h3 className="text-xl font-semibold mb-4 text-gray-900">
+            Ready to try again?
+          </h3>
+          <p className="text-gray-700 mb-6 leading-relaxed">
+            Head back to the Premarket app and restart the subscription process. Make sure to verify your payment details before proceeding.
+          </p>
+          <div className="space-y-3">
+            <div className="flex items-start">
+              <svg className="w-6 h-6 text-blue-600 mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-gray-700">Double-check your card details</span>
+            </div>
+            <div className="flex items-start">
+              <svg className="w-6 h-6 text-blue-600 mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-gray-700">Ensure your billing address is correct</span>
+            </div>
+            <div className="flex items-start">
+              <svg className="w-6 h-6 text-blue-600 mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-gray-700">Try a different payment method if needed</span>
+            </div>
+          </div>
+        </div>
+
+        {/* CTA Buttons */}
+        <div className="text-center space-y-4">
           <Link
             href="premarket://open"
             className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-4 rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105"
           >
-            Open Premarket App
+            Return to Premarket App
           </Link>
-          <p className="text-sm text-gray-500 mt-4">
-            Ready to get started? Open the app and explore your opportunities.
+          <p className="text-sm text-gray-500">
+            Questions? Contact our support team at{' '}
+            <a href="mailto:support@premarket.com" className="text-blue-600 hover:underline">
+              support@premarket.com
+            </a>
           </p>
         </div>
 
