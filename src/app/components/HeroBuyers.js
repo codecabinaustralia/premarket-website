@@ -160,7 +160,7 @@ export default function Hero() {
             How It Works
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Three simple steps to help homeowners discover their property's true market value
+            Three simple steps to help buyers discover exclusive properties
           </p>
         </div>
 
@@ -203,7 +203,7 @@ export default function Hero() {
                 Buyers Give Price Opinions
               </h3>
               <p className="text-gray-600 leading-relaxed">
-                Buyers and investors share their price opinions and express genuine interest in the property.
+                Buyers and investors share their price opinions on properties they like and register genuine interest in properties they love.
               </p>
             </div>
 
@@ -220,10 +220,10 @@ export default function Hero() {
                 STEP 3
               </div>
               <h3 className="text-2xl interBold text-gray-900 mb-4">
-                Receive Your Free Report
+                Home Owner Goes To Market
               </h3>
               <p className="text-gray-600 leading-relaxed">
-                Get a comprehensive market report giving you confidence to go to market or stay put.
+                Get in lightening fast, before the property hits major websites or starts doing open homes.
               </p>
             </div>
           </div>

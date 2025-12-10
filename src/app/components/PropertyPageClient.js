@@ -8,6 +8,8 @@ import { doc, getDoc, addDoc, setDoc, collection, serverTimestamp, updateDoc, qu
 import Image from 'next/image';
 import FooterLarge from '../components/FooterLarge';
 import Nav from '../components/Nav';
+import Testimonials from '../components/Testimonials';
+import StatBox from '../components/Stats';
 
 // Generate a session ID for tracking price opinions
 const getSessionId = () => {
@@ -444,46 +446,46 @@ export default function PropertyPageClient() {
       <Nav />
 
       {/* Hero Video Section */}
-      <div className="relative bg-gray-900">
+      <div className="relative bg-orange-600">
         <div className="max-w-s mx-auto">
-          <div className="relative sm:aspect-video h-screen sm:h-auto">
-            <video
+          <div className="relative">
+            {/* <video
               src="https://premarketvideos.b-cdn.net/manualVideos/6b98cc64-ae9e-472c-8b3e-6e4fd08a55e0.mp4"
               className="sm:block hidden blur-lg w-full h-full object-cover"
               autoPlay
               muted
               loop
               playsInline
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+            /> */}
+            {/* <div className="absolute inset-0 bg-gradient-to-t from-red/60 to-transparent" /> */}
             
             {/* Overlay Text */}
-            <div className="absolute inset-0 flex items-center justify-center">
+            <div className="py-10 inset-0 flex items-center justify-center">
               <div className="text-center px-4 max-w-4xl">
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600/90 backdrop-blur-sm rounded-full mb-4 border border-orange-400">
+               
+                <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 leading-tight drop-shadow-lg">
+                  Exclusive Premarket Properties
+                </h1>
+
+                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600/90 backdrop-blur-sm rounded-full mb-4 border border-orange-400">
                   <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
                   </svg>
-                  <span className="text-sm font-bold text-white">EXCLUSIVE PRE-MARKET PROPERTIES</span>
+                  <span className="text-sm font-bold text-white"> {address}</span>
                 </div>
-                <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 leading-tight drop-shadow-lg">
-                  Properties Not Found On Any Other Website
-                </h1>
-
+{/* 
                 <video
               src="https://premarketvideos.b-cdn.net/manualVideos/6b98cc64-ae9e-472c-8b3e-6e4fd08a55e0.mp4"
               className="w-full sm:w-1/2 mx-auto rounded-lg shadow-lg my-4"
               autoPlay
          controls
               playsInline
-            />
+            /> */}
 
-                <p className="text-3xl md:text-2xl text-white/95 mb-6 drop-shadow-md">
-                  No Domain. No Realestate.com.au. Just Exclusive Pre-Market Listings.
-                </p>
-                <p className="text-base text-white/90 drop-shadow-md">
-                  Leave your opinion • No obligation • Nobody will hassle you
-                </p>
+                {/* <p className="text-xl md:text-2xl text-white/95 mb-6 drop-shadow-md">
+                   Scroll down to give your price opinion on<br />
+                </p> */}
+
               </div>
             </div>
           </div>
@@ -664,56 +666,83 @@ export default function PropertyPageClient() {
             </div>
 
             {/* Right: Price Opinion Slider */}
-            <div className="bg-gradient-to-br from-slate-50 to-slate-100 p-8 lg:p-12 border-l border-slate-200">
-              <div className="text-center mb-6">
-                <h3 className="text-2xl font-bold text-slate-800 mb-2">
-                  Your Price Opinion
-                </h3>
-                <p className="text-sm text-slate-600">
-                  What do you think this property is worth?
-                </p>
-              </div>
+          <div className="bg-gradient-to-br from-slate-50 to-slate-100 p-8 lg:p-12 border-l border-slate-200">
+  <div className="text-center mb-6">
+    <h3 className="text-2xl sm:text-4xl font-bold text-slate-800 mb-2">
+      Your Price Opinion
+    </h3>
+    <p className="text-sm text-slate-600">
+      Help the homeowner understand market sentiment
+    </p>
+  </div>
 
-              {/* Big Price Display */}
-              <div className="text-center mb-8">
-                <div className="text-5xl font-bold text-orange-600">
-                  {formatMoney(priceOpinion)}
-                </div>
-              </div>
+  {/* Big Price Display */}
+  <div className="text-center mb-8">
+    <div className="text-5xl font-bold text-orange-600">
+      {formatMoney(priceOpinion)}
+    </div>
+  </div>
 
-              {/* Slider */}
-              <div className="mb-6">
-                <input
-                  type="range"
-                  min={minPrice}
-                  max={maxPrice}
-                  step={1000}
-                  value={priceOpinion}
-                  onChange={(e) => setPriceOpinion(Number(e.target.value))}
-                  onMouseDown={() => setIsSliding(true)}
-                  onMouseUp={() => setIsSliding(false)}
-                  onTouchStart={() => setIsSliding(true)}
-                  onTouchEnd={() => setIsSliding(false)}
-                  className="w-full h-3 bg-gradient-to-r from-orange-400 via-yellow-400 to-green-500 rounded-lg appearance-none cursor-pointer slider-thumb"
-                />
-                
-                {/* Min/Max Labels */}
-                <div className="flex justify-between mt-3 text-sm">
-                  <div className="text-left">
-                    <div className="text-xs text-slate-500 font-semibold">Low</div>
-                    <div className="font-bold text-slate-700">{formatCompact(minPrice)}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-xs text-slate-500 font-semibold">High</div>
-                    <div className="font-bold text-slate-700">{formatCompact(maxPrice)}</div>
-                  </div>
-                </div>
-              </div>
+  {/* Slider */}
+  <div className="mb-6">
+    <input
+      type="range"
+      min={minPrice}
+      max={maxPrice}
+      step={1000}
+      value={priceOpinion}
+      onChange={(e) => setPriceOpinion(Number(e.target.value))}
+      onMouseDown={() => setIsSliding(true)}
+      onMouseUp={() => setIsSliding(false)}
+      onTouchStart={() => setIsSliding(true)}
+      onTouchEnd={() => setIsSliding(false)}
+      className="w-full h-3 bg-gradient-to-r from-orange-400 via-yellow-400 to-green-500 rounded-lg appearance-none cursor-pointer slider-thumb"
+    />
+    
+    {/* Min/Max Labels */}
+    <div className="flex justify-between mt-3 text-sm">
+      <div className="text-left">
+        <div className="text-xs text-slate-500 font-semibold">Low</div>
+        <div className="font-bold text-slate-700">{formatCompact(minPrice)}</div>
+      </div>
+      <div className="text-right">
+        <div className="text-xs text-slate-500 font-semibold">High</div>
+        <div className="font-bold text-slate-700">{formatCompact(maxPrice)}</div>
+      </div>
+    </div>
+  </div>
 
-              <p className="text-xs text-center text-slate-500 mt-4 bg-white/50 rounded-lg p-3 border border-slate-200">
-                💡 <strong>Move the slider</strong> to leave your price opinion. No signup required to browse!
-              </p>
-            </div>
+  {/* Why Give Opinion - Enhanced */}
+  <div className="space-y-3 mt-6">
+    <div className="bg-white rounded-lg p-4 border border-slate-200 shadow-sm">
+      <div className="flex items-start gap-3">
+        <div className="text-2xl">🏡</div>
+        <div>
+          <h4 className="font-semibold text-slate-800 mb-1">Help the Homeowner</h4>
+          <p className="text-sm text-slate-600">
+            Your opinion gives them confidence to list at the right price and move forward with their sale.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div className="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg p-4 border border-orange-200 shadow-sm">
+      <div className="flex items-start gap-3">
+        <div className="text-2xl">⚡</div>
+        <div>
+          <h4 className="font-semibold text-orange-800 mb-1">Get First Access</h4>
+          <p className="text-sm text-slate-700">
+            Love this property? Register your interest to be <strong>first in line</strong> when it goes to market—way ahead of the competition before it hits the major listing sites.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p className="text-xs text-center text-slate-500 mt-4 bg-white/50 rounded-lg p-3 border border-slate-200">
+    💡 <strong>No signup required</strong> to browse and leave your opinion
+  </p>
+</div>
           </div>
         </div>
       </div>
@@ -956,119 +985,89 @@ export default function PropertyPageClient() {
         )}
       </div>
 
-      {/* About Premarket App Section */}
-      <div className="bg-gradient-to-br from-slate-50 to-slate-100 py-20">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-orange-100 rounded-full mb-6">
-                <svg className="w-5 h-5 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
-                  <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z" />
-                </svg>
-                <span className="text-sm font-bold text-orange-600">EXCLUSIVE ACCESS</span>
-              </div>
-              <h2 className="text-4xl font-bold text-slate-900 mb-6">
-                Discover Properties Before They Hit The Market
-              </h2>
-              <p className="text-lg text-slate-600 mb-8 leading-relaxed">
-                Premarket connects you with exclusive off-market properties and pre-listings before they reach public platforms. Get first access to hidden opportunities and make informed decisions with comprehensive property data.
-              </p>
-              
-              <div className="space-y-4 mb-8">
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                    <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-slate-800 mb-1">Early Access</h3>
-                    <p className="text-slate-600">View properties weeks before they hit the market</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                    <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-slate-800 mb-1">AI-Powered Insights</h3>
-                    <p className="text-slate-600">Get detailed investment analysis and price estimates</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                    <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-slate-800 mb-1">Direct Agent Contact</h3>
-                    <p className="text-slate-600">Connect directly with selling agents</p>
-                  </div>
-                </div>
-              </div>
 
-              <div className="flex flex-col sm:flex-row gap-4">
-                <a href="https://apps.apple.com/au/app/premarket-homes/id6742205449"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block"
-                >
-                  <Image
-                    src="https://www.airtasker.com/images/homepage/apple-store-2022.svg"
-                    alt="Download on the App Store"
-                    width={160}
-                    height={53}
-                  />
-                </a>
-                <a href="https://play.google.com/store/apps/details?id=com.premarkethomes.app&hl=en"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block"
-                >
-                  <Image
-                    src="https://www.airtasker.com/images/homepage/google-play-2022.svg"
-                    alt="Get it on Google Play"
-                    width={160}
-                    height={53}
-                  />
-                </a>
+      {/* How It Works Section */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16 lg:py-20">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl interBold text-gray-900 mb-4">
+            How Premarket Works For Buyers
+          </h2>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Three simple steps to help buyers discover exclusive properties
+          </p>
+        </div>
+
+        {/* Feature Cards */}
+        <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-gray-200">
+            {/* Step 1 */}
+            <div className="p-8 lg:p-10 text-center group hover:bg-gradient-to-br hover:from-orange-50 hover:to-amber-50 transition-all duration-300">
+              <div className="flex justify-center mb-6">
+                <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-amber-100 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                  <svg className="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                  </svg>
+                </div>
               </div>
+              <div className="inline-block px-3 py-1 bg-orange-100 text-orange-600 rounded-full text-xs font-bold mb-4">
+                STEP 1
+              </div>
+              <h3 className="text-2xl interBold text-gray-900 mb-4">
+                Homeowners List For Free
+              </h3>
+              <p className="text-gray-600 leading-relaxed">
+                Property owners can list their home on Premarket at no cost and see what the market thinks it's worth.
+              </p>
             </div>
 
-            {/* Video Player */}
-            <div className="relative">
-              <div className="relative z-10 rounded-2xl overflow-hidden shadow-2xl border-8 border-white">
-                {displayVideoUrl ? (
-                  <video
-                    src={displayVideoUrl}
-                    className="w-full aspect-[9/16] object-cover"
-                    controls
-                    playsInline
-                    poster={imageUrls[0] || ''}
-                  />
-                ) : (
-                  <div className="w-full aspect-[9/16] bg-gradient-to-br from-orange-600 to-amber-600 flex items-center justify-center">
-                    <Image
-                      src="https://premarket.homes/assets/logo.png"
-                      alt="Premarket"
-                      width={200}
-                      height={50}
-                      className="brightness-0 invert"
-                      unoptimized
-                    />
-                  </div>
-                )}
+            {/* Step 2 */}
+            <div className="p-8 lg:p-10 text-center group hover:bg-gradient-to-br hover:from-orange-50 hover:to-amber-50 transition-all duration-300">
+              <div className="flex justify-center mb-6">
+                <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-amber-100 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                  <svg className="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
               </div>
-              <div className="absolute -bottom-6 -right-6 w-72 h-72 bg-orange-200 rounded-full blur-3xl opacity-30" />
-              <div className="absolute -top-6 -left-6 w-72 h-72 bg-amber-200 rounded-full blur-3xl opacity-30" />
+              <div className="inline-block px-3 py-1 bg-orange-100 text-orange-600 rounded-full text-xs font-bold mb-4">
+                STEP 2
+              </div>
+              <h3 className="text-2xl interBold text-gray-900 mb-4">
+                Buyers Give Price Opinions
+              </h3>
+              <p className="text-gray-600 leading-relaxed">
+                Buyers and investors share their price opinions on properties they like and register genuine interest in properties they love.
+              </p>
+            </div>
+
+            {/* Step 3 */}
+            <div className="p-8 lg:p-10 text-center group hover:bg-gradient-to-br hover:from-orange-50 hover:to-amber-50 transition-all duration-300">
+              <div className="flex justify-center mb-6">
+                <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-amber-100 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                  <svg className="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+              </div>
+              <div className="inline-block px-3 py-1 bg-orange-100 text-orange-600 rounded-full text-xs font-bold mb-4">
+                STEP 3
+              </div>
+              <h3 className="text-2xl interBold text-gray-900 mb-4">
+                Home Owner Goes To Market
+              </h3>
+              <p className="text-gray-600 leading-relaxed">
+                Get in lightening fast, before the property hits major websites or starts doing open homes.
+              </p>
             </div>
           </div>
         </div>
       </div>
+
+        {/* <FeaturesBuyers /> */}
+          <StatBox />
+          {/* <Roles /> */}
+          <Testimonials />
+
 
       {/* CTA Section */}
       <div className="bg-gradient-to-r from-orange-600 to-amber-600 py-16">
