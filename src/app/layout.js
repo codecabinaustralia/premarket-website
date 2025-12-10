@@ -42,7 +42,8 @@ export default function RootLayout({ children }) {
           `}
         </Script>
       </head>
-      <body className={`${antons.variable} antialiased bg-white`}>
+      
+      <body className={` antialiased bg-white`}>
         {/* Google Tag Manager (noscript) */}
         <noscript>
           <iframe 
