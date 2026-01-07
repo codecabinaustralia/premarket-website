@@ -42,21 +42,21 @@ export default function Hero() {
 
               {/* Main Heading */}
               <h1 className="text-7xl sm:text-5xl lg:text-[90px] leading-none lg:leading-none interBold text-white mb-3 sm:mb-4 lg:mb-6 drop-shadow-2xl">
-                More Power for Home Owners
+                Test the Market Before Selling Your Property
               </h1>
 
-              <h1 className="text-xl sm:text-2xl lg:text-2xl leading-snug interMedium text-white mb-4 sm:mb-6 drop-shadow-lg">
-                Try Premarket before going to an agent
-              </h1>
+              <h2 className="text-xl sm:text-2xl lg:text-2xl leading-snug interMedium text-white mb-4 sm:mb-6 drop-shadow-lg">
+                Free Off-Market Property Listings for Australian Homeowners
+              </h2>
 
               {/* Subheading with Gradient */}
               <div className="mb-6 sm:mb-8 max-w-full lg:w-2/3">
-                <h2
+                <p
                   className="text-base sm:text-lg lg:text-xl font-medium leading-relaxed text-white drop-shadow-lg"
-        
+
                 >
-                  Either save money or make money by running a free premarket campaign on your home. Get real buyer feedback and interest giving you the confidence to go to market or stay put. No open homes, no sales calls, no fees, no risk.
-                </h2>
+                  Get genuine price opinions from real buyers before committing to an agent. Run a free premarket campaign on your Australian property, receive buyer feedback within 24 hours, and make informed decisions. No open homes, no agent fees, no risk.
+                </p>
               </div>
 
               {/* CTA Buttons */}
@@ -154,10 +154,10 @@ export default function Hero() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
         <div className="text-center mb-8 sm:mb-12">
           <h2 className="text-2xl sm:text-3xl lg:text-5xl interBold text-gray-900 mb-3 sm:mb-4">
-            How It Works
+            How Premarket Works for Australian Homeowners
           </h2>
           <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto px-4">
-            Three simple steps to help homeowners discover their property's true market value
+            Three simple steps to test the market and get real buyer feedback before selling your property
           </p>
         </div>
 
@@ -177,10 +177,10 @@ export default function Hero() {
                 STEP 1
               </div>
               <h3 className="text-xl sm:text-2xl interBold text-gray-900 mb-3 sm:mb-4">
-                Homeowners List For Free
+                List Your Property Free on Premarket
               </h3>
               <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
-                Property owners can list their home on Premarket at no cost and see what the market thinks it's worth.
+                Australian homeowners can create a free off-market listing in minutes and test what buyers think your property is worth—no agent required.
               </p>
             </div>
 

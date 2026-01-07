@@ -1,50 +1,63 @@
-// pages/index.js
-'use client';
-
-import Head from 'next/head';
-import Header from '../components/Header';
+// app/agents/page.js
 import HeroAgents from '../components/HeroAgents';
-import Logos from '../components/Logos';
 import FeaturesAgents from '../components/FeaturesAgents';
-import Roles from '../components/Roles';
-import CallToAction from '../components/CallToAction';
 import FooterLarge from '../components/FooterLarge';
 import TestimonialAgents from '../components/TestimonialsAgents';
 import FAQ from '../components/faq';
-import Welcome from '../components/Welcome';
 import Pricing from '../components/Pricing';
-import PropertyFormModal from '../components/Form';
-import { useModal } from '../context/ModalContext';
-import Countdown from '../components/Countdown';
+import SchemaOrganization from '../components/SchemaOrganization';
+import SchemaWebsite from '../components/SchemaWebsite';
+import SchemaService from '../components/SchemaService';
 
-export default function Home() {
-  const { showModal } = useModal();
+export const metadata = {
+  title: "Real Estate Agent Leads Australia | Win More Listings with Premarket | Agent Pro",
+  description: "Win 10x more listings by offering free premarket campaigns to vendors. Get exclusive seller leads before they hit market. Australian real estate agents using Premarket generate qualified leads and win vendor trust. Start free.",
+  keywords: "real estate agent leads, property leads australia, win listings, vendor leads, real estate CRM, premarket campaign, agent marketing tools, listing generation",
+  openGraph: {
+    title: "Win More Real Estate Listings | Premarket Agent Pro Australia",
+    description: "Generate exclusive seller leads and win more listings by offering free premarket campaigns. Used by top Australian agents.",
+    url: 'https://premarket.homes/agents',
+    siteName: 'Premarket',
+    images: [
+      {
+        url: 'https://premarket.homes/assets/og-image-agents.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Premarket Agent Pro - Win More Listings',
+      },
+    ],
+    locale: 'en_AU',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Real Estate Agent Leads | Premarket Agent Pro',
+    description: 'Win 10x more listings with free premarket campaigns. Generate qualified vendor leads.',
+    images: ['https://premarket.homes/assets/twitter-image-agents.jpg'],
+  },
+  alternates: {
+    canonical: 'https://premarket.homes/agents',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+};
 
+export default function AgentsPage() {
   return (
     <>
-      <Head >
-        <title>Premarket Homes</title>
-        <meta name="description" content="Premarket Homes - Test the market before you sell." />
-      </Head>
-      {/* <Header /> */}
-        {/* <div className="fixed top-0 left-0 w-full z-50">
-              <Countdown />
-            </div> */}
-      
-      {/* <PropertyFormModal /> */}
-      
-        <main>
-       
+      {/* Schema Markup for SEO */}
+      <SchemaOrganization />
+      <SchemaWebsite />
+      <SchemaService />
+
+      <main>
         <HeroAgents />
-        {/* <Logos /> */}
-        {/* <Welcome /> */}
         <FeaturesAgents />
-        {/* <StatBox /> */}
-        { <FAQ /> }
+        <FAQ />
         <TestimonialAgents />
         <Pricing />
-     
-        {/* <CallToAction /> */}
       </main>
       <FooterLarge />
     </>

@@ -8,29 +8,63 @@ const poppins = Poppins({
   weight: ['400', '500', '600', '700', '800'],
   subsets: ['latin'],
   variable: '--font-poppins',
+  display: 'swap',
+  preload: true,
 });
 
 const inter = Inter({
   weight: ['400', '500', '600', '700', '800'],
   subsets: ['latin'],
   variable: '--font-inter',
+  display: 'swap',
+  preload: true,
 });
 
 const antons = Anton({
   weight: ['400'],
   subsets: ['latin'],
   variable: '--font-anton',
+  display: 'swap',
+  preload: true,
 });
 
 export const metadata = {
-  title: "Premarket",
-  description: "Giving the confidence to home owners by collecting real buyer interest and price opinions before going to market. Smart real estate in Australia.",
+  metadataBase: new URL('https://premarket.homes'),
+  title: {
+    default: "Premarket - Australia's Off-Market Property Platform",
+    template: "%s | Premarket"
+  },
+  description: "Australia's leading off-market property platform. Homeowners test the market free, buyers access exclusive pre-market listings, agents win more listings. Operating across Sydney, Melbourne, Brisbane & all of Australia.",
+  applicationName: 'Premarket',
+  authors: [{ name: 'Premarket' }],
+  generator: 'Next.js',
+  keywords: ['premarket', 'off-market properties', 'pre-market listings', 'australia property', 'test the market', 'exclusive property listings', 'real estate australia'],
+  referrer: 'origin-when-cross-origin',
+  creator: 'Premarket',
+  publisher: 'Premarket',
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  icons: {
+    icon: '/iconFull.png',
+    apple: '/apple.png',
+  },
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <head>
+        {/* Viewport and Mobile Meta Tags */}
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Premarket" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="theme-color" content="#e48900" />
+
         {/* Google Tag Manager */}
         <Script id="google-tag-manager" strategy="afterInteractive">
           {`

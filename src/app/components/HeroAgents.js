@@ -45,17 +45,17 @@ export default function Hero() {
 
               {/* Main Heading */}
               <h1 className="text-6xl sm:text-4xl text-shadow-lg leading-none lg:text-[140px] tracking-tight interBold text-white mb-6">
-                How do you get listings?
+                Win More Real Estate Listings in Australia
               </h1>
 
-               <h1 className="text-4xl sm:text-3xl leading-none lg:text-2xl interMedium text-white mb-6">
-                Get real measurable results that build trust and win listings
-            
-              </h1>
+               <h2 className="text-4xl sm:text-3xl leading-none lg:text-2xl interMedium text-white mb-6">
+                Generate Exclusive Seller Leads with Free Premarket Campaigns
+
+              </h2>
 
               {/* Subheading with Gradient */}
               <div className="mb-8 w-full sm:w-2/3">
-                <h2
+                <p
                   className="text-lg sm:text-xl lg:text-xl font-medium leading-relaxed bg-clip-text text-transparent"
                   style={{
                     backgroundImage: `linear-gradient(to right, #fff, #fff)`,
@@ -63,8 +63,8 @@ export default function Hero() {
                     backgroundPositionX: gradientPos,
                   }}
                 >
-                  Agents using Premarket are winning 10x more listings by running free premarket campaigns for their prospects.
-                </h2>
+                  Australian real estate agents using Premarket win 10x more listings by offering free premarket campaigns to vendors. Build trust, demonstrate value, and generate qualified seller leads before your competition.
+                </p>
               </div>
 
               {/* CTA Buttons */}

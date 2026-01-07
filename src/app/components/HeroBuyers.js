@@ -44,21 +44,21 @@ export default function Hero() {
 
               {/* Main Heading */}
               <h1 className="text-5xl sm:text-6xl lg:text-7xl xl:text-[120px] leading-tight lg:leading-none tracking-tight interBold text-white mb-6 drop-shadow-2xl">
-                Find exclusive properties
+                Off-Market Properties Australia
               </h1>
 
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-2xl leading-snug interMedium text-white mb-6 drop-shadow-lg">
-                Express your interest before the crowds
-              </h1>
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl xl:text-2xl leading-snug interMedium text-white mb-6 drop-shadow-lg">
+                Access Exclusive Pre-Market Listings Before They Go Public
+              </h2>
 
               {/* Subheading with Gradient */}
               <div className="mb-8 w-full lg:w-2/3">
-                <h2
+                <p
                   className="text-base sm:text-lg lg:text-xl font-medium leading-relaxed text-white drop-shadow-lg"
-            
+
                 >
-                  Give your price opinions on homes you like or express your interest on homes you love. When the homes go to market you'll be the first to know about it.
-                </h2>
+                  Discover off-market properties across Sydney, Melbourne, Brisbane and all of Australia before they hit realestate.com.au or Domain. Express your interest and get first access when properties officially list.
+                </p>
               </div>
 
               {/* CTA Buttons */}
