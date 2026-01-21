@@ -522,37 +522,44 @@ export default function PropertyPageClient() {
     <div className="min-h-screen bg-white overflow-x-hidden">
       <Nav />
 
-      {/* Minimal Header Bar */}
-      <div className="bg-gradient-to-r from-slate-900 to-slate-800 py-3">
-        <div className="max-w-7xl mx-auto px-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="px-3 py-1 bg-gradient-to-r from-[#e48900] to-[#c64500] text-white text-xs font-bold rounded-full">PRE-MARKET</span>
-            <span className="text-white/90 text-sm font-medium hidden sm:inline">{address}</span>
-          </div>
-          <div className="flex items-center gap-2 text-white/80 text-sm">
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-            </svg>
-            <span className="sm:hidden text-xs">{address?.split(',')[0]}</span>
+      {/* Hero Section with Full-Width Gradient */}
+      <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-hidden">
+        {/* Background gradient decorations - full width */}
+        <div className="absolute inset-0 opacity-30">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-orange-500 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500 rounded-full blur-3xl" />
+        </div>
+
+        {/* Address Bar */}
+        <div className="relative z-10 py-4">
+          <div className="max-w-7xl mx-auto px-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="px-3 py-1 bg-gradient-to-r from-[#e48900] to-[#c64500] text-white text-xs font-bold rounded-full">PRE-MARKET</span>
+              <span className="text-white/90 text-sm font-medium hidden sm:inline">{address}</span>
+            </div>
+            <div className="flex items-center gap-2 text-white/80 text-sm">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+              </svg>
+              <span className="sm:hidden text-xs">{address?.split(',')[0]}</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Hero Image Gallery */}
-      <div className="relative bg-slate-900">
-        <div className="max-w-7xl mx-auto">
+        {/* Image Gallery */}
+        <div className="max-w-7xl mx-auto px-4 pb-6 relative z-10">
           {imageUrls.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-1 md:gap-2">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-3">
               {/* Main large image */}
               <div
-                className="md:col-span-2 relative aspect-[16/10] md:aspect-[16/9] cursor-pointer group"
+                className="md:col-span-2 relative aspect-[16/10] md:aspect-[16/9] cursor-pointer group rounded-xl overflow-hidden"
                 onClick={() => openLightbox(0)}
               >
                 <Image
                   src={imageUrls[0]}
                   alt={title}
                   fill
-                  className="object-cover group-hover:brightness-90 transition-all"
+                  className="object-cover group-hover:brightness-90 group-hover:scale-105 transition-all duration-300"
                   unoptimized
                   priority
                 />
@@ -563,18 +570,18 @@ export default function PropertyPageClient() {
                 </div>
               </div>
               {/* Side images */}
-              <div className="hidden md:grid grid-rows-2 gap-2">
+              <div className="hidden md:grid grid-rows-2 gap-3">
                 {imageUrls.slice(1, 3).map((url, index) => (
                   <div
                     key={index}
-                    className="relative aspect-[16/9] cursor-pointer group"
+                    className="relative aspect-[16/9] cursor-pointer group rounded-xl overflow-hidden"
                     onClick={() => openLightbox(index + 1)}
                   >
                     <Image
                       src={url}
                       alt={`${title} - ${index + 2}`}
                       fill
-                      className="object-cover group-hover:brightness-90 transition-all"
+                      className="object-cover group-hover:brightness-90 group-hover:scale-105 transition-all duration-300"
                       unoptimized
                     />
                     {index === 1 && imageUrls.length > 3 && (
