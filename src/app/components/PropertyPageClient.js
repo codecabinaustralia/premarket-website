@@ -70,6 +70,9 @@ export default function PropertyPageClient() {
   // Nearby properties state
   const [nearbyProperties, setNearbyProperties] = useState([]);
 
+  // Sticky price bar visibility
+  const [showStickyPrice, setShowStickyPrice] = useState(false);
+
   const trackEvent = (eventName, eventParams = {}) => {
     if (typeof window !== 'undefined' && window.dataLayer) {
       window.dataLayer.push({
@@ -157,6 +160,25 @@ export default function PropertyPageClient() {
 
     fetchNearbyProperties();
   }, [property, propertyId]);
+
+  // Sticky price bar scroll visibility
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY;
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+
+      const showThreshold = 400; // Show after scrolling past hero
+      const hideThreshold = documentHeight - windowHeight - 600; // Hide near bottom CTA
+
+      setShowStickyPrice(scrollPosition > showThreshold && scrollPosition < hideThreshold);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    handleScroll();
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const incrementPropertyViews = async (propId) => {
     try {
@@ -1032,6 +1054,105 @@ export default function PropertyPageClient() {
       {/* Footer */}
       <AgentFooter />
 
+      {/* Sticky Price Opinion Bar */}
+      <motion.div
+        initial={{ y: 100, opacity: 0 }}
+        animate={{
+          y: showStickyPrice ? 0 : 100,
+          opacity: showStickyPrice ? 1 : 0
+        }}
+        transition={{ duration: 0.3, ease: 'easeOut' }}
+        className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none"
+      >
+        <div className="max-w-7xl mx-auto px-4 pb-4">
+          <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl shadow-2xl border border-slate-700 pointer-events-auto">
+            <div className="px-4 sm:px-6 py-4">
+              {/* Mobile Layout */}
+              <div className="flex flex-col gap-3 sm:hidden">
+                <div className="flex items-center justify-between">
+                  <span className="text-white/80 text-sm font-medium">Your Price Opinion</span>
+                  <motion.span
+                    key={priceOpinion}
+                    initial={{ scale: 1.1 }}
+                    animate={{ scale: 1 }}
+                    className="text-2xl font-bold text-orange-400"
+                  >
+                    {formatMoney(priceOpinion)}
+                  </motion.span>
+                </div>
+                <input
+                  type="range"
+                  min={minPrice}
+                  max={maxPrice}
+                  step={1000}
+                  value={priceOpinion}
+                  onChange={(e) => setPriceOpinion(Number(e.target.value))}
+                  onMouseDown={() => setIsSliding(true)}
+                  onMouseUp={() => setIsSliding(false)}
+                  onTouchStart={() => setIsSliding(true)}
+                  onTouchEnd={() => setIsSliding(false)}
+                  className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer sticky-slider"
+                />
+                <div className="flex justify-between text-xs text-slate-500">
+                  <span>{formatCompact(minPrice)}</span>
+                  <span>{formatCompact(maxPrice)}</span>
+                </div>
+                <button
+                  onClick={handleRegisterInterest}
+                  className="w-full bg-gradient-to-r from-[#e48900] to-[#c64500] text-white font-bold py-3 rounded-xl"
+                >
+                  Register Interest
+                </button>
+              </div>
+
+              {/* Desktop Layout */}
+              <div className="hidden sm:flex items-center gap-6">
+                <div className="flex-shrink-0">
+                  <span className="text-white/80 text-sm font-medium block mb-1">Your Price Opinion</span>
+                  <motion.span
+                    key={priceOpinion}
+                    initial={{ scale: 1.1 }}
+                    animate={{ scale: 1 }}
+                    className="text-3xl font-bold text-orange-400"
+                  >
+                    {formatMoney(priceOpinion)}
+                  </motion.span>
+                </div>
+
+                <div className="flex-1 px-4">
+                  <input
+                    type="range"
+                    min={minPrice}
+                    max={maxPrice}
+                    step={1000}
+                    value={priceOpinion}
+                    onChange={(e) => setPriceOpinion(Number(e.target.value))}
+                    onMouseDown={() => setIsSliding(true)}
+                    onMouseUp={() => setIsSliding(false)}
+                    onTouchStart={() => setIsSliding(true)}
+                    onTouchEnd={() => setIsSliding(false)}
+                    className="w-full h-3 bg-slate-700 rounded-lg appearance-none cursor-pointer sticky-slider"
+                  />
+                  <div className="flex justify-between mt-1 text-xs text-slate-500">
+                    <span>{formatCompact(minPrice)}</span>
+                    <span>{formatCompact(maxPrice)}</span>
+                  </div>
+                </div>
+
+                <motion.button
+                  onClick={handleRegisterInterest}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="flex-shrink-0 bg-gradient-to-r from-[#e48900] to-[#c64500] text-white font-bold px-6 py-3 rounded-xl shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all"
+                >
+                  Register Interest
+                </motion.button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
       {/* Price Opinion Modal */}
       {showPriceOpinionModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -1621,6 +1742,27 @@ export default function PropertyPageClient() {
           cursor: pointer;
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
           border: 3px solid #ea580c;
+        }
+
+        .sticky-slider::-webkit-slider-thumb {
+          appearance: none;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: linear-gradient(to right, #e48900, #c64500);
+          cursor: pointer;
+          box-shadow: 0 2px 8px rgba(228, 137, 0, 0.4);
+          border: 2px solid white;
+        }
+
+        .sticky-slider::-moz-range-thumb {
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: linear-gradient(to right, #e48900, #c64500);
+          cursor: pointer;
+          box-shadow: 0 2px 8px rgba(228, 137, 0, 0.4);
+          border: 2px solid white;
         }
       `}</style>
     </div>
