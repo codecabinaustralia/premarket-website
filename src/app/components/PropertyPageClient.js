@@ -6,10 +6,9 @@ import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { db } from '../firebase/clientApp';
 import { doc, getDoc, addDoc, setDoc, collection, serverTimestamp, updateDoc, query, where, orderBy, limit, getDocs, increment } from 'firebase/firestore';
 import Image from 'next/image';
-import FooterLarge from '../components/FooterLarge';
+import { motion } from 'framer-motion';
+import AgentFooter from '../components/AgentFooter';
 import Nav from '../components/Nav';
-import Testimonials from '../components/Testimonials';
-import StatBox from '../components/Stats';
 
 // Generate a session ID for tracking price opinions
 const getSessionId = () => {
@@ -60,6 +59,16 @@ export default function PropertyPageClient() {
   const [password, setPassword] = useState('');
   const [signupError, setSignupError] = useState('');
   const [showThankYou, setShowThankYou] = useState(false);
+
+  // Buyer preferences state
+  const [preferredLocations, setPreferredLocations] = useState('');
+  const [preferredType, setPreferredType] = useState('');
+  const [minBedrooms, setMinBedrooms] = useState('Any');
+  const [minBudget, setMinBudget] = useState('Any');
+  const [maxBudget, setMaxBudget] = useState('Any');
+
+  // Nearby properties state
+  const [nearbyProperties, setNearbyProperties] = useState([]);
 
   const trackEvent = (eventName, eventParams = {}) => {
     if (typeof window !== 'undefined' && window.dataLayer) {
@@ -119,6 +128,35 @@ export default function PropertyPageClient() {
     };
     fetchProperty();
   }, [propertyId]);
+
+  // Fetch nearby properties based on geohash - only active properties
+  useEffect(() => {
+    if (!property) return;
+
+    const fetchNearbyProperties = async () => {
+      try {
+        // Query active properties
+        const nearbyQuery = query(
+          collection(db, 'properties'),
+          where('active', '==', true),
+          where('visibility', '==', true),
+          limit(12)
+        );
+
+        const snapshot = await getDocs(nearbyQuery);
+        const nearby = snapshot.docs
+          .filter(doc => doc.id !== propertyId) // Exclude current property
+          .map(doc => ({ id: doc.id, ...doc.data() }))
+          .slice(0, 4);
+
+        setNearbyProperties(nearby);
+      } catch (error) {
+        console.error('Error fetching nearby properties:', error);
+      }
+    };
+
+    fetchNearbyProperties();
+  }, [property, propertyId]);
 
   const incrementPropertyViews = async (propId) => {
     try {
@@ -331,6 +369,12 @@ export default function PropertyPageClient() {
 
       const userId = userCredential.user.uid;
 
+      // Helper to parse budget string to number
+      const parseBudget = (val) => {
+        if (val === 'Any') return null;
+        return parseInt(val.replace(/[^0-9]/g, '')) || null;
+      };
+
       await setDoc(doc(db, "users", userId), {
         uid: userId,
         email: email.trim().toLowerCase(),
@@ -339,11 +383,22 @@ export default function PropertyPageClient() {
         phone: "",
         pro: false,
         agent: false,
+        buyer: true,
         created: serverTimestamp(),
-        tags: ["new"],
+        tags: ["new", "buyer"],
         avatar: "https://premarketvideos.b-cdn.net/assets/icon.png",
         activeCampaigns: 0,
-        availableCampaigns: 1
+        availableCampaigns: 1,
+        // Buyer preferences for property matching
+        buyerPreferences: {
+          locations: preferredLocations.split(',').map(s => s.trim()).filter(Boolean),
+          propertyType: preferredType || null,
+          minBedrooms: minBedrooms === 'Any' ? null : parseInt(minBedrooms),
+          minBudget: parseBudget(minBudget),
+          maxBudget: parseBudget(maxBudget),
+          notifyNewProperties: true,
+          createdAt: serverTimestamp(),
+        }
       });
 
       // Track successful signup
@@ -442,184 +497,200 @@ export default function PropertyPageClient() {
                               propertyData?.property_type || 'Property';
 
   return (
-    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
+    <div className="min-h-screen bg-white overflow-x-hidden">
       <Nav />
 
-      {/* Hero Video Section */}
-      <div className="relative bg-orange-600">
-        <div className="max-w-s mx-auto">
-          <div className="relative">
-            {/* <video
-              src="https://premarketvideos.b-cdn.net/manualVideos/6b98cc64-ae9e-472c-8b3e-6e4fd08a55e0.mp4"
-              className="sm:block hidden blur-lg w-full h-full object-cover"
-              autoPlay
-              muted
-              loop
-              playsInline
-            /> */}
-            {/* <div className="absolute inset-0 bg-gradient-to-t from-red/60 to-transparent" /> */}
-            
-            {/* Overlay Text */}
-            <div className="py-10 inset-0 flex items-center justify-center">
-              <div className="text-center px-4 max-w-4xl">
-               
-                <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 leading-tight drop-shadow-lg">
-                  Exclusive Premarket Properties
-                </h1>
+      {/* Minimal Header Bar */}
+      <div className="bg-gradient-to-r from-slate-900 to-slate-800 py-3">
+        <div className="max-w-7xl mx-auto px-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="px-3 py-1 bg-gradient-to-r from-[#e48900] to-[#c64500] text-white text-xs font-bold rounded-full">PRE-MARKET</span>
+            <span className="text-white/90 text-sm font-medium hidden sm:inline">{address}</span>
+          </div>
+          <div className="flex items-center gap-2 text-white/80 text-sm">
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+            </svg>
+            <span className="sm:hidden text-xs">{address?.split(',')[0]}</span>
+          </div>
+        </div>
+      </div>
 
-                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600/90 backdrop-blur-sm rounded-full mb-4 border border-orange-400">
-                  <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
-                  </svg>
-                  <span className="text-sm font-bold text-white"> {address}</span>
+      {/* Hero Image Gallery */}
+      <div className="relative bg-slate-900">
+        <div className="max-w-7xl mx-auto">
+          {imageUrls.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-1 md:gap-2">
+              {/* Main large image */}
+              <div
+                className="md:col-span-2 relative aspect-[16/10] md:aspect-[16/9] cursor-pointer group"
+                onClick={() => openLightbox(0)}
+              >
+                <Image
+                  src={imageUrls[0]}
+                  alt={title}
+                  fill
+                  className="object-cover group-hover:brightness-90 transition-all"
+                  unoptimized
+                  priority
+                />
+                <div className="absolute bottom-4 left-4 flex items-center gap-2">
+                  <span className="px-3 py-1.5 bg-gradient-to-r from-[#e48900] to-[#c64500] text-white text-xs font-bold rounded-lg shadow-lg">
+                    {displayPropertyType}
+                  </span>
                 </div>
-{/* 
-                <video
-              src="https://premarketvideos.b-cdn.net/manualVideos/6b98cc64-ae9e-472c-8b3e-6e4fd08a55e0.mp4"
-              className="w-full sm:w-1/2 mx-auto rounded-lg shadow-lg my-4"
-              autoPlay
-         controls
-              playsInline
-            /> */}
-
-                {/* <p className="text-xl md:text-2xl text-white/95 mb-6 drop-shadow-md">
-                   Scroll down to give your price opinion on<br />
-                </p> */}
-
+              </div>
+              {/* Side images */}
+              <div className="hidden md:grid grid-rows-2 gap-2">
+                {imageUrls.slice(1, 3).map((url, index) => (
+                  <div
+                    key={index}
+                    className="relative aspect-[16/9] cursor-pointer group"
+                    onClick={() => openLightbox(index + 1)}
+                  >
+                    <Image
+                      src={url}
+                      alt={`${title} - ${index + 2}`}
+                      fill
+                      className="object-cover group-hover:brightness-90 transition-all"
+                      unoptimized
+                    />
+                    {index === 1 && imageUrls.length > 3 && (
+                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                        <span className="text-white text-lg font-bold">+{imageUrls.length - 3} photos</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
-      {/* Trust Indicators */}
-      <div className="bg-white border-b border-slate-200 py-8">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="grid md:grid-cols-4 gap-6 text-center">
-            <div className="flex flex-col items-center">
-              <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-3">
-                <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-              </div>
-              <h3 className="font-bold text-slate-800 mb-1">EXCLUSIVE PROPERTIES</h3>
-              <p className="text-sm text-slate-600">Not found anywhere else</p>
-            </div>
-            <div className="flex flex-col items-center">
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-3">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h3 className="font-bold text-slate-800 mb-1">No Obligation</h3>
-              <p className="text-sm text-slate-600">Just leave an opinion and browse</p>
-            </div>
-            <div className="flex flex-col items-center">
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-3">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                </svg>
-              </div>
-              <h3 className="font-bold text-slate-800 mb-1">No Sales Calls</h3>
-              <p className="text-sm text-slate-600">We don't every contact you</p>
-            </div>
-            <div className="flex flex-col items-center">
-              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mb-3">
-                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-              </div>
-              <h3 className="font-bold text-slate-800 mb-1">Early Access</h3>
-              <p className="text-sm text-slate-600">See properties before anyone else does</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 py-8 lg:py-12">
+        <div className="grid lg:grid-cols-5 gap-8 lg:gap-12">
 
-      {/* Property Info and Price Opinion Container */}
-      <div className="max-w-7xl mx-auto px-4 py-12">
-        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
-          <div className="grid lg:grid-cols-2">
-            {/* Left: Property Details */}
-            <div className="p-8 lg:p-12">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-full mb-4">
-                <span className="text-xs font-semibold text-slate-700">{displayPropertyType}</span>
-              </div>
-              
-              <h2 className="text-xl md:text-xl bg-orange-100 rounded-xl p-4 font-bold mb-3 leading-tight text-orange-700">
-                Leave your price opinion on the home
-              </h2>
-
-              <img src={imageUrls[0]} className='rounded-lg object-cover w-full h-56 my-4' />
-              
-              <h2 className="text-2xl md:text-3xl font-bold mb-3 leading-tight text-slate-900">
+          {/* Left: Property Details (3 cols) */}
+          <div className="lg:col-span-3">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-2">
                 {title}
-              </h2>
-              
+              </h1>
               <div className="flex items-center gap-2 text-slate-600 mb-6">
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                 </svg>
-                <span className="text-sm font-medium">{address}</span>
+                <span className="font-medium">{address}</span>
               </div>
 
               {/* Property Features */}
               <div className="flex flex-wrap gap-3 mb-8">
                 {bedrooms && (
-                  <div className="flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-lg">
-                    <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 rounded-xl">
+                    <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                     </svg>
-                    <span className="font-semibold text-slate-900">{bedrooms} Beds</span>
+                    <span className="font-semibold text-slate-800">{bedrooms} Beds</span>
                   </div>
                 )}
                 {bathrooms && (
-                  <div className="flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-lg">
-                    <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 rounded-xl">
+                    <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
                     </svg>
-                    <span className="font-semibold text-slate-900">{bathrooms} Baths</span>
+                    <span className="font-semibold text-slate-800">{bathrooms} Baths</span>
                   </div>
                 )}
                 {carSpaces && (
-                  <div className="flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-lg">
-                    <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 rounded-xl">
+                    <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
                     </svg>
-                    <span className="font-semibold text-slate-900">{carSpaces} Cars</span>
+                    <span className="font-semibold text-slate-800">{carSpaces} Cars</span>
                   </div>
                 )}
                 {squareFootage && (
-                  <div className="flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-lg">
-                    <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 rounded-xl">
+                    <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
                     </svg>
-                    <span className="font-semibold text-slate-900">{squareFootage}m²</span>
+                    <span className="font-semibold text-slate-800">{squareFootage}m²</span>
+                  </div>
+                )}
+                {propertyData?.land_size && (
+                  <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 rounded-xl">
+                    <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                    </svg>
+                    <span className="font-semibold text-slate-800">{propertyData.land_size}m² land</span>
                   </div>
                 )}
               </div>
 
-              {/* Image Gallery Grid */}
-              {imageUrls.length > 0 && (
+              {/* What is Premarket Info Box */}
+              <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-6 border border-orange-200 mb-8">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-[#e48900] to-[#c64500] rounded-xl flex items-center justify-center flex-shrink-0">
+                    <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-lg mb-2">What is a Pre-Market Property?</h3>
+                    <p className="text-slate-700 leading-relaxed">
+                      This property is <strong>fully prepared and ready to sell</strong>. The owner is testing market interest before publicly listing. You have exclusive early access to view, share your price opinion, and register interest before it hits Domain or REA.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Description */}
+              {description && (
                 <div className="mb-8">
-                  <h3 className="text-sm font-bold text-slate-700 mb-3">Property Photos</h3>
-                  <div className="grid grid-cols-4 gap-2">
-                    {imageUrls.slice(0, 8).map((url, index) => (
+                  <h3 className="text-xl font-bold text-slate-900 mb-4">About This Property</h3>
+                  <div className="prose prose-slate max-w-none">
+                    <p className={`text-slate-600 leading-relaxed ${!showFullDescription && 'line-clamp-4'}`}>
+                      {description}
+                    </p>
+                    {description.length > 300 && (
+                      <button
+                        onClick={() => setShowFullDescription(!showFullDescription)}
+                        className="text-orange-600 font-semibold mt-2 hover:text-orange-700"
+                      >
+                        {showFullDescription ? 'Show less' : 'Read more'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* More Photos Grid - Mobile */}
+              {imageUrls.length > 1 && (
+                <div className="md:hidden mb-8">
+                  <h3 className="text-lg font-bold text-slate-900 mb-3">More Photos</h3>
+                  <div className="grid grid-cols-3 gap-2">
+                    {imageUrls.slice(1, 7).map((url, index) => (
                       <div
                         key={index}
-                        onClick={() => openLightbox(index)}
-                        className="relative aspect-square rounded-lg overflow-hidden cursor-pointer group"
+                        onClick={() => openLightbox(index + 1)}
+                        className="relative aspect-square rounded-lg overflow-hidden cursor-pointer"
                       >
                         <Image
                           src={url}
-                          alt={`${title} - ${index + 1}`}
+                          alt={`${title} - ${index + 2}`}
                           fill
-                          className="object-cover group-hover:scale-110 transition-transform duration-300"
+                          className="object-cover"
                           unoptimized
                         />
-                        {index === 7 && imageUrls.length > 8 && (
-                          <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
-                            <span className="text-white text-sm font-bold">+{imageUrls.length - 8}</span>
+                        {index === 5 && imageUrls.length > 7 && (
+                          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                            <span className="text-white text-sm font-bold">+{imageUrls.length - 7}</span>
                           </div>
                         )}
                       </div>
@@ -628,491 +699,338 @@ export default function PropertyPageClient() {
                 </div>
               )}
 
-              {/* Additional Property Details */}
-              {(propertyData?.year_built || propertyData?.land_size) && (
-                <div className="grid grid-cols-2 gap-3 mb-8">
-                  {propertyData?.year_built && (
-                    <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
-                      <div className="text-xs text-slate-600 mb-1">Year Built</div>
+              {/* Property Details Grid */}
+              {propertyData?.year_built && (
+                <div className="mb-8">
+                  <h3 className="text-lg font-bold text-slate-900 mb-3">Property Details</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-slate-50 rounded-xl p-4">
+                      <div className="text-sm text-slate-500 mb-1">Year Built</div>
                       <div className="text-lg font-bold text-slate-900">{propertyData.year_built}</div>
                     </div>
-                  )}
-                  {propertyData?.land_size && (
-                    <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
-                      <div className="text-xs text-slate-600 mb-1">Land Size</div>
-                      <div className="text-lg font-bold text-slate-900">{propertyData.land_size}m²</div>
+                    <div className="bg-slate-50 rounded-xl p-4">
+                      <div className="text-sm text-slate-500 mb-1">Property Type</div>
+                      <div className="text-lg font-bold text-slate-900">{displayPropertyType}</div>
                     </div>
-                  )}
+                  </div>
                 </div>
               )}
 
-              {/* Key Metrics */}
-              {(priceEstimate || rentalEstimate) && (
-                <div className="grid grid-cols-2 gap-4">
-                  {priceEstimate?.last_sold_price && (
-                    <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-4 border border-blue-200">
-                      <div className="text-xs text-blue-700 mb-1 font-semibold">Last Sold</div>
-                      <div className="text-xl font-bold text-blue-900">{formatMoney(priceEstimate.last_sold_price)}</div>
-                    </div>
-                  )}
-                  {rentalEstimate?.rental_yield && (
-                    <div className="bg-gradient-to-br from-orange-50 to-yellow-50 rounded-xl p-4 border border-orange-200">
-                      <div className="text-xs text-orange-700 mb-1 font-semibold">Rental Yield</div>
-                      <div className="text-xl font-bold text-orange-900">{rentalEstimate.rental_yield.toFixed(1)}%</div>
-                    </div>
-                  )}
+              {/* Map Section */}
+              {property?.location?.latitude && property?.location?.longitude && (
+                <div className="mb-8">
+                  <h3 className="text-lg font-bold text-slate-900 mb-3">Location</h3>
+                  <div className="rounded-xl overflow-hidden border border-slate-200">
+                    <iframe
+                      width="100%"
+                      height="300"
+                      style={{ border: 0 }}
+                      loading="lazy"
+                      allowFullScreen
+                      src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${property.location.latitude},${property.location.longitude}&zoom=15`}
+                    />
+                  </div>
                 </div>
               )}
-            </div>
+            </motion.div>
+          </div>
 
-            {/* Right: Price Opinion Slider */}
-          <div className="bg-gradient-to-br from-slate-50 to-slate-100 p-8 lg:p-12 border-l border-slate-200">
-  <div className="text-center mb-6">
-    <h3 className="text-2xl sm:text-4xl font-bold text-slate-800 mb-2">
-      Your Price Opinion
-    </h3>
-    <p className="text-sm text-slate-600">
-      Help the homeowner understand market sentiment
-    </p>
-  </div>
+          {/* Right: Price Opinion Panel (2 cols) */}
+          <div className="lg:col-span-2">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="sticky top-24"
+            >
+              <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+                <div className="bg-gradient-to-r from-orange-500 to-amber-500 p-6 text-center">
+                  <h3 className="text-xl font-bold text-white mb-1">What&apos;s Your Price Opinion?</h3>
+                  <p className="text-white/90 text-sm">No signup required</p>
+                </div>
 
-  {/* Big Price Display */}
-  <div className="text-center mb-8">
-    <div className="text-5xl font-bold text-orange-600">
-      {formatMoney(priceOpinion)}
-    </div>
-  </div>
+                <div className="p-6">
+                  {/* Big Price Display */}
+                  <div className="text-center mb-6">
+                    <motion.div
+                      className="text-4xl md:text-5xl font-bold text-orange-600"
+                      key={priceOpinion}
+                      initial={{ scale: 1.05 }}
+                      animate={{ scale: 1 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      {formatMoney(priceOpinion)}
+                    </motion.div>
+                  </div>
 
-  {/* Slider */}
-  <div className="mb-6">
-    <input
-      type="range"
-      min={minPrice}
-      max={maxPrice}
-      step={1000}
-      value={priceOpinion}
-      onChange={(e) => setPriceOpinion(Number(e.target.value))}
-      onMouseDown={() => setIsSliding(true)}
-      onMouseUp={() => setIsSliding(false)}
-      onTouchStart={() => setIsSliding(true)}
-      onTouchEnd={() => setIsSliding(false)}
-      className="w-full h-3 bg-gradient-to-r from-orange-400 via-yellow-400 to-green-500 rounded-lg appearance-none cursor-pointer slider-thumb"
-    />
-    
-    {/* Min/Max Labels */}
-    <div className="flex justify-between mt-3 text-sm">
-      <div className="text-left">
-        <div className="text-xs text-slate-500 font-semibold">Low</div>
-        <div className="font-bold text-slate-700">{formatCompact(minPrice)}</div>
-      </div>
-      <div className="text-right">
-        <div className="text-xs text-slate-500 font-semibold">High</div>
-        <div className="font-bold text-slate-700">{formatCompact(maxPrice)}</div>
-      </div>
-    </div>
-  </div>
+                  {/* Slider */}
+                  <div className="mb-6">
+                    <input
+                      type="range"
+                      min={minPrice}
+                      max={maxPrice}
+                      step={1000}
+                      value={priceOpinion}
+                      onChange={(e) => setPriceOpinion(Number(e.target.value))}
+                      onMouseDown={() => setIsSliding(true)}
+                      onMouseUp={() => setIsSliding(false)}
+                      onTouchStart={() => setIsSliding(true)}
+                      onTouchEnd={() => setIsSliding(false)}
+                      className="w-full h-3 bg-gradient-to-r from-orange-400 via-yellow-400 to-green-500 rounded-lg appearance-none cursor-pointer slider-thumb"
+                    />
+                    <div className="flex justify-between mt-2 text-xs text-slate-500">
+                      <span>{formatCompact(minPrice)}</span>
+                      <span>{formatCompact(maxPrice)}</span>
+                    </div>
+                  </div>
 
-  {/* Why Give Opinion - Enhanced */}
-  <div className="space-y-3 mt-6">
-    <div className="bg-white rounded-lg p-4 border border-slate-200 shadow-sm">
-      <div className="flex items-start gap-3">
-        <div className="text-2xl">🏡</div>
-        <div>
-          <h4 className="font-semibold text-slate-800 mb-1">Help the Homeowner</h4>
-          <p className="text-sm text-slate-600">
-            Your opinion gives them confidence to list at the right price and move forward with their sale.
-          </p>
-        </div>
-      </div>
-    </div>
+                  {/* Register Interest CTA */}
+                  <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-4 mb-4 border border-orange-200">
+                    <h4 className="font-bold text-slate-800 mb-2 flex items-center gap-2">
+                      <svg className="w-5 h-5 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
+                      </svg>
+                      Interested in this property?
+                    </h4>
+                    <p className="text-sm text-slate-600 mb-3">
+                      Register to be first in line when it goes to market
+                    </p>
+                    <button
+                      onClick={handleRegisterInterest}
+                      className="w-full bg-gradient-to-r from-[#e48900] to-[#c64500] text-white font-bold py-3 rounded-xl hover:shadow-lg transition-all"
+                    >
+                      Register My Interest
+                    </button>
+                  </div>
 
-    <div className="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg p-4 border border-orange-200 shadow-sm">
-      <div className="flex items-start gap-3">
-        <div className="text-2xl">⚡</div>
-        <div>
-          <h4 className="font-semibold text-orange-800 mb-1">Get First Access</h4>
-          <p className="text-sm text-slate-700">
-            Love this property? Register your interest to be <strong>first in line</strong> when it goes to market—way ahead of the competition before it hits the major listing sites.
-          </p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <p className="text-xs text-center text-slate-500 mt-4 bg-white/50 rounded-lg p-3 border border-slate-200">
-    💡 <strong>No signup required</strong> to browse and leave your opinion
-  </p>
-</div>
+                  <p className="text-xs text-center text-slate-500">
+                    100% free • No obligation • Your agent sent you this link
+                  </p>
+                </div>
+              </div>
+            </motion.div>
           </div>
         </div>
       </div>
 
-      {/* Property Details Section */}
-      <div className="max-w-7xl mx-auto px-4 py-12">
-        {/* About Property and Map Side by Side */}
-        <div className="grid lg:grid-cols-2 gap-8 mb-12">
-          {/* About This Property */}
-          <div className="bg-white rounded-2xl shadow-lg p-8 border border-slate-200">
-            <h2 className="text-2xl font-bold text-slate-800 mb-4">About This Property</h2>
-            <div className="relative">
-              <p className={`text-slate-700 leading-relaxed ${!showFullDescription ? 'line-clamp-6' : ''}`}>
-                {description}
+      {/* How You Got Here Section */}
+      <div className="bg-gradient-to-br from-slate-50 to-white py-16 lg:py-20">
+        <div className="max-w-5xl mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-4">
+              Why You&apos;re Seeing This Property
+            </h2>
+            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+              Your agent sent you this exclusive pre-market listing
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* Step 1 */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200"
+            >
+              <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl flex items-center justify-center mb-4">
+                <span className="text-white font-bold text-lg">1</span>
+              </div>
+              <h3 className="text-lg font-bold text-slate-900 mb-2">Agent Lists Property</h3>
+              <p className="text-slate-600 text-sm leading-relaxed">
+                A real estate agent adds this property to Premarket to test market interest before going public.
               </p>
-              {!showFullDescription && description && description.length > 300 && (
-                <div className="absolute bottom-0 left-0 w-full h-20 bg-gradient-to-t from-white to-transparent pointer-events-none" />
-              )}
-            </div>
-            {description && description.length > 300 && (
-              <button
-                onClick={() => setShowFullDescription(!showFullDescription)}
-                className="text-orange-600 font-semibold mt-4 hover:text-orange-700 transition-colors inline-flex items-center gap-1"
-              >
-                {showFullDescription ? (
-                  <>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                    </svg>
-                    Show Less
-                  </>
-                ) : (
-                  <>
-                    Read More
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </>
-                )}
-              </button>
-            )}
+            </motion.div>
+
+            {/* Step 2 */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200"
+            >
+              <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl flex items-center justify-center mb-4">
+                <span className="text-white font-bold text-lg">2</span>
+              </div>
+              <h3 className="text-lg font-bold text-slate-900 mb-2">Agent Sends You the Link</h3>
+              <p className="text-slate-600 text-sm leading-relaxed">
+                Because you&apos;re in their buyer database, they&apos;ve sent you early access to this exclusive property.
+              </p>
+            </motion.div>
+
+            {/* Step 3 */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3 }}
+              className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200"
+            >
+              <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl flex items-center justify-center mb-4">
+                <span className="text-white font-bold text-lg">3</span>
+              </div>
+              <h3 className="text-lg font-bold text-slate-900 mb-2">You Get First Access</h3>
+              <p className="text-slate-600 text-sm leading-relaxed">
+                View, share your opinion, and register interest—all before it hits Domain, REA, or open homes.
+              </p>
+            </motion.div>
           </div>
-
-          {/* Map */}
-          {address && (
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-slate-200">
-              <div className="p-6 border-b border-slate-200">
-                <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                  <svg className="w-5 h-5 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                  </svg>
-                  Location
-                </h3>
-                <p className="text-sm text-slate-600 mt-1">{address}</p>
-              </div>
-              <iframe
-                width="100%"
-                height="350"
-                style={{ border: 0 }}
-                loading="lazy"
-                allowFullScreen
-                src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodeURIComponent(address)}`}
-              />
-            </div>
-          )}
         </div>
+      </div>
 
-        {/* Investment Analysis */}
-        {(rentalEstimate || areaStats || priceEstimate) && (
-          <div className="space-y-8 mb-12">
-            <h2 className="text-3xl font-bold text-slate-800">Investment Analysis</h2>
-            
-            {/* Price Estimate Details */}
-            {priceEstimate && (
-              <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl shadow-lg p-8 border border-purple-200">
-                <h3 className="text-xl font-bold text-purple-900 mb-6 flex items-center gap-2">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  Price History & Growth
-                </h3>
-                <div className="grid md:grid-cols-3 gap-6">
-                  {priceEstimate.last_sold_price && (
-                    <div className="bg-white/70 rounded-lg p-4">
-                      <div className="text-sm text-purple-700 mb-1">Last Sold Price</div>
-                      <div className="text-2xl font-bold text-purple-900">
-                        {formatMoney(priceEstimate.last_sold_price)}
-                      </div>
-                      {priceEstimate.last_sold_date && (
-                        <div className="text-xs text-purple-600 mt-1">
-                          {new Date(priceEstimate.last_sold_date).toLocaleDateString('en-AU', { 
-                            year: 'numeric', 
-                            month: 'short', 
-                            day: 'numeric' 
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  {priceEstimate.price_growth_since_last_sold !== undefined && (
-                    <div className="bg-white/70 rounded-lg p-4">
-                      <div className="text-sm text-purple-700 mb-1">Growth Since Purchase</div>
-                      <div className={`text-2xl font-bold ${priceEstimate.price_growth_since_last_sold >= 0 ? 'text-orange-600' : 'text-red-600'}`}>
-                        {priceEstimate.price_growth_since_last_sold >= 0 ? '+' : ''}{priceEstimate.price_growth_since_last_sold.toFixed(1)}%
-                      </div>
-                    </div>
-                  )}
-                  {priceEstimate.price_growth_since_last_month !== undefined && (
-                    <div className="bg-white/70 rounded-lg p-4">
-                      <div className="text-sm text-purple-700 mb-1">Monthly Growth</div>
-                      <div className={`text-2xl font-bold ${priceEstimate.price_growth_since_last_month >= 0 ? 'text-orange-600' : 'text-red-600'}`}>
-                        {priceEstimate.price_growth_since_last_month >= 0 ? '+' : ''}{priceEstimate.price_growth_since_last_month.toFixed(1)}%
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            <div className="grid md:grid-cols-2 gap-8">
-              {/* Rental Estimate */}
-              {rentalEstimate?.estimated_rental_income && (
-                <div className="bg-gradient-to-br from-orange-50 to-yellow-50 rounded-2xl shadow-lg p-8 border border-orange-200">
-                  <h3 className="text-xl font-bold text-orange-900 mb-4 flex items-center gap-2">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                    </svg>
-                    Rental Estimate
-                  </h3>
-                  <div className="text-4xl font-bold text-orange-900 mb-2">
-                    {formatMoney(rentalEstimate.estimated_rental_income)}/wk
-                  </div>
-                  {rentalEstimate.rental_yield && (
-                    <div className="text-lg text-orange-800 mb-4">
-                      Rental Yield: <span className="font-bold">{rentalEstimate.rental_yield.toFixed(2)}%</span>
-                    </div>
-                  )}
-                  {rentalEstimate.low_range && rentalEstimate.high_range && (
-                    <div className="mt-4">
-                      <div className="h-2 bg-gradient-to-r from-amber-400 to-orange-600 rounded-full mb-2" />
-                      <div className="flex justify-between text-sm text-orange-800 font-semibold">
-                        <span>{formatMoney(rentalEstimate.low_range)}</span>
-                        <span>{formatMoney(rentalEstimate.high_range)}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Area Statistics */}
-              {areaStats && (
-                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl shadow-lg p-8 border border-blue-200">
-                  <h3 className="text-xl font-bold text-blue-900 mb-4 flex items-center gap-2">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                    {areaStats.suburb || 'Area Statistics'}
-                  </h3>
-                  {areaStats.median_price && (
-                    <div className="mb-4">
-                      <div className="text-sm text-blue-700 mb-1">Median Price</div>
-                      <div className="text-3xl font-bold text-blue-900">
-                        {formatMoney(areaStats.median_price)}
-                      </div>
-                    </div>
-                  )}
-                  <div className="grid grid-cols-2 gap-4 mt-4">
-                    {areaStats.past_12_month_growth !== undefined && (
-                      <div className="bg-white/70 rounded-lg p-3">
-                        <div className="text-xs text-blue-700 mb-1">12mo Growth</div>
-                        <div className="text-lg font-bold text-orange-600">
-                          {areaStats.past_12_month_growth >= 0 ? '+' : ''}{areaStats.past_12_month_growth.toFixed(1)}%
-                        </div>
-                      </div>
-                    )}
-                    {areaStats.population && (
-                      <div className="bg-white/70 rounded-lg p-3">
-                        <div className="text-xs text-blue-700 mb-1">Population</div>
-                        <div className="text-lg font-bold text-blue-900">
-                          {areaStats.population.toLocaleString()}
-                        </div>
-                      </div>
-                    )}
-                    {areaStats.median_age && (
-                      <div className="bg-white/70 rounded-lg p-3">
-                        <div className="text-xs text-blue-700 mb-1">Median Age</div>
-                        <div className="text-lg font-bold text-blue-900">
-                          {areaStats.median_age} yrs
-                        </div>
-                      </div>
-                    )}
-                    {areaStats.median_household_income && (
-                      <div className="bg-white/70 rounded-lg p-3">
-                        <div className="text-xs text-blue-700 mb-1">Median Income</div>
-                        <div className="text-lg font-bold text-blue-900">
-                          ${areaStats.median_household_income}/wk
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
+      {/* Nearby Properties Section */}
+      {nearbyProperties.length > 0 && (
+        <div className="py-16 lg:py-20 bg-gradient-to-br from-slate-50 to-white">
+          <div className="max-w-7xl mx-auto px-4">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-4">
+                More Properties Nearby
+              </h2>
+              <p className="text-lg text-slate-600">
+                Discover other exclusive pre-market properties in your area
+              </p>
             </div>
 
-            {/* Additional Demographics */}
-            {(areaStats?.household_type || areaStats?.occupancy) && (
-              <div className="bg-white rounded-2xl shadow-lg p-8 border border-slate-200">
-                <h3 className="text-xl font-bold text-slate-800 mb-6">Local Demographics</h3>
-                <div className="grid md:grid-cols-2 gap-6">
-                  {areaStats.household_type && (
-                    <div className="flex items-start gap-4">
-                      <div className="p-3 bg-indigo-100 rounded-lg">
-                        <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {nearbyProperties.map((prop) => (
+                <a
+                  key={prop.id}
+                  href={`/find-property?propertyId=${prop.id}`}
+                  className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden group hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                >
+                  <div className="aspect-video relative overflow-hidden">
+                    {prop.imageUrls?.[0] ? (
+                      <Image
+                        src={prop.imageUrls[0]}
+                        alt={prop.title || 'Property'}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        unoptimized
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-slate-200 flex items-center justify-center">
+                        <svg className="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                         </svg>
                       </div>
-                      <div>
-                        <div className="text-sm text-slate-600 mb-1">Household Type</div>
-                        <div className="text-lg font-semibold text-slate-800">{areaStats.household_type}</div>
-                      </div>
+                    )}
+                    <div className="absolute top-3 left-3">
+                      <span className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-semibold">
+                        Pre-Market
+                      </span>
                     </div>
-                  )}
-                  {areaStats.occupancy && (
-                    <div className="flex items-start gap-4">
-                      <div className="p-3 bg-purple-100 rounded-lg">
-                        <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                        </svg>
-                      </div>
-                      <div>
-                        <div className="text-sm text-slate-600 mb-1">Occupancy</div>
-                        <div className="text-lg font-semibold text-slate-800">{areaStats.occupancy}</div>
-                      </div>
+                  </div>
+                  <div className="p-5">
+                    <h3 className="font-bold text-slate-900 mb-1 truncate">
+                      {prop.title || 'Property'}
+                    </h3>
+                    <p className="text-sm text-slate-600 mb-3 truncate flex items-center gap-1">
+                      <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                      </svg>
+                      {prop.address || 'Address unavailable'}
+                    </p>
+                    <div className="flex items-center gap-3 text-sm text-slate-700 mb-4">
+                      {prop.bedrooms && (
+                        <span className="flex items-center gap-1">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                          </svg>
+                          {prop.bedrooms}
+                        </span>
+                      )}
+                      {prop.bathrooms && (
+                        <span className="flex items-center gap-1">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
+                          </svg>
+                          {prop.bathrooms}
+                        </span>
+                      )}
+                      {prop.carSpaces && (
+                        <span className="flex items-center gap-1">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+                          </svg>
+                          {prop.carSpaces}
+                        </span>
+                      )}
                     </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-
-      {/* How It Works Section */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16 lg:py-20">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl interBold text-gray-900 mb-4">
-            How Premarket Works For Buyers
-          </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Three simple steps to help buyers discover exclusive properties
-          </p>
-        </div>
-
-        {/* Feature Cards */}
-        <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden">
-          <div className="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-gray-200">
-            {/* Step 1 */}
-            <div className="p-8 lg:p-10 text-center group hover:bg-gradient-to-br hover:from-orange-50 hover:to-amber-50 transition-all duration-300">
-              <div className="flex justify-center mb-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-amber-100 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                  <svg className="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                  </svg>
-                </div>
-              </div>
-              <div className="inline-block px-3 py-1 bg-orange-100 text-orange-600 rounded-full text-xs font-bold mb-4">
-                STEP 1
-              </div>
-              <h3 className="text-2xl interBold text-gray-900 mb-4">
-                Homeowners List For Free
-              </h3>
-              <p className="text-gray-600 leading-relaxed">
-                Property owners can list their home on Premarket at no cost and see what the market thinks it's worth.
-              </p>
-            </div>
-
-            {/* Step 2 */}
-            <div className="p-8 lg:p-10 text-center group hover:bg-gradient-to-br hover:from-orange-50 hover:to-amber-50 transition-all duration-300">
-              <div className="flex justify-center mb-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-amber-100 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                  <svg className="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-              </div>
-              <div className="inline-block px-3 py-1 bg-orange-100 text-orange-600 rounded-full text-xs font-bold mb-4">
-                STEP 2
-              </div>
-              <h3 className="text-2xl interBold text-gray-900 mb-4">
-                Buyers Give Price Opinions
-              </h3>
-              <p className="text-gray-600 leading-relaxed">
-                Buyers and investors share their price opinions on properties they like and register genuine interest in properties they love.
-              </p>
-            </div>
-
-            {/* Step 3 */}
-            <div className="p-8 lg:p-10 text-center group hover:bg-gradient-to-br hover:from-orange-50 hover:to-amber-50 transition-all duration-300">
-              <div className="flex justify-center mb-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-amber-100 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                  <svg className="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </div>
-              </div>
-              <div className="inline-block px-3 py-1 bg-orange-100 text-orange-600 rounded-full text-xs font-bold mb-4">
-                STEP 3
-              </div>
-              <h3 className="text-2xl interBold text-gray-900 mb-4">
-                Home Owner Goes To Market
-              </h3>
-              <p className="text-gray-600 leading-relaxed">
-                Get in lightening fast, before the property hits major websites or starts doing open homes.
-              </p>
+                    <div className="w-full text-center py-2 bg-gradient-to-r from-[#e48900] to-[#c64500] text-white text-sm font-semibold rounded-lg">
+                      View Property
+                    </div>
+                  </div>
+                </a>
+              ))}
             </div>
           </div>
         </div>
-      </div>
-
-        {/* <FeaturesBuyers /> */}
-          <StatBox />
-          {/* <Roles /> */}
-          <Testimonials />
+      )}
 
 
-      {/* CTA Section */}
-      <div className="bg-gradient-to-r from-orange-600 to-amber-600 py-16">
-        <div className="max-w-4xl mx-auto px-4 text-center text-white">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            View More Exclusive Properties on Premarket
-          </h2>
-          <p className="text-xl mb-2 text-white/90">
-            Get in first before they go to market
-          </p>
-          <p className="text-lg mb-8 text-white/80">
-            100% free to use • No hidden fees • Access thousands of pre-market listings
-          </p>
 
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <a href="https://apps.apple.com/au/app/premarket-homes/id6742205449"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block"
-            >
-              <Image
-                src="https://www.airtasker.com/images/homepage/apple-store-2022.svg"
-                alt="Download on the App Store"
-                width={160}
-                height={53}
-              />
-            </a>
-            <a href="https://play.google.com/store/apps/details?id=com.premarkethomes.app&hl=en"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block"
-            >
-              <Image
-                src="https://www.airtasker.com/images/homepage/google-play-2022.svg"
-                alt="Get it on Google Play"
-                width={160}
-                height={53}
-              />
-            </a>
-          </div>
+      {/* CTA Section - Dark Purple Style */}
+      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-20 lg:py-28 relative overflow-hidden">
+        {/* Background decoration */}
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-orange-500 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500 rounded-full blur-3xl" />
+        </div>
+
+        <div className="max-w-5xl mx-auto px-4 text-center relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6">
+              Discover More <span className="bg-gradient-to-r from-orange-400 to-orange-300 bg-clip-text text-transparent">Exclusive Properties</span>
+            </h2>
+            <p className="text-xl lg:text-2xl text-slate-300 mb-4 leading-relaxed">
+              Get early access to properties before they hit major listing sites
+            </p>
+            <p className="text-lg text-slate-400 mb-10">
+              100% free to browse • No hidden fees • Share opinions, register interest
+            </p>
+
+            <div className="flex flex-col sm:flex-row justify-center gap-4">
+              <motion.a
+                href="/"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.98 }}
+                className="inline-flex items-center justify-center px-10 py-5 text-xl font-bold text-slate-900 bg-gradient-to-r from-orange-400 to-orange-300 rounded-lg shadow-2xl shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-300"
+              >
+                <svg className="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                Browse All Properties
+              </motion.a>
+              <motion.button
+                onClick={() => setShowSignupModal(true)}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.98 }}
+                className="inline-flex items-center justify-center px-10 py-5 text-xl font-bold text-white bg-white/10 border-2 border-white/20 rounded-lg hover:bg-white/20 transition-all duration-300 backdrop-blur-sm"
+              >
+                <svg className="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                Get Notified of New Properties
+              </motion.button>
+            </div>
+          </motion.div>
         </div>
       </div>
 
       {/* Footer */}
-      <FooterLarge />
+      <AgentFooter />
 
       {/* Price Opinion Modal */}
       {showPriceOpinionModal && (
@@ -1144,63 +1062,34 @@ export default function PropertyPageClient() {
               </p>
             </div>
 
-            <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl p-6 mb-6 border border-orange-200">
-              <h4 className="font-bold text-slate-800 mb-3 flex items-center gap-2">
-                <svg className="w-5 h-5 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                </svg>
-                Want to See More Exclusive Properties?
-              </h4>
-              <p className="text-sm text-slate-700 mb-4">
-                Download the Premarket app to view <strong>exclusive properties not found on Domain, Realestate.com.au or anywhere else</strong>. No obligation, completely free!
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <a href="https://apps.apple.com/au/app/premarket-homes/id6742205449"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block"
+            {/* Two Options Side by Side */}
+            <div className="space-y-4">
+              {/* Primary: Register Interest */}
+              <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl p-6 border-2 border-orange-200">
+                <h4 className="font-bold text-lg text-slate-800 mb-2">
+                  Seriously Interested in This Property?
+                </h4>
+                <p className="text-sm text-slate-600 mb-4">
+                  Be <strong>first in line</strong> when this property goes to market - before open homes, before major listing sites
+                </p>
+                <button
+                  onClick={handleRegisterInterest}
+                  className="w-full bg-gradient-to-r from-[#e48900] to-[#c64500] text-white font-bold py-4 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
                 >
-                  <Image
-                    src="https://www.airtasker.com/images/homepage/apple-store-2022.svg"
-                    alt="Download on the App Store"
-                    width={140}
-                    height={47}
-                  />
-                </a>
-                <a href="https://play.google.com/store/apps/details?id=com.premarkethomes.app&hl=en"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block"
-                >
-                  <Image
-                    src="https://www.airtasker.com/images/homepage/google-play-2022.svg"
-                    alt="Get it on Google Play"
-                    width={140}
-                    height={47}
-                  />
-                </a>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                  </svg>
+                  Register My Interest
+                </button>
               </div>
-            </div>
 
-            <div className="border-t border-slate-200 pt-6">
-              <h4 className="font-bold text-slate-800 mb-3 text-center">
-                Seriously Interested in This Property?
-              </h4>
-              <p className="text-sm text-slate-600 mb-4 text-center">
-                Register your interest to be <strong>first in line</strong> when they decide to go to market
-              </p>
+              {/* Secondary: Continue Browsing */}
               <button
-                onClick={handleRegisterInterest}
-                className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                onClick={() => setShowPriceOpinionModal(false)}
+                className="w-full py-3 text-slate-600 hover:text-slate-900 font-medium transition-colors"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
-                <span>Register My Interest</span>
+                Continue Browsing
               </button>
-              <p className="text-xs text-center text-slate-500 mt-3">
-                Optional • We'll only notify you about this specific property
-              </p>
             </div>
           </div>
         </div>
@@ -1359,60 +1248,51 @@ export default function PropertyPageClient() {
 
             {showThankYou ? (
               <div className="text-center">
+                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
                 <h3 className="text-3xl font-bold text-slate-800 mb-3">
-                  Thank You!
+                  You're All Set!
                 </h3>
                 <p className="text-lg text-slate-600 mb-6">
-                  Your account has been created successfully. Download the app to discover more exclusive pre-market properties.
+                  Your account has been created and your interest in this property has been registered.
                 </p>
 
-                <div className="bg-teal-50 mb-6 text-left text-teal-700 rounded-lg p-4 text-sm leading-relaxed">
-                  <strong className="block text-lg mb-1">Are you a homeowner/investor?</strong>
-                  <p className="mb-3 text-xs">
-                    Did you know you can run your own <strong>Premarket campaign for FREE</strong>?  
-                    Get the confidence you need before committing to an agent.
-                  </p>
-
-                  <ul className="list-disc text-xs list-inside space-y-1">
-                    <li className="mb-3"><strong>Leasing a property?</strong> No worries — Premarket means no intrusive marketing and no scaring tenants.</li>
-                    <li className="mb-3"><strong>Curious about your property's true value?</strong> Skip the generic market reports and get real interest directly from buyers.</li>
-                    <li className="mb-3"><strong>Completely free.</strong> Set up and go live in minutes with your own premarket campaign.</li>
+                <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl p-6 mb-6 border border-orange-200">
+                  <h4 className="font-bold text-slate-800 mb-2">What Happens Next?</h4>
+                  <ul className="text-sm text-slate-700 text-left space-y-2">
+                    <li className="flex items-start gap-2">
+                      <svg className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      We'll notify you when this property goes to market
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <svg className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      You'll receive alerts for matching properties in your area
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <svg className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Access to exclusive pre-market properties - 100% free
+                    </li>
                   </ul>
                 </div>
 
-                <div className="bg-orange-50 border border-orange-200 rounded-xl p-6 mb-6">
-                  <h4 className="font-bold text-slate-800 mb-3">Download Premarket App</h4>
-                  <div className="flex flex-col gap-3">
-                    <a href="https://apps.apple.com/au/app/premarket-homes/id6742205449"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-block mx-auto"
-                    >
-                      <Image
-                        src="https://www.airtasker.com/images/homepage/apple-store-2022.svg"
-                        alt="Download on the App Store"
-                        width={160}
-                        height={53}
-                      />
-                    </a>
-                    <a href="https://play.google.com/store/apps/details?id=com.premarkethomes.app&hl=en"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-block mx-auto"
-                    >
-                      <Image
-                        src="https://www.airtasker.com/images/homepage/google-play-2022.svg"
-                        alt="Get it on Google Play"
-                        width={160}
-                        height={53}
-                      />
-                    </a>
-                  </div>
-                </div>
-
-                <p className="text-sm text-slate-500">
-                  Access exclusive properties before they hit the market
-                </p>
+                <a
+                  href="/"
+                  className="inline-flex items-center justify-center w-full px-6 py-4 bg-gradient-to-r from-[#e48900] to-[#c64500] text-white font-bold rounded-xl hover:shadow-lg transition-all"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  Browse More Properties
+                </a>
               </div>
             ) : (
               <>
@@ -1489,6 +1369,114 @@ export default function PropertyPageClient() {
                     />
                   </div>
 
+                  {/* Buyer Preferences Section */}
+                  <div className="border-t border-slate-200 pt-4 mt-4">
+                    <h4 className="font-semibold text-slate-800 mb-2 text-sm">
+                      What are you looking for? (Optional)
+                    </h4>
+                    <p className="text-xs text-slate-500 mb-4">
+                      We'll notify you of matching properties - 100% free
+                    </p>
+
+                    {/* Preferred Locations */}
+                    <div className="mb-3">
+                      <label className="block text-xs font-medium text-slate-600 mb-1">
+                        Preferred Suburbs/Areas
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g., Mosman, North Sydney, Manly"
+                        value={preferredLocations}
+                        onChange={(e) => setPreferredLocations(e.target.value)}
+                        className="text-gray-900 placeholder-gray-400 w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                      />
+                    </div>
+
+                    {/* Property Type */}
+                    <div className="mb-3">
+                      <label className="block text-xs font-medium text-slate-600 mb-1">
+                        Property Type
+                      </label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {['House', 'Apartment', 'Townhouse'].map((type) => (
+                          <button
+                            key={type}
+                            type="button"
+                            onClick={() => setPreferredType(preferredType === type ? '' : type)}
+                            className={`px-2 py-1.5 rounded-lg border text-xs font-medium transition-all ${
+                              preferredType === type
+                                ? 'border-orange-500 bg-orange-50 text-orange-600'
+                                : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                            }`}
+                          >
+                            {type}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Minimum Bedrooms */}
+                    <div className="mb-3">
+                      <label className="block text-xs font-medium text-slate-600 mb-1">
+                        Minimum Bedrooms
+                      </label>
+                      <div className="flex gap-1">
+                        {['Any', '1+', '2+', '3+', '4+'].map((option) => (
+                          <button
+                            key={option}
+                            type="button"
+                            onClick={() => setMinBedrooms(option)}
+                            className={`flex-1 px-2 py-1.5 rounded-lg border text-xs font-medium transition-all ${
+                              minBedrooms === option
+                                ? 'border-orange-500 bg-orange-50 text-orange-600'
+                                : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                            }`}
+                          >
+                            {option}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Budget Range */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">
+                          Min Budget
+                        </label>
+                        <select
+                          value={minBudget}
+                          onChange={(e) => setMinBudget(e.target.value)}
+                          className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded-lg text-slate-700 focus:ring-2 focus:ring-orange-500"
+                        >
+                          <option value="Any">Any</option>
+                          <option value="500000">$500K</option>
+                          <option value="750000">$750K</option>
+                          <option value="1000000">$1M</option>
+                          <option value="1500000">$1.5M</option>
+                          <option value="2000000">$2M</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">
+                          Max Budget
+                        </label>
+                        <select
+                          value={maxBudget}
+                          onChange={(e) => setMaxBudget(e.target.value)}
+                          className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded-lg text-slate-700 focus:ring-2 focus:ring-orange-500"
+                        >
+                          <option value="Any">Any</option>
+                          <option value="750000">$750K</option>
+                          <option value="1000000">$1M</option>
+                          <option value="1500000">$1.5M</option>
+                          <option value="2000000">$2M</option>
+                          <option value="3000000">$3M+</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
                   {signupError && (
                     <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
                       {signupError}
@@ -1498,9 +1486,9 @@ export default function PropertyPageClient() {
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-gradient-to-r from-[#e48900] to-[#c64500] text-white font-bold py-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {submitting ? 'Creating Account...' : 'Create Account'}
+                    {submitting ? 'Creating Account...' : 'Create Account & Get Notified'}
                   </button>
                 </form>
 

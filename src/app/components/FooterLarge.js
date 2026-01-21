@@ -81,37 +81,21 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Download App */}
+          {/* Stay Connected */}
           <div>
-            <h3 className="font-bold mb-4">Download App</h3>
-            <div className="space-y-3">
-              
-                <a href="https://apps.apple.com/au/app/premarket-homes/id6742205449"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block w-fit"
-              >
-                <Image
-                  src="https://www.airtasker.com/images/homepage/apple-store-2022.svg"
-                  alt="Download on the App Store"
-                  width={130}
-                  height={43}
-                />
-              </a>
-              
-                <a href="https://play.google.com/store/apps/details?id=com.premarkethomes.app&hl=en"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block w-fit"
-              >
-                <Image
-                  src="https://www.airtasker.com/images/homepage/google-play-2022.svg"
-                  alt="Get it on Google Play"
-                  width={130}
-                  height={43}
-                />
-              </a>
-            </div>
+            <h3 className="font-bold mb-4">Stay Connected</h3>
+            <p className="text-slate-400 text-sm mb-4">
+              Get early access to exclusive pre-market properties.
+            </p>
+            <a
+              href="/"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#e48900] to-[#c64500] text-white text-sm font-semibold rounded-lg hover:opacity-90 transition-opacity"
+            >
+              Browse Properties
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </a>
           </div>
         </div>
 

@@ -43,35 +43,6 @@ export default function Nav() {
               ))}
             </nav>
 
-            {/* Desktop Store Buttons */}
-            <div className="hidden lg:flex items-center space-x-3">
-              <a
-                href="https://apps.apple.com/au/app/premarket-homes/id6742205449"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="transition-transform hover:scale-105"
-              >
-                <Image
-                  src="https://www.airtasker.com/images/homepage/apple-store-2022.svg"
-                  alt="Download on the App Store"
-                  width={120}
-                  height={40}
-                />
-              </a>
-              <a
-                href="https://play.google.com/store/apps/details?id=com.premarkethomes.app&hl=en"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="transition-transform hover:scale-105"
-              >
-                <Image
-                  src="https://www.airtasker.com/images/homepage/google-play-2022.svg"
-                  alt="Get it on Google Play"
-                  width={120}
-                  height={40}
-                />
-              </a>
-            </div>
 
             {/* Mobile Menu Button */}
             <button
@@ -111,39 +82,6 @@ export default function Nav() {
               </a>
             ))}
 
-            {/* Mobile Store Buttons */}
-            <div className="pt-4 space-y-3">
-              <a
-                href="https://apps.apple.com/au/app/premarket-homes/id6742205449"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <Image
-                  src="https://www.airtasker.com/images/homepage/apple-store-2022.svg"
-                  alt="Download on the App Store"
-                  width={140}
-                  height={46}
-                  className="mx-auto"
-                />
-              </a>
-              <a
-                href="https://play.google.com/store/apps/details?id=com.premarkethomes.app&hl=en"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <Image
-                  src="https://www.airtasker.com/images/homepage/google-play-2022.svg"
-                  alt="Get it on Google Play"
-                  width={140}
-                  height={46}
-                  className="mx-auto"
-                />
-              </a>
-            </div>
           </div>
         </div>
       </header>
