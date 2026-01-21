@@ -5,6 +5,9 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { loadStripe } from '@stripe/stripe-js';
+import { db } from '../../firebase/clientApp';
+import { doc, getDoc } from 'firebase/firestore';
+import ReactMarkdown from 'react-markdown';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_live_51OG4Sx2CS9oaniYak1bfqxMlOlJW90ZhPdSHqnCPZi0VRHvHnZLLZEtdvpNjpzxbT1qJqzPRSqEsRB3qJrOZg6Ol00XqKjxBvZ');
 
@@ -13,6 +16,8 @@ export default function AgentTerms() {
   const [accepted, setAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [uid, setUid] = useState(null);
+  const [terms, setTerms] = useState('');
+  const [loadingTerms, setLoadingTerms] = useState(true);
 
   useEffect(() => {
     const storedUid = sessionStorage.getItem('agentSignupUid');
@@ -21,6 +26,23 @@ export default function AgentTerms() {
       return;
     }
     setUid(storedUid);
+
+    // Fetch terms from Firebase
+    const fetchTerms = async () => {
+      try {
+        const docRef = doc(db, 'settings', 'agentSignup');
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists() && docSnap.data().terms) {
+          setTerms(docSnap.data().terms);
+        }
+      } catch (error) {
+        console.error('Error fetching terms:', error);
+      } finally {
+        setLoadingTerms(false);
+      }
+    };
+
+    fetchTerms();
   }, [router]);
 
   const handleContinue = async () => {
@@ -95,71 +117,21 @@ export default function AgentTerms() {
         {/* Terms Card */}
         <div className="bg-white rounded-2xl shadow-2xl p-8">
           {/* Terms Content */}
-          <div className="h-80 overflow-y-auto mb-6 p-4 bg-slate-50 rounded-xl border border-slate-200 text-sm text-slate-700 space-y-4">
-            <h3 className="font-bold text-slate-900">Premarket Agent Pro Subscription Agreement</h3>
-
-            <p>
-              By subscribing to Premarket Agent Pro, you agree to the following terms:
-            </p>
-
-            <h4 className="font-semibold text-slate-900 mt-4">1. Subscription Service</h4>
-            <p>
-              Your subscription provides access to Premarket&apos;s agent tools, including unlimited pre-market campaigns,
-              buyer feedback collection, and lead management features. The subscription is billed monthly and
-              renews automatically until cancelled.
-            </p>
-
-            <h4 className="font-semibold text-slate-900 mt-4">2. Payment Terms</h4>
-            <p>
-              Payment is processed securely through Stripe. Your subscription will automatically renew each month.
-              You may cancel at any time through your account settings or by contacting support.
-            </p>
-
-            <h4 className="font-semibold text-slate-900 mt-4">3. Refund Policy</h4>
-            <p>
-              We offer a satisfaction guarantee. If Premarket doesn&apos;t add measurable value to your listing
-              conversations within the first 30 days, contact us for a full refund.
-            </p>
-
-            <h4 className="font-semibold text-slate-900 mt-4">4. Acceptable Use</h4>
-            <p>
-              You agree to use Premarket in accordance with all applicable laws and regulations.
-              You will not misuse the platform, share your credentials, or engage in any activity
-              that could harm other users or the platform.
-            </p>
-
-            <h4 className="font-semibold text-slate-900 mt-4">5. Data & Privacy</h4>
-            <p>
-              We collect and process data as described in our Privacy Policy. By using Premarket,
-              you consent to this data collection and processing. We take your privacy seriously
-              and implement industry-standard security measures.
-            </p>
-
-            <h4 className="font-semibold text-slate-900 mt-4">6. Intellectual Property</h4>
-            <p>
-              All content, features, and functionality of Premarket are owned by Premarket Australia
-              and are protected by intellectual property laws. You are granted a limited license
-              to use the platform for your real estate business.
-            </p>
-
-            <h4 className="font-semibold text-slate-900 mt-4">7. Limitation of Liability</h4>
-            <p>
-              Premarket is provided &quot;as is&quot; without warranties of any kind. We are not liable
-              for any indirect, incidental, or consequential damages arising from your use of the platform.
-            </p>
-
-            <h4 className="font-semibold text-slate-900 mt-4">8. Changes to Terms</h4>
-            <p>
-              We may update these terms from time to time. Continued use of Premarket after changes
-              constitutes acceptance of the new terms.
-            </p>
-
-            <p className="mt-6 text-slate-500">
-              For the full Terms & Conditions, please visit{' '}
-              <a href="/terms" target="_blank" className="text-orange-600 hover:underline">
-                premarket.homes/terms
-              </a>
-            </p>
+          <div className="h-80 overflow-y-auto mb-6 p-4 bg-slate-50 rounded-xl border border-slate-200 text-sm text-slate-700">
+            {loadingTerms ? (
+              <div className="flex items-center justify-center h-full">
+                <svg className="animate-spin w-8 h-8 text-orange-500" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+              </div>
+            ) : terms ? (
+              <div className="prose prose-sm prose-slate max-w-none prose-headings:text-slate-900 prose-h2:text-lg prose-h2:font-bold prose-h2:mt-6 prose-h2:mb-2 prose-h3:text-base prose-h3:font-semibold prose-h3:mt-4 prose-h3:mb-2 prose-p:text-slate-700 prose-p:leading-relaxed prose-ul:my-2 prose-li:my-1">
+                <ReactMarkdown>{terms}</ReactMarkdown>
+              </div>
+            ) : (
+              <p className="text-slate-500">Terms and conditions could not be loaded. Please try again later.</p>
+            )}
           </div>
 
           {/* Checkbox */}

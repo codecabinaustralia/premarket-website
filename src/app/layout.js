@@ -51,6 +51,28 @@ export const metadata = {
     icon: '/iconFull.png',
     apple: '/apple.png',
   },
+  openGraph: {
+    title: "Premarket - Australia's Off-Market Property Platform",
+    description: "Australia's leading off-market property platform. Homeowners test the market free, buyers access exclusive pre-market listings.",
+    url: 'https://premarket.homes',
+    siteName: 'Premarket',
+    images: [
+      {
+        url: '/iconFull.png',
+        width: 512,
+        height: 512,
+        alt: 'Premarket',
+      },
+    ],
+    locale: 'en_AU',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: "Premarket - Australia's Off-Market Property Platform",
+    description: "Australia's leading off-market property platform. Homeowners test the market free, buyers access exclusive pre-market listings.",
+    images: ['/iconFull.png'],
+  },
 };
 
 export default function RootLayout({ children }) {

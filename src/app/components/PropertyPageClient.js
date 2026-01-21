@@ -535,13 +535,21 @@ export default function PropertyPageClient() {
           <div className="max-w-7xl mx-auto px-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <span className="px-3 py-1 bg-gradient-to-r from-[#e48900] to-[#c64500] text-white text-xs font-bold rounded-full">PRE-MARKET</span>
-              <span className="text-white/90 text-sm font-medium hidden sm:inline">{address}</span>
+              <span className="text-white/90 text-sm font-medium hidden sm:inline">
+                {property?.showSuburbOnly
+                  ? (address?.split(',')[1]?.trim() || property?.location?.suburb || 'Suburb')
+                  : address}
+              </span>
             </div>
             <div className="flex items-center gap-2 text-white/80 text-sm">
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
               </svg>
-              <span className="sm:hidden text-xs">{address?.split(',')[0]}</span>
+              <span className="sm:hidden text-xs">
+                {property?.showSuburbOnly
+                  ? (address?.split(',')[1]?.trim() || property?.location?.suburb || 'Suburb')
+                  : address?.split(',')[0]}
+              </span>
             </div>
           </div>
         </div>
@@ -615,7 +623,11 @@ export default function PropertyPageClient() {
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                 </svg>
-                <span className="font-medium">{address}</span>
+                <span className="font-medium">
+                  {property?.showSuburbOnly
+                    ? (address?.split(',')[1]?.trim() || property?.location?.suburb || 'Suburb unavailable')
+                    : address}
+                </span>
               </div>
 
               {/* Property Features */}
@@ -964,7 +976,9 @@ export default function PropertyPageClient() {
                       <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                       </svg>
-                      {prop.address || 'Address unavailable'}
+                      {prop.showSuburbOnly
+                        ? (prop.address?.split(',')[1]?.trim() || prop.location?.suburb || 'Suburb unavailable')
+                        : (prop.address || 'Address unavailable')}
                     </p>
                     <div className="flex items-center gap-3 text-sm text-slate-700 mb-4">
                       {prop.bedrooms && (
@@ -1032,7 +1046,7 @@ export default function PropertyPageClient() {
 
             <div className="flex flex-col sm:flex-row justify-center gap-4">
               <motion.a
-                href="/"
+                href="/listings"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.98 }}
                 className="inline-flex items-center justify-center px-10 py-5 text-xl font-bold text-slate-900 bg-gradient-to-r from-orange-400 to-orange-300 rounded-lg shadow-2xl shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-300"
@@ -1413,7 +1427,7 @@ export default function PropertyPageClient() {
                 </div>
 
                 <a
-                  href="/"
+                  href="/listings"
                   className="inline-flex items-center justify-center w-full px-6 py-4 bg-gradient-to-r from-[#e48900] to-[#c64500] text-white font-bold rounded-xl hover:shadow-lg transition-all"
                 >
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
