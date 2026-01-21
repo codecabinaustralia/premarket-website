@@ -1,4 +1,6 @@
 // components/Features.js
+'use client';
+
 import { useModal } from '../context/ModalContext';
 
 export default function Pricing() {

@@ -1,29 +1,33 @@
-// app/page.js
-import Hero from './components/Hero';
-import Features from './components/Features';
-import FooterLarge from './components/FooterLarge';
-import Testimonials from './components/Testimonials';
-import FAQHomeOwners from './components/FAQHomeOwners';
+// app/page.js - Agent-Focused Homepage
+import Nav from './components/Nav';
+import AgentHero from './components/AgentHero';
+import AgentProblem from './components/AgentProblem';
+import AgentSolution from './components/AgentSolution';
+import AgentHowItWorks from './components/AgentHowItWorks';
+import AgentReframe from './components/AgentReframe';
+import AgentTestimonials from './components/AgentTestimonials';
+import AgentGuarantee from './components/AgentGuarantee';
+import AgentFinalCTA from './components/AgentFinalCTA';
+import StickyCTA from './components/StickyCTA';
+import AgentFooter from './components/AgentFooter';
 import SchemaOrganization from './components/SchemaOrganization';
 import SchemaWebsite from './components/SchemaWebsite';
-import SchemaFAQ from './components/SchemaFAQ';
-import SchemaMobileApp from './components/SchemaMobileApp';
 
 export const metadata = {
-  title: "Premarket - Test the Market Before Selling Your Home | Free Property Valuation Australia",
-  description: "Get real buyer feedback and price opinions before listing your property. Free premarket campaign for Australian homeowners. No agent fees, no open homes, no risk. Test the market in 24 hours.",
-  keywords: "premarket, off market property, test the market, property price opinion, sell property australia, free property listing, buyer feedback, premarket homes",
+  title: "Premarket - Win More Listings with Pre-Market Campaigns | Real Estate Agents Australia",
+  description: "Stop asking for marketing money before earning trust. Premarket gives agents unlimited premarket campaigns to gather buyer feedback, build authority, and win listings faster. Built for agents, by agents.",
+  keywords: "premarket for agents, real estate agent tools, win more listings, pre-market campaigns, buyer feedback, listing tool australia, agent platform, real estate technology",
   openGraph: {
-    title: "Test the Market Before Selling Your Home | Premarket Australia",
-    description: "Free premarket campaigns for Australian homeowners. Get genuine buyer interest and price opinions before committing to an agent.",
+    title: "Win More Listings with Premarket | Built for Real Estate Agents",
+    description: "Offer vendors unlimited premarket campaigns. Collect real buyer feedback. Walk into conversations with proof, not promises. The pre-market system agents have been missing.",
     url: 'https://premarket.homes',
     siteName: 'Premarket',
     images: [
       {
-        url: 'https://premarket.homes/assets/og-image-homeowners.jpg',
+        url: 'https://premarket.homes/assets/og-image-agents.jpg',
         width: 1200,
         height: 630,
-        alt: 'Premarket - Test Your Property Market Value',
+        alt: 'Premarket - Win More Listings',
       },
     ],
     locale: 'en_AU',
@@ -31,9 +35,9 @@ export const metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Test the Market Before Selling | Premarket Australia',
-    description: 'Get real buyer feedback on your property before listing. Free, no obligation.',
-    images: ['https://premarket.homes/assets/twitter-image-homeowners.jpg'],
+    title: 'Premarket - Win More Listings with Pre-Market Campaigns',
+    description: 'The pre-market system built exclusively for real estate agents. Build trust faster, win listings easier.',
+    images: ['https://premarket.homes/assets/twitter-image-agents.jpg'],
   },
   alternates: {
     canonical: 'https://premarket.homes',
@@ -51,23 +55,23 @@ export const metadata = {
   },
 };
 
-// FAQ data for Schema markup
-const homeownerFAQs = [
+// FAQ data for Schema markup - Agent focused
+const agentFAQs = [
   {
-    question: "Is there any cost to list my property on Premarket?",
-    answer: "No. Premarket is 100% free for Australian homeowners. There are no listing fees, no marketing costs, and no obligation to sell. You can test the market risk-free."
+    question: "How does Premarket help agents win more listings?",
+    answer: "Premarket gives agents unlimited premarket campaigns to offer vendors before asking for marketing spend. You collect real buyer feedback and price opinions, then return with data and proof—not just promises. This builds trust faster and reduces vendor resistance, helping you secure more listings."
   },
   {
-    question: "How long does it take to get buyer feedback?",
-    answer: "Most Australian homeowners start receiving genuine price opinions from buyers within 24-48 hours of creating their free premarket listing."
+    question: "How long does it take to set up a pre-market campaign?",
+    answer: "Adding a property to Premarket takes about 30 seconds. You can do it before your appraisal meeting or even during the meeting itself. The platform is designed to be fast and effortless for busy agents."
   },
   {
-    question: "What happens after I receive buyer feedback on my property?",
-    answer: "You're in complete control. Use the real buyer feedback and price opinions to decide if you want to list with an agent, pursue a private sale, or stay in your home. There's absolutely no pressure or obligation."
+    question: "What kind of buyer feedback do agents receive?",
+    answer: "Agents receive anonymous price opinions from real buyers, registered interest from qualified prospects, and detailed engagement metrics. This data gives you concrete evidence of market interest to share with vendors."
   },
   {
-    question: "Do I need professional photos to list on Premarket?",
-    answer: "No. You can take your own photos and list your Australian property in minutes. Many homeowners successfully test the market without professional photography."
+    question: "Is there a guarantee for agents using Premarket?",
+    answer: "Yes. We're so confident in Premarket's value that we offer a success guarantee. If it doesn't add measurable value to your listing conversations, you don't pay. No fine print, no hoops. Book a demo to learn more about how our guarantee works."
   }
 ];
 
@@ -77,16 +81,69 @@ export default function Home() {
       {/* Schema Markup for SEO */}
       <SchemaOrganization />
       <SchemaWebsite />
-      <SchemaFAQ faqs={homeownerFAQs} />
-      <SchemaMobileApp />
+
+      {/* Agent-focused FAQ Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": agentFAQs.map(faq => ({
+              "@type": "Question",
+              "name": faq.question,
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": faq.answer
+              }
+            }))
+          })
+        }}
+      />
+
+      {/* Software Application Schema for Agents */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            "name": "Premarket - Agent Platform",
+            "applicationCategory": "BusinessApplication",
+            "operatingSystem": "Web, iOS, Android",
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "AUD",
+              "description": "Unlimited premarket campaigns for real estate agents"
+            },
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4.8",
+              "ratingCount": "127",
+              "bestRating": "5",
+              "worstRating": "1"
+            },
+            "description": "Pre-market campaign platform for Australian real estate agents. Win more listings by offering unlimited premarket campaigns that collect buyer feedback and build vendor trust."
+          })
+        }}
+      />
+
+      <Nav />
 
       <main>
-        <Hero />
-        <Features />
-        <FAQHomeOwners />
-        <Testimonials />
+        <AgentHero />
+        <AgentProblem />
+        <AgentSolution />
+        <AgentHowItWorks />
+        <AgentReframe />
+        <AgentTestimonials />
+        <AgentGuarantee />
+        <AgentFinalCTA />
       </main>
-      <FooterLarge />
+
+      <StickyCTA />
+      <AgentFooter />
     </>
   );
 }
