@@ -5,7 +5,6 @@ import { useSearchParams } from 'next/navigation';
 import { db } from '../firebase/clientApp';
 import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { motion } from 'framer-motion';
-import Image from 'next/image';
 
 function UnsubscribeContent() {
   const searchParams = useSearchParams();
@@ -77,20 +76,6 @@ function UnsubscribeContent() {
         transition={{ duration: 0.6 }}
         className="w-full max-w-md relative z-10"
       >
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <a href="/">
-            <Image
-              src="/logo.png"
-              alt="Premarket"
-              width={180}
-              height={45}
-              className="mx-auto mb-6"
-              unoptimized
-            />
-          </a>
-        </div>
-
         {/* Card */}
         <div className="bg-white rounded-2xl shadow-2xl p-8">
           {status === 'success' ? (
