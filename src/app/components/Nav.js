@@ -5,10 +5,12 @@
 import Image from 'next/image';
 import { useState } from 'react';
 
-export default function Nav() {
+export default function Nav({ isHomepage = false }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const navLinks = [];
+  const navLinks = [
+    { name: 'Browse Properties', href: '/listings' },
+  ];
 
   return (
     <>
@@ -41,6 +43,14 @@ export default function Nav() {
                   <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-[#c64500ff] to-[#e48900] group-hover:w-full transition-all duration-300"></span>
                 </a>
               ))}
+              {isHomepage && (
+                <a
+                  href="#book-demo"
+                  className="px-5 py-2.5 bg-gradient-to-r from-[#e48900] to-[#c64500] text-white font-semibold text-sm rounded-lg shadow-md hover:shadow-lg hover:shadow-orange-500/30 transition-all duration-200"
+                >
+                  Book a Demo
+                </a>
+              )}
             </nav>
 
 
@@ -81,7 +91,15 @@ export default function Nav() {
                 {link.name}
               </a>
             ))}
-
+            {isHomepage && (
+              <a
+                href="#book-demo"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block mx-4 mt-4 px-4 py-3 bg-gradient-to-r from-[#e48900] to-[#c64500] text-white font-semibold text-center rounded-lg shadow-md"
+              >
+                Book a Demo
+              </a>
+            )}
           </div>
         </div>
       </header>

@@ -129,7 +129,7 @@ export default function Home() {
         }}
       />
 
-      <Nav />
+      <Nav isHomepage={true} />
 
       <main>
         <AgentHero />
