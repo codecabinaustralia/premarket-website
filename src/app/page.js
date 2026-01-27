@@ -6,6 +6,7 @@ import AgentSolution from './components/AgentSolution';
 import AgentHowItWorks from './components/AgentHowItWorks';
 import AgentReframe from './components/AgentReframe';
 import AgentTestimonials from './components/AgentTestimonials';
+import AgentAIImageEditing from './components/AgentAIImageEditing';
 import AgentGuarantee from './components/AgentGuarantee';
 import AgentFinalCTA from './components/AgentFinalCTA';
 import StickyCTA from './components/StickyCTA';
@@ -138,6 +139,7 @@ export default function Home() {
         <AgentHowItWorks />
         <AgentReframe />
         <AgentTestimonials />
+        <AgentAIImageEditing />
         <AgentGuarantee />
         <AgentFinalCTA />
       </main>
