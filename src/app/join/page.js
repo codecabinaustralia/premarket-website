@@ -141,7 +141,7 @@ export default function AgentSignup() {
             unoptimized
           /> */}
           <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3">
-            Join Premarket Pro
+            Join Premarket
           </h1>
           <p className="text-slate-400 text-lg">
             Start winning more listings today
