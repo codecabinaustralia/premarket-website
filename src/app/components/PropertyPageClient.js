@@ -784,7 +784,8 @@ export default function PropertyPageClient() {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="sticky top-24"
             >
-              <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+              {/* Price Opinion Card */}
+              <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden mb-6">
                 <div className="bg-gradient-to-r from-orange-500 to-amber-500 p-6 text-center">
                   <h3 className="text-xl font-bold text-white mb-1">What&apos;s Your Price Opinion?</h3>
                   <p className="text-white/90 text-sm">No signup required</p>
@@ -805,7 +806,7 @@ export default function PropertyPageClient() {
                   </div>
 
                   {/* Slider */}
-                  <div className="mb-6">
+                  <div className="mb-4">
                     <input
                       type="range"
                       min={minPrice}
@@ -825,27 +826,36 @@ export default function PropertyPageClient() {
                     </div>
                   </div>
 
-                  {/* Register Interest CTA */}
-                  <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-4 mb-4 border border-orange-200">
-                    <h4 className="font-bold text-slate-800 mb-2 flex items-center gap-2">
-                      <svg className="w-5 h-5 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
+                  <p className="text-xs text-center text-slate-500">
+                    Drag the slider to share your opinion • No signup needed
+                  </p>
+                </div>
+              </div>
+
+              {/* Register Interest Card - Separate */}
+              <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+                <div className="p-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
                       </svg>
+                    </div>
+                    <h4 className="font-bold text-slate-800 text-lg">
                       Interested in this property?
                     </h4>
-                    <p className="text-sm text-slate-600 mb-3">
-                      Register to be first in line when it goes to market
-                    </p>
-                    <button
-                      onClick={handleRegisterInterest}
-                      className="w-full bg-gradient-to-r from-[#e48900] to-[#c64500] text-white font-bold py-3 rounded-xl hover:shadow-lg transition-all"
-                    >
-                      Register My Interest
-                    </button>
                   </div>
-
-                  <p className="text-xs text-center text-slate-500">
-                    100% free • No obligation • Your agent sent you this link
+                  <p className="text-sm text-slate-600 mb-4">
+                    Register your interest to be first in line when this property goes to market. Get priority access before open homes.
+                  </p>
+                  <button
+                    onClick={handleRegisterInterest}
+                    className="w-full bg-gradient-to-r from-[#e48900] to-[#c64500] text-white font-bold py-3 rounded-xl hover:shadow-lg transition-all"
+                  >
+                    Register My Interest
+                  </button>
+                  <p className="text-xs text-center text-slate-500 mt-3">
+                    100% free • No obligation
                   </p>
                 </div>
               </div>

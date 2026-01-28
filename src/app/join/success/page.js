@@ -1,60 +1,14 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, Suspense } from 'react';
 import { motion } from 'framer-motion';
-import { useSearchParams } from 'next/navigation';
-import { doc, updateDoc, Timestamp } from 'firebase/firestore';
-import { db } from '../../firebase/clientApp';
 import Image from 'next/image';
 
 function SuccessContent() {
-  const searchParams = useSearchParams();
-  const [updated, setUpdated] = useState(false);
-  const [error, setError] = useState(false);
-
   useEffect(() => {
-    const updateUser = async () => {
-      const uid = searchParams.get('uid') || sessionStorage.getItem('agentSignupUid');
-
-      if (!uid) {
-        setError(true);
-        return;
-      }
-
-      try {
-        await updateDoc(doc(db, 'users', uid), {
-          active: true,
-          pro: true,
-          updatedAt: Timestamp.now(),
-        });
-        setUpdated(true);
-        // Clear session storage
-        sessionStorage.removeItem('agentSignupUid');
-      } catch (err) {
-        console.error('Error updating user:', err);
-        setError(true);
-      }
-    };
-
-    updateUser();
-  }, [searchParams]);
-
-  if (error) {
-    return (
-      <div className="text-center">
-        <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
-          <svg className="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </div>
-        <h2 className="text-2xl font-bold text-slate-900 mb-4">Something went wrong</h2>
-        <p className="text-slate-600 mb-6">Please contact support if you were charged.</p>
-        <a href="mailto:support@premarket.homes" className="text-orange-600 hover:underline">
-          support@premarket.homes
-        </a>
-      </div>
-    );
-  }
+    // Clear session storage on success
+    sessionStorage.removeItem('agentSignupUid');
+  }, []);
 
   return (
     <>
@@ -71,7 +25,7 @@ function SuccessContent() {
       </motion.div>
 
       <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-4">
-        Welcome to Premarket Pro!
+        Welcome to Premarket
       </h1>
       <p className="text-xl text-slate-600 mb-8">
         Your subscription is now active
