@@ -58,7 +58,8 @@ export default function AgentTerms() {
         },
         body: JSON.stringify({
           uid,
-          priceId: 'price_1Sr6iz2CS9oaniYaYi3Vszci',
+          priceId: 'price_1SuPmF2CS9oaniYaFavP4kMb',
+          // priceId: 'price_1Sr6iz2CS9oaniYaYi3Vszci',
         }),
       });
 
