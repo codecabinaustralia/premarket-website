@@ -58,7 +58,7 @@ export const metadata = {
     siteName: 'Premarket',
     images: [
       {
-        url: '/iconFull.png',
+        url: 'https://premarketvideos.b-cdn.net/assets/logo.png',
         width: 512,
         height: 512,
         alt: 'Premarket',
@@ -71,7 +71,7 @@ export const metadata = {
     card: 'summary',
     title: "Premarket - Australia's Off-Market Property Platform",
     description: "Australia's leading off-market property platform. Homeowners test the market free, buyers access exclusive pre-market listings.",
-    images: ['/iconFull.png'],
+    images: ['https://premarketvideos.b-cdn.net/assets/logo.png'],
   },
 };
 

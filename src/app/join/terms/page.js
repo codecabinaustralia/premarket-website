@@ -99,7 +99,7 @@ export default function AgentTerms() {
         {/* Logo */}
         <div className="text-center mb-8">
           {/* <Image
-            src="https://premarket.homes/assets/logo.png"
+            src="https://premarketvideos.b-cdn.net/assets/logo.png"
             alt="Premarket"
             width={180}
             height={45}

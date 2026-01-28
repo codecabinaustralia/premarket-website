@@ -130,7 +130,7 @@ export default function AgentSuccess() {
       >
         {/* Logo */}
         <Image
-          src="https://premarket.homes/assets/logo.png"
+          src="https://premarketvideos.b-cdn.net/assets/logo.png"
           alt="Premarket"
           width={150}
           height={38}

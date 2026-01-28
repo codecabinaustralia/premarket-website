@@ -9,7 +9,6 @@ import { useModal } from '../context/ModalContext';
 import { useSearchParams } from 'next/navigation';
 import { storage, db } from '../firebase/clientApp';
 
-import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import {
   collection,
   addDoc,
@@ -33,8 +32,7 @@ const STEPS = {
   PRICE: 5,
   DETAILS: 6,
   IMAGES: 7,
-  ACCOUNT: 8,
-  COMPLETE: 9,
+  COMPLETE: 8,
 };
 
 const STEP_ICONS = {
@@ -45,7 +43,6 @@ const STEP_ICONS = {
   5: DollarSign,
   6: Bed,
   7: ImageIcon,
-  8: User,
 };
 
 export default function PropertyFormModal() {
@@ -92,9 +89,6 @@ export default function PropertyFormModal() {
   const [images, setImages] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // account
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
 
   // ux
   const [errors, setErrors] = useState({});
@@ -144,11 +138,6 @@ export default function PropertyFormModal() {
       }
     })();
   }, []);
-
-  // keep email in sync with clientEmail initially
-  useEffect(() => {
-    if (clientEmail && !email) setEmail(clientEmail);
-  }, [clientEmail]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // revoke object URLs on unmount
   useEffect(() => {
@@ -292,12 +281,6 @@ export default function PropertyFormModal() {
       newErrors.step = 'Please upload at least one image.';
     }
 
-    if (step === STEPS.ACCOUNT) {
-      if (!email || !password) newErrors.step = 'Please enter an email and password.';
-      else if (!email.includes('@')) newErrors.step = 'Please enter a valid email address.';
-      else if (password.length < 6) newErrors.step = 'Password must be at least 6 characters.';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -366,23 +349,13 @@ export default function PropertyFormModal() {
       return;
     }
 
-    const auth = getAuth();
-    let user = auth.currentUser;
-
     try {
       setIsSubmitting(true);
-
-      if (!user) {
-        const cred = await createUserWithEmailAndPassword(auth, email, password);
-        user = cred.user;
-      }
-      if (!user) throw new Error('Account creation failed.');
 
       const total = images.length;
       const imageUrls = [];
 
       await updateDoc(doc(db, 'properties', propertyId), {
-        clientId: user.uid,
         userId: userId,
         createdAt: serverTimestamp(),
         imageUploadProgress: {
@@ -394,7 +367,7 @@ export default function PropertyFormModal() {
 
       for (let i = 0; i < total; i++) {
         const file = images[i];
-        const storageRef = ref(storage, `propertyImages/${user.uid}/${Date.now()}-${file.name}`);
+        const storageRef = ref(storage, `propertyImages/${userId}/${Date.now()}-${file.name}`);
         const uploadTask = uploadBytesResumable(storageRef, file);
 
         // eslint-disable-next-line no-await-in-loop
@@ -440,7 +413,7 @@ export default function PropertyFormModal() {
         squareFootage,
         title,
         active: true,
-        visibility: true,
+        visibility: false,
         acceptingOffers: true,
         campaignId: 'FqMZd0mWlNlSBl66s7BN',
         isEager: 80,
@@ -453,7 +426,6 @@ export default function PropertyFormModal() {
         clientPhone,
         vendorUploaded: true,
         agentManaged: true,
-        clientId: user.uid,
         userId: userId,
       };
 
@@ -481,7 +453,7 @@ export default function PropertyFormModal() {
   };
 
   // ---------- Render ----------
-  const progressSteps = 8;
+  const progressSteps = 7;
   const progressPercent = (Math.min(step, progressSteps) / progressSteps) * 100;
 
   const StepIcon = STEP_ICONS[step];
@@ -858,56 +830,7 @@ export default function PropertyFormModal() {
                 </div>
               )}
 
-              {/* Step 8: Account */}
-              {step === STEPS.ACCOUNT && (
-                <div className="space-y-6">
-                  <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-200">
-                    <div className="mb-6">
-                      <h2 className="text-3xl font-bold text-gray-900 mb-3">Almost done! 🎉</h2>
-                      <p className="text-gray-600 text-lg">Create your account to finish listing your property.</p>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Email</label>
-                        <input
-                          type="email"
-                          placeholder="your@email.com"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          className="w-full px-4 py-4 rounded-xl border-2 border-gray-200 focus:border-orange-400 focus:ring-0 outline-none transition-colors text-gray-900 placeholder-gray-400"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Password</label>
-                        <input
-                          type="password"
-                          placeholder="••••••••"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          className="w-full px-4 py-4 rounded-xl border-2 border-gray-200 focus:border-orange-400 focus:ring-0 outline-none transition-colors text-gray-900 placeholder-gray-400"
-                        />
-                        <p className="text-xs text-gray-500 mt-2">At least 6 characters</p>
-                      </div>
-
-                      <div className="pt-4">
-                        <label className="flex items-start space-x-3 cursor-pointer">
-                          <input type="checkbox" required className="mt-1 w-5 h-5 text-orange-500 border-gray-300 rounded focus:ring-orange-400" />
-                          <span className="text-sm text-gray-700">
-                            I agree to the{' '}
-                            <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-orange-600 hover:underline font-medium">
-                              terms and conditions
-                            </a>
-                          </span>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Step 9: Complete */}
+              {/* Step 8: Complete */}
               {step === STEPS.COMPLETE && (
                 <div className="min-h-[60vh] flex items-center justify-center">
                   <div className="bg-white rounded-3xl p-12 shadow-sm border border-gray-200 text-center max-w-2xl">
@@ -915,40 +838,10 @@ export default function PropertyFormModal() {
                       <Check className="w-10 h-10 text-white" />
                     </div>
 
-                    <h2 className="text-4xl font-bold text-gray-900 mb-4">All done! 🎉</h2>
+                    <h2 className="text-4xl font-bold text-gray-900 mb-4">Property Submitted</h2>
                     <p className="text-lg text-gray-600 mb-8 leading-relaxed max-w-xl mx-auto">
-                      We've received your property details. Our team will review everything and reach out if we need anything else. We'll keep you updated on any interest from qualified buyers.
-                      {startDate && (
-                        <>
-                          <br />
-                          <br />
-                          The next Premarket campaign starts on{' '}
-                          <strong className="text-orange-600">
-                            {startDate.toLocaleString('en-AU', {
-                              day: '2-digit',
-                              month: 'short',
-                              year: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                              hour12: true,
-                            })}
-                          </strong>
-                          .
-                        </>
-                      )}
+                      Your property details have been submitted successfully. Your agent will review everything and be in touch with next steps.
                     </p>
-
-                    <div className="bg-gray-50 rounded-2xl p-6 mb-8">
-                      <p className="text-sm font-semibold text-gray-700 mb-4">Download the Premarket App</p>
-                      <div className="flex justify-center space-x-4">
-                        <a href="https://apps.apple.com/au/app/premarket-homes/id6742205449">
-                          <img src="./apple.png" className="h-12" alt="Download on App Store" />
-                        </a>
-                        <a href="https://play.google.com/store/apps/details?id=com.premarkethomes.app&hl=en_AU">
-                          <img src="./play.png" className="h-12" alt="Get it on Google Play" />
-                        </a>
-                      </div>
-                    </div>
 
                     <button
                       onClick={closeModal}
@@ -990,7 +883,7 @@ export default function PropertyFormModal() {
                   <div />
                 )}
 
-                {step < STEPS.ACCOUNT ? (
+                {step < STEPS.IMAGES ? (
                   <button
                     onClick={onNext}
                     disabled={navLoading}
@@ -1004,7 +897,7 @@ export default function PropertyFormModal() {
                     disabled={isSubmitting}
                     className="px-8 py-4 bg-gradient-to-r from-orange-400 to-orange-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isSubmitting ? 'Submitting...' : 'List Property'}
+                    {isSubmitting ? 'Submitting...' : 'Submit Property'}
                   </button>
                 )}
               </div>

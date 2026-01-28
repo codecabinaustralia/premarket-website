@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '../../../firebase/adminApp';
+import { FieldValue } from 'firebase-admin/firestore';
 
 export async function POST(request) {
   const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
@@ -38,16 +39,19 @@ export async function POST(request) {
         const session = event.data.object;
         const uid = session.metadata?.uid;
 
+        console.log('checkout.session.completed - session metadata:', JSON.stringify(session.metadata));
+        console.log('checkout.session.completed - uid:', uid);
+
         if (uid) {
-          await adminDb.collection('users').doc(uid).update({
+          await adminDb.collection('users').doc(uid).set({
             active: true,
             pro: true,
             agent: true,
             stripeCustomerId: session.customer,
             stripeSubscriptionId: session.subscription,
             subscriptionStatus: 'active',
-            updatedAt: new Date(),
-          });
+            updatedAt: FieldValue.serverTimestamp(),
+          }, { merge: true });
           console.log(`User ${uid} activated after checkout`);
         } else {
           console.warn('checkout.session.completed missing uid in metadata');
@@ -60,11 +64,11 @@ export async function POST(request) {
         const uid = subscription.metadata?.uid;
 
         if (uid) {
-          await adminDb.collection('users').doc(uid).update({
+          await adminDb.collection('users').doc(uid).set({
             stripeSubscriptionId: subscription.id,
             subscriptionStatus: subscription.status,
-            updatedAt: new Date(),
-          });
+            updatedAt: FieldValue.serverTimestamp(),
+          }, { merge: true });
           console.log(`Subscription created for user ${uid}`);
         }
         break;
@@ -76,12 +80,12 @@ export async function POST(request) {
 
         if (uid) {
           const isActive = ['active', 'trialing'].includes(subscription.status);
-          await adminDb.collection('users').doc(uid).update({
+          await adminDb.collection('users').doc(uid).set({
             active: isActive,
             pro: isActive,
             subscriptionStatus: subscription.status,
-            updatedAt: new Date(),
-          });
+            updatedAt: FieldValue.serverTimestamp(),
+          }, { merge: true });
           console.log(`Subscription updated for user ${uid}: ${subscription.status}`);
         }
         break;
@@ -92,12 +96,12 @@ export async function POST(request) {
         const uid = subscription.metadata?.uid;
 
         if (uid) {
-          await adminDb.collection('users').doc(uid).update({
+          await adminDb.collection('users').doc(uid).set({
             active: false,
             pro: false,
             subscriptionStatus: 'canceled',
-            updatedAt: new Date(),
-          });
+            updatedAt: FieldValue.serverTimestamp(),
+          }, { merge: true });
           console.log(`User ${uid} deactivated - subscription canceled`);
         }
         break;
@@ -113,13 +117,13 @@ export async function POST(request) {
           const uid = subscription.metadata?.uid;
 
           if (uid) {
-            await adminDb.collection('users').doc(uid).update({
+            await adminDb.collection('users').doc(uid).set({
               active: true,
               pro: true,
               subscriptionStatus: 'active',
-              lastPaymentDate: new Date(),
-              updatedAt: new Date(),
-            });
+              lastPaymentDate: FieldValue.serverTimestamp(),
+              updatedAt: FieldValue.serverTimestamp(),
+            }, { merge: true });
             console.log(`Payment succeeded for user ${uid}`);
           }
         }
@@ -135,11 +139,11 @@ export async function POST(request) {
           const uid = subscription.metadata?.uid;
 
           if (uid) {
-            await adminDb.collection('users').doc(uid).update({
+            await adminDb.collection('users').doc(uid).set({
               subscriptionStatus: 'past_due',
-              paymentFailedAt: new Date(),
-              updatedAt: new Date(),
-            });
+              paymentFailedAt: FieldValue.serverTimestamp(),
+              updatedAt: FieldValue.serverTimestamp(),
+            }, { merge: true });
             console.log(`Payment failed for user ${uid}`);
           }
         }
@@ -163,6 +167,10 @@ export async function POST(request) {
     return NextResponse.json({ received: true });
   } catch (error) {
     console.error(`Error processing ${event.type}:`, error);
-    return NextResponse.json({ error: 'Webhook handler failed' }, { status: 500 });
+    return NextResponse.json({
+      error: 'Webhook handler failed',
+      message: error.message,
+      stack: error.stack
+    }, { status: 500 });
   }
 }

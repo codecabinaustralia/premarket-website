@@ -24,7 +24,7 @@ export default function Header() {
         <div className="flex items-center space-x-4">
           {/* Logo */}
           <Link href="/">
-          <img src="./iconFull.png" className="w-10 h-10 rounded-lg" />
+          <img src="https://premarketvideos.b-cdn.net/assets/logo.png" className="w-10 h-10 rounded-lg" />
           </Link>
 
           {/* Desktop nav */}
@@ -117,7 +117,7 @@ export default function Header() {
             className="fixed top-0 right-0 w-3/4 h-full bg-white shadow-lg z-[100] p-6"
           >
             <div className="flex justify-between items-center mb-6">
-              <img src="./iconFull.png" className="w-10 h-10 rounded-lg" />
+              <img src="https://premarketvideos.b-cdn.net/assets/logo.png" className="w-10 h-10 rounded-lg" />
               <button onClick={() => setMobileOpen(false)}>
                 <X className="w-6 h-6 text-gray-800" />
               </button>

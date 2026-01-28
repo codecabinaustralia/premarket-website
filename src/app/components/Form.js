@@ -211,6 +211,7 @@ export default function PropertyFormModal() {
                 isEager: 80,
                 propertyType: type,
                 wantsPremiumListing: false,
+                vendorUploaded: true,
             };
 
             await updateDoc(docRef, propertyData);
@@ -245,7 +246,7 @@ export default function PropertyFormModal() {
                                 <h2
                                     className="px-10 sm:px-0 my-8 leading-none text-2xl sm:text-4xl inter text-white flex flex-wrap sm:flex-nowrap"
                                 >
-                                    <img onClick={closeModal} src="./iconFull.png" className="mr-2 w-6 h-6 sm:w-10 sm:h-10 rounded sm:rounded-lg mb-4 sm:mb-0" /> Add your property to the next campaign
+                                    <img onClick={closeModal} src="https://premarketvideos.b-cdn.net/assets/logo.png" className="mr-2 w-6 h-6 sm:w-10 sm:h-10 rounded sm:rounded-lg mb-4 sm:mb-0" /> Add your property to the next campaign
                                 </h2>
 
                                 {errors.step && (
@@ -603,7 +604,7 @@ export default function PropertyFormModal() {
                 {isSubmitting && (
                     <div className="fixed inset-0 z-100 flex items-center justify-center">
                         <div className="bg-white p-20 rounded-lg border border-gray-200 shadow-xl text-center">
-                            <img onClick={closeModal} src="./iconFull.png" className="mx-auto mb-4 w-10 h-10 rounded-lg" />
+                            <img onClick={closeModal} src="https://premarketvideos.b-cdn.net/assets/logo.png" className="mx-auto mb-4 w-10 h-10 rounded-lg" />
                             <h2 className="text-xl text-gray-900 font-semibold mb-2">Uploading your property...</h2>
                             <p className="text-sm text-gray-600">Please wait while we upload your images and save your listing.</p>
                         </div>

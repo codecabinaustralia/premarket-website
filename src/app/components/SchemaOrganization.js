@@ -5,7 +5,7 @@ export default function SchemaOrganization() {
     "name": "Premarket",
     "alternateName": "Premarket Homes",
     "url": "https://premarket.homes",
-    "logo": "https://premarket.homes/iconFull.png",
+    "logo": "https://premarketvideos.b-cdn.net/assets/logo.png",
     "description": "Australia's leading off-market property platform connecting homeowners, buyers, and real estate agents through pre-market listings and property market testing.",
     "address": {
       "@type": "PostalAddress",

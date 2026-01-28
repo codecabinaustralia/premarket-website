@@ -21,7 +21,7 @@ export default function Nav({ isHomepage = false }) {
             <div className="flex-shrink-0">
               <a href="/">
                 <Image
-                  src="https://premarket.homes/assets/logo.png"
+                  src="https://premarketvideos.b-cdn.net/assets/logo.png"
                   alt="Premarket Logo"
                   width={140}
                   height={35}
