@@ -70,6 +70,9 @@ export default function PropertyPageClient() {
   // Nearby properties state
   const [nearbyProperties, setNearbyProperties] = useState([]);
 
+  // Agent data state
+  const [agentData, setAgentData] = useState(null);
+
   // Sticky price bar visibility
   const [showStickyPrice, setShowStickyPrice] = useState(false);
 
@@ -131,6 +134,31 @@ export default function PropertyPageClient() {
     };
     fetchProperty();
   }, [propertyId]);
+
+  // Fetch agent data for this property
+  useEffect(() => {
+    if (!property?.userId) return;
+
+    const fetchAgentData = async () => {
+      try {
+        const userDoc = await getDoc(doc(db, 'users', property.userId));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setAgentData({
+            firstName: userData.firstName,
+            lastName: userData.lastName,
+            companyName: userData.companyName,
+            avatar: userData.avatar,
+            logoUrl: userData.logoUrl,
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching agent data:', error);
+      }
+    };
+
+    fetchAgentData();
+  }, [property?.userId]);
 
   // Fetch nearby properties based on geohash - only active properties
   useEffect(() => {
@@ -690,6 +718,61 @@ export default function PropertyPageClient() {
                   </div>
                 </div>
               </div>
+
+              {/* Agent Details Card */}
+              {agentData && (
+                <div className="bg-white rounded-2xl shadow-md border border-slate-200 p-5 mb-8">
+                  <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-4">Listing Agent</h3>
+                  <div className="flex items-center gap-4">
+                    {/* Agent Avatar with Agency Logo */}
+                    <div className="relative flex-shrink-0">
+                      {agentData.avatar ? (
+                        <Image
+                          src={agentData.avatar}
+                          alt={`${agentData.firstName || 'Agent'} ${agentData.lastName || ''}`}
+                          width={56}
+                          height={56}
+                          className="rounded-full object-cover border-2 border-slate-100"
+                          unoptimized
+                        />
+                      ) : (
+                        <div className="w-14 h-14 bg-gradient-to-br from-slate-100 to-slate-200 rounded-full flex items-center justify-center border-2 border-slate-100">
+                          <svg className="w-7 h-7 text-slate-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                      )}
+                      {agentData.logoUrl && (
+                        <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full shadow-md overflow-hidden border border-slate-200 flex items-center justify-center">
+                          <Image
+                            src={agentData.logoUrl}
+                            alt="Agency logo"
+                            width={20}
+                            height={20}
+                            className="object-contain"
+                            unoptimized
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Agent Info */}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-slate-900 text-lg">
+                        {agentData.firstName} {agentData.lastName}
+                      </p>
+                      {agentData.companyName && (
+                        <p className="text-sm text-slate-600 flex items-center gap-1">
+                          <svg className="w-4 h-4 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                          </svg>
+                          <span className="truncate">{agentData.companyName}</span>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Description */}
               {description && (

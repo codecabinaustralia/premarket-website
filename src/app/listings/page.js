@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import { db } from '../firebase/clientApp';
-import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
+import { collection, query, where, orderBy, getDocs, doc, getDoc } from 'firebase/firestore';
 import Nav from '../components/Nav';
 import AgentFooter from '../components/AgentFooter';
 
@@ -90,6 +90,7 @@ function ListingsContent() {
   const [activeEducationCard, setActiveEducationCard] = useState(0);
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [agents, setAgents] = useState({});
   const searchInputRef = useRef(null);
 
   // Filters
@@ -197,6 +198,30 @@ function ListingsContent() {
         if (suburb) suburbSet.add(suburb);
       });
       setSuburbs(Array.from(suburbSet).sort());
+
+      // Fetch agent data for all unique userIds
+      const userIds = [...new Set(docs.map(p => p.userId).filter(Boolean))];
+      const agentData = {};
+      await Promise.all(
+        userIds.map(async (userId) => {
+          try {
+            const userDoc = await getDoc(doc(db, 'users', userId));
+            if (userDoc.exists()) {
+              const userData = userDoc.data();
+              agentData[userId] = {
+                firstName: userData.firstName,
+                lastName: userData.lastName,
+                companyName: userData.companyName,
+                avatar: userData.avatar,
+                logoUrl: userData.logoUrl,
+              };
+            }
+          } catch (err) {
+            console.error('Error fetching agent:', userId, err);
+          }
+        })
+      );
+      setAgents(agentData);
     } catch (error) {
       console.error('Error fetching properties:', error);
     } finally {
@@ -620,7 +645,7 @@ function ListingsContent() {
                           ? (property.address?.split(',')[1]?.trim() || property.location?.suburb || 'Suburb unavailable')
                           : (property.address || 'Address unavailable')}
                       </p>
-                      <div className="flex items-center gap-4 text-sm text-slate-700">
+                      <div className="flex items-center gap-4 text-sm text-slate-700 mb-3">
                         {property.bedrooms && (
                           <span className="flex items-center gap-1">
                             <span className="font-semibold">{property.bedrooms}</span> bed
@@ -637,6 +662,54 @@ function ListingsContent() {
                           </span>
                         )}
                       </div>
+
+                      {/* Agent Details */}
+                      {property.userId && agents[property.userId] && (
+                        <div className="pt-3 border-t border-slate-100">
+                          <div className="flex items-center gap-2">
+                            <div className="relative flex-shrink-0">
+                              {agents[property.userId].avatar ? (
+                                <Image
+                                  src={agents[property.userId].avatar}
+                                  alt={`${agents[property.userId].firstName || 'Agent'}`}
+                                  width={32}
+                                  height={32}
+                                  className="rounded-full object-cover"
+                                  unoptimized
+                                />
+                              ) : (
+                                <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center">
+                                  <svg className="w-4 h-4 text-slate-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                                  </svg>
+                                </div>
+                              )}
+                              {agents[property.userId].logoUrl && (
+                                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-white rounded-full shadow-sm overflow-hidden border border-slate-200">
+                                  <Image
+                                    src={agents[property.userId].logoUrl}
+                                    alt="Agency"
+                                    width={16}
+                                    height={16}
+                                    className="object-contain"
+                                    unoptimized
+                                  />
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium text-slate-800 truncate">
+                                {agents[property.userId].firstName} {agents[property.userId].lastName}
+                              </p>
+                              {agents[property.userId].companyName && (
+                                <p className="text-xs text-slate-500 truncate">
+                                  {agents[property.userId].companyName}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </motion.a>
                 ))}
