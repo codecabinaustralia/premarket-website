@@ -227,8 +227,6 @@ export default function PropertyFormModal() {
     setLocation(null);
     setFeatures({});
     setImages([]);
-    setEmail('');
-    setPassword('');
     setErrors({});
     setGotoMarketGoal(null);
     setFullName('');
@@ -537,10 +535,7 @@ export default function PropertyFormModal() {
                           type="email"
                           placeholder="john@example.com"
                           value={clientEmail}
-                          onChange={(e) => {
-                            setEmail(e.target.value);
-                            setClientEmail(e.target.value);
-                          }}
+                          onChange={(e) => setClientEmail(e.target.value)}
                           className="w-full px-4 py-4 rounded-xl border-2 border-gray-200 focus:border-orange-400 focus:ring-0 outline-none transition-colors text-gray-900 placeholder-gray-400"
                         />
                       </div>
