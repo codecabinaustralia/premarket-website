@@ -1,73 +1,22 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import Image from 'next/image';
+import { motion } from 'framer-motion';
 
 export default function AgentTestimonials() {
-  const [activeVideo, setActiveVideo] = useState(null);
-  const videoRef = useRef(null);
-
-  const videoTestimonials = [
-    {
-      name: 'Rebecca Leo',
-      agency: 'Gold Coast',
-      video: 'https://premarketvideos.b-cdn.net/assets/testimonial1.mp4',
-      thumbnail: 'https://premarketvideos.b-cdn.net/assets/bec1.webp'
-    },
-    {
-      name: 'Greg Costello',
-      agency: 'Kingscliff',
-      video: 'https://premarketvideos.b-cdn.net/assets/testimonial2.mp4',
-      thumbnail: 'https://premarketvideos.b-cdn.net/assets/greg1.jpg'
-    }
-  ];
-
   const testimonials = [
     {
       name: 'Rebecca Leo',
       agency: 'Gold Coast',
       quote: 'I\'d been doing pre-market for years — badly. Just phone calls and hope. Premarket gave me a system. My last three appraisals, I walked in with buyer feedback already in hand. Signed all three.',
-      avatar: 'B',
-      video: 'https://premarketvideos.b-cdn.net/assets/testimonial1.mp4'
+      avatar: 'B'
     },
     {
       name: 'Greg Costello',
       agency: 'Kingscliff',
       quote: 'The moment I stopped asking vendors for marketing money and started offering unlimited premarket campaigns, everything changed. Less resistance. Better conversations. More listings.',
-      avatar: 'G',
-      video: 'https://premarketvideos.b-cdn.net/assets/testimonial2.mp4'
+      avatar: 'G'
     }
   ];
-
-  useEffect(() => {
-    if (activeVideo && videoRef.current) {
-      videoRef.current.play();
-    }
-  }, [activeVideo]);
-
-  // Handle escape key and body scroll lock
-  useEffect(() => {
-    const handleEscape = (e) => {
-      if (e.key === 'Escape') {
-        setActiveVideo(null);
-      }
-    };
-
-    if (activeVideo) {
-      document.addEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'hidden';
-    }
-
-    return () => {
-      document.removeEventListener('keydown', handleEscape);
-      document.body.style.overflow = '';
-    };
-  }, [activeVideo]);
-
-  const closeModal = () => {
-    setActiveVideo(null);
-  };
 
   return (
     <section className="py-20 lg:py-32 bg-gradient-to-br from-slate-50 to-white">
@@ -88,55 +37,29 @@ export default function AgentTestimonials() {
           </h2>
         </motion.div>
 
-        {/* Video Testimonials */}
-        <div className="grid md:grid-cols-2 gap-8 mb-16">
-          {videoTestimonials.map((video, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
-              className="relative group cursor-pointer"
-              onClick={() => setActiveVideo(video)}
-            >
-              <div className="relative aspect-video bg-gradient-to-br from-slate-200 to-slate-300 rounded-2xl overflow-hidden shadow-lg">
-                {/* Video thumbnail */}
-                <Image
-                  src={video.thumbnail}
-                  alt={`${video.name} testimonial`}
-                  fill
-                  className="object-cover"
-                />
-
-                {/* Play button overlay */}
-                <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors duration-300">
-                  <motion.div
-                    whileHover={{ scale: 1.1 }}
-                    className="w-20 h-20 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-xl group-hover:bg-gradient-to-br group-hover:from-[#e48900] group-hover:to-[#c64500] transition-all duration-300"
-                  >
-                    <svg className="w-8 h-8 text-slate-900 group-hover:text-white transition-colors ml-1" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M8 5v14l11-7z" />
-                    </svg>
-                  </motion.div>
-                </div>
-
-                {/* Bottom gradient with name */}
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
-                  <p className="text-white font-medium">{video.name}</p>
-                  <p className="text-white/80 text-sm">{video.agency}</p>
-                </div>
-              </div>
-
-              {/* Video caption */}
-              <div className="mt-4">
-                <p className="text-sm text-slate-600 text-center">
-                  See how real agents are using Premarket to win more listings
-                </p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+        {/* Video Testimonial */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="max-w-4xl mx-auto mb-16"
+        >
+          <div className="relative aspect-video rounded-2xl overflow-hidden shadow-lg">
+            <iframe
+              src="https://www.youtube.com/embed/909gXWhMV78"
+              title="Agent Testimonial"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              className="w-full h-full"
+            />
+          </div>
+          <div className="mt-4">
+            <p className="text-sm text-slate-600 text-center">
+              See how real agents are using Premarket to win more listings
+            </p>
+          </div>
+        </motion.div>
 
         {/* Written Testimonials */}
         <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
@@ -179,53 +102,6 @@ export default function AgentTestimonials() {
           ))}
         </div>
       </div>
-
-      {/* Video Modal */}
-      <AnimatePresence>
-        {activeVideo && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
-            onClick={closeModal}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="relative w-full max-w-4xl aspect-video"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Close button */}
-              <button
-                onClick={closeModal}
-                className="absolute -top-12 right-0 text-white/80 hover:text-white transition-colors"
-              >
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-
-              {/* Video player */}
-              <video
-                ref={videoRef}
-                src={activeVideo.video}
-                controls
-                autoPlay
-                className="w-full h-full rounded-2xl shadow-2xl"
-              />
-
-              {/* Video info */}
-              <div className="absolute -bottom-12 left-0 text-white">
-                <p className="font-medium">{activeVideo.name}</p>
-                <p className="text-white/70 text-sm">{activeVideo.agency}</p>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </section>
   );
 }
