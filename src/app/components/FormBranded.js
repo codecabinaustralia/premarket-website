@@ -475,6 +475,7 @@ export default function PropertyFormModal() {
                 </div>
               </div>
               <button
+                type="button"
                 onClick={closeModal}
                 className="w-10 h-10 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
               >
