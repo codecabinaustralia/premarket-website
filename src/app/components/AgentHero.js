@@ -113,11 +113,11 @@ export default function AgentHero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-900 leading-tight mb-6"
+              className="text-5xl font-bold text-slate-900 leading-[1.1] mb-6"
             >
-              <span className="">If You&apos;re Asking for Marketing Money Upfront, </span>
+              <span className="">If You Aren&apos;t Offering Premarket as a Service, </span>
               <span className="bg-gradient-to-r from-[#e48900] to-[#c64500] bg-clip-text text-transparent">
-                You&apos;re Doing It Wrong.
+                You&apos;re Losing.
               </span>
             </motion.h1>
 
@@ -139,14 +139,12 @@ export default function AgentHero() {
               className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
             >
               <motion.a
-                href="https://calendly.com/knockknock-premarket/30min"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/join"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.98 }}
                 className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-white bg-gradient-to-r from-[#e48900] to-[#c64500] rounded-lg shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-300"
               >
-                Book a Demo
+                Get Started Free
                 <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>

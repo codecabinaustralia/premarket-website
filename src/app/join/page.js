@@ -93,9 +93,9 @@ export default function AgentSignup() {
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         phone: fullPhone,
-        pro: false,
+        pro: true,
         agent: true,
-        active: false,
+        active: true,
         roles: ['agent'],
         showLeaderboard: true,
         tags: ['new'],
@@ -107,7 +107,7 @@ export default function AgentSignup() {
       sessionStorage.setItem('agentSignupUid', user.uid);
 
       // Redirect to terms page
-      router.push('/join/terms');
+      router.push('/join/success');
     } catch (err) {
       console.error('Signup error:', err);
       if (err.code === 'auth/email-already-in-use') {
@@ -144,7 +144,7 @@ export default function AgentSignup() {
             Join Premarket
           </h1>
           <p className="text-slate-400 text-lg">
-            Start winning more listings today
+            100% free. Start winning more listings today.
           </p>
         </div>
 
@@ -283,7 +283,7 @@ export default function AgentSignup() {
                   Creating Account...
                 </span>
               ) : (
-                'Create Account'
+                'Get Started — It\'s Free'
               )}
             </motion.button>
           </form>

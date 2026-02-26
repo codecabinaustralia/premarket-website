@@ -45,12 +45,10 @@ export default function Nav({ isHomepage = false }) {
               ))}
               {isHomepage && (
                 <a
-                  href="https://calendly.com/knockknock-premarket/30min"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href="/join"
                   className="px-5 py-2.5 bg-gradient-to-r from-[#e48900] to-[#c64500] text-white font-semibold text-sm rounded-lg shadow-md hover:shadow-lg hover:shadow-orange-500/30 transition-all duration-200"
                 >
-                  Book a Demo
+                  Get Started Free
                 </a>
               )}
             </nav>
@@ -95,13 +93,11 @@ export default function Nav({ isHomepage = false }) {
             ))}
             {isHomepage && (
               <a
-                href="https://calendly.com/knockknock-premarket/30min"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/join"
                 onClick={() => setMobileMenuOpen(false)}
                 className="block mx-4 mt-4 px-4 py-3 bg-gradient-to-r from-[#e48900] to-[#c64500] text-white font-semibold text-center rounded-lg shadow-md"
               >
-                Book a Demo
+                Get Started Free
               </a>
             )}
           </div>

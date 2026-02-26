@@ -10,7 +10,7 @@ export default function AgentGuarantee() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       ),
-      text: 'Proven ROI for agents'
+      text: 'Free for every agent'
     },
     {
       icon: (
@@ -18,7 +18,7 @@ export default function AgentGuarantee() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
         </svg>
       ),
-      text: 'Fast implementation'
+      text: 'Set up in 30 seconds'
     },
     {
       icon: (
@@ -26,7 +26,7 @@ export default function AgentGuarantee() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
         </svg>
       ),
-      text: 'No risk guarantee'
+      text: 'Unlimited campaigns, no strings'
     }
   ];
 
@@ -52,16 +52,16 @@ export default function AgentGuarantee() {
           </div>
 
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 mb-6">
-            <span className="block">Guaranteed to Add Value —</span>
+            <span className="block">If You Aren&apos;t Offering Premarket,</span>
             <span className="bg-gradient-to-r from-teal-600 to-teal-600 bg-clip-text text-transparent">
-              Or You Don&apos;t Pay
+              You&apos;re Losing Listings
             </span>
           </h2>
 
           <p className="text-xl text-slate-600 leading-relaxed mb-8 max-w-3xl mx-auto">
-            We believe in Premarket so strongly that we back it with a success guarantee.
-            If it doesn&apos;t add measurable value to your listing conversations, you don&apos;t pay.{' '}
-            <span className="font-semibold text-slate-900">No fine print. No hoops.</span>
+            Every top agent is building trust with buyers before the listing hits the market.
+            Premarket gives you the system to do it — for free.{' '}
+            <span className="font-semibold text-slate-900">No limits. No credit card. No catch.</span>
           </p>
 
           <motion.div
@@ -99,14 +99,12 @@ export default function AgentGuarantee() {
             transition={{ duration: 0.6, delay: 0.5 }}
           >
             <motion.a
-              href="https://calendly.com/knockknock-premarket/30min"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/join"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.98 }}
               className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-white bg-gradient-to-r from-teal-600 to-teal-600 rounded-lg shadow-lg shadow-teal-500/30 hover:shadow-teal-500/50 transition-all duration-300"
             >
-              Book a Demo & Learn About Our Guarantee
+              Get Started Free — No Credit Card Required
               <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>

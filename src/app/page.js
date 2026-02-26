@@ -71,8 +71,8 @@ const agentFAQs = [
     answer: "Agents receive anonymous price opinions from real buyers, registered interest from qualified prospects, and detailed engagement metrics. This data gives you concrete evidence of market interest to share with vendors."
   },
   {
-    question: "Is there a guarantee for agents using Premarket?",
-    answer: "Yes. We're so confident in Premarket's value that we offer a success guarantee. If it doesn't add measurable value to your listing conversations, you don't pay. No fine print, no hoops. Book a demo to learn more about how our guarantee works."
+    question: "Is Premarket really free for agents?",
+    answer: "Yes — Premarket is 100% free for every agent. There are no subscription fees, no credit card required, and no limits on campaigns. Sign up in seconds and start running premarket campaigns immediately."
   }
 ];
 
