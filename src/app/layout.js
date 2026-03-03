@@ -1,5 +1,6 @@
 import { Poppins, Inter, Anton } from "next/font/google";
 import { ModalProvider } from './context/ModalContext';
+import { AuthProvider } from './context/AuthContext';
 import Script from 'next/script';
 
 import "./globals.css";
@@ -110,9 +111,11 @@ export default function RootLayout({ children }) {
           />
         </noscript>
         
-        <ModalProvider>
-          {children}
-        </ModalProvider>
+        <AuthProvider>
+          <ModalProvider>
+            {children}
+          </ModalProvider>
+        </AuthProvider>
       </body>
     </html>
   );

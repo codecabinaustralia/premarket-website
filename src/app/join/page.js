@@ -100,14 +100,13 @@ export default function AgentSignup() {
         showLeaderboard: true,
         tags: ['new'],
         updatedAt: Timestamp.now(),
-        xp: 0,
       });
 
       // Store uid in session storage for later
       sessionStorage.setItem('agentSignupUid', user.uid);
 
-      // Redirect to terms page
-      router.push('/join/success');
+      // Redirect to dashboard
+      router.push('/dashboard');
     } catch (err) {
       console.error('Signup error:', err);
       if (err.code === 'auth/email-already-in-use') {

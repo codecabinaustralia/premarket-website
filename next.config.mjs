@@ -19,6 +19,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'www.airtasker.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'firebasestorage.googleapis.com',
+      },
     ],
   },
 

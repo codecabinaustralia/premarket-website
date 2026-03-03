@@ -804,7 +804,7 @@ function ListingsContent() {
                 Create a free account and be the first to know when new pre-market properties become available.
               </p>
               <a
-                href="/register"
+                href="/join"
                 className="block w-full text-center py-3 bg-gradient-to-r from-[#e48900] to-[#c64500] text-white font-bold rounded-xl hover:shadow-lg transition-all"
               >
                 Create Free Account

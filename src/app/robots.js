@@ -4,7 +4,7 @@ export default function robots() {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/api/', '/register/', '/subscription-success/', '/subscription-cancelled/'],
+        disallow: ['/api/'],
       },
     ],
     sitemap: 'https://premarket.homes/sitemap.xml',

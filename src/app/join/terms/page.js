@@ -3,13 +3,9 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
-import { loadStripe } from '@stripe/stripe-js';
 import { db } from '../../firebase/clientApp';
 import { doc, getDoc } from 'firebase/firestore';
 import ReactMarkdown from 'react-markdown';
-
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_live_51OG4Sx2CS9oaniYak1bfqxMlOlJW90ZhPdSHqnCPZi0VRHvHnZLLZEtdvpNjpzxbT1qJqzPRSqEsRB3qJrOZg6Ol00XqKjxBvZ');
 
 export default function AgentTerms() {
   const router = useRouter();
@@ -45,47 +41,10 @@ export default function AgentTerms() {
     fetchTerms();
   }, [router]);
 
-  const handleContinue = async () => {
+  const handleContinue = () => {
     if (!accepted || !uid) return;
-
     setLoading(true);
-
-    try {
-      const response = await fetch('/api/create-checkout-session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          uid,
-          priceId: 'price_1Sr6iz2CS9oaniYaYi3Vszci',
-        }),
-      });
-
-      const { sessionId, error } = await response.json();
-
-      if (error) {
-        console.error('Checkout error:', error);
-        alert('Something went wrong. Please try again.');
-        setLoading(false);
-        return;
-      }
-
-      const stripe = await stripePromise;
-      const { error: stripeError } = await stripe.redirectToCheckout({
-        sessionId,
-      });
-
-      if (stripeError) {
-        console.error('Stripe error:', stripeError);
-        alert('Payment redirect failed. Please try again.');
-      }
-    } catch (err) {
-      console.error('Error:', err);
-      alert('Something went wrong. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+    router.push('/dashboard');
   };
 
   return (
@@ -98,14 +57,6 @@ export default function AgentTerms() {
       >
         {/* Logo */}
         <div className="text-center mb-8">
-          {/* <Image
-            src="https://premarketvideos.b-cdn.net/assets/logo.png"
-            alt="Premarket"
-            width={180}
-            height={45}
-            className="mx-auto mb-6"
-            unoptimized
-          /> */}
           <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3">
             Terms & Conditions
           </h1>
@@ -168,16 +119,12 @@ export default function AgentTerms() {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
-                Redirecting to Payment...
+                Redirecting...
               </span>
             ) : (
-              'Continue to Payment'
+              'Continue to Dashboard'
             )}
           </motion.button>
-
-          <p className="text-center text-sm text-slate-500 mt-4">
-            Secure payment powered by Stripe
-          </p>
         </div>
       </motion.div>
     </div>

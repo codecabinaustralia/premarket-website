@@ -1,0 +1,7 @@
+{
+  "crons": [
+    { "path": "/api/cron/compute-scores", "schedule": "0 2 * * *" },
+    { "path": "/api/cron/compute-trends", "schedule": "0 3 1 * *" },
+    { "path": "/api/cron/cleanup-stale", "schedule": "0 */6 * * *" }
+  ]
+}
