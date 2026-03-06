@@ -10,20 +10,23 @@ export async function generatePropertyTitleAndDescription(data) {
   const { propertyType, address, bedrooms, bathrooms, squareFeatures, features, price } = data;
 
   const messages = [
-    { role: 'system', content: 'You are an assistant that generates title and description JSON for Australian pre-market properties. You are not to put in any price or street address into the title or description.' },
-    { role: 'user', content: `Type: ${propertyType}, Address: ${address}, Bedrooms: ${bedrooms}, Bathrooms: ${bathrooms}, Size: ${squareFeatures}, Features: ${(features || []).join(', ')}, Price: ${price} - You are not to put in any price or street address into the title or description. Refrain from using generic text - try to be creative.` },
+    { role: 'system', content: 'You generate listing titles and descriptions for Premarket, an Australian pre-market property platform. Listings are designed to attract buyer price opinions and registered interest before the property goes to market. Write concise, engaging copy. Never include the street address or price. Focus on the property\'s appeal and invite buyers to submit their price opinion.' },
+    { role: 'user', content: `Property details — Type: ${propertyType}, Area: ${address}, Bedrooms: ${bedrooms}, Bathrooms: ${bathrooms}, Size: ${squareFeatures || 'N/A'}sqm, Features: ${(features || []).join(', ') || 'None specified'}. Generate a short punchy title (under 10 words) and a description (2-3 sentences). The description should highlight what makes this property appealing and encourage buyers to register their interest or submit a price opinion. Do NOT use generic real estate clichés. Do NOT include the street address or price.` },
   ];
 
-  const functionsDef = [
+  const tools = [
     {
-      name: 'capturePropertyDetails',
-      parameters: {
-        type: 'object',
-        properties: {
-          title: { type: 'string' },
-          description: { type: 'string' },
+      type: 'function',
+      function: {
+        name: 'capturePropertyDetails',
+        parameters: {
+          type: 'object',
+          properties: {
+            title: { type: 'string' },
+            description: { type: 'string' },
+          },
+          required: ['title', 'description'],
         },
-        required: ['title', 'description'],
       },
     },
   ];
@@ -31,9 +34,9 @@ export async function generatePropertyTitleAndDescription(data) {
   const completion = await getOpenAI().chat.completions.create({
     model: 'gpt-4o',
     messages,
-    functions: functionsDef,
-    function_call: { name: 'capturePropertyDetails' },
+    tools,
+    tool_choice: { type: 'function', function: { name: 'capturePropertyDetails' } },
   });
 
-  return JSON.parse(completion.choices[0].message.function_call.arguments);
+  return JSON.parse(completion.choices[0].message.tool_calls[0].function.arguments);
 }

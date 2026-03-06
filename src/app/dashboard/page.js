@@ -27,6 +27,8 @@ import {
   Code,
   Shield,
   Sparkles,
+  BookOpen,
+  Video,
 } from 'lucide-react';
 
 function formatPrice(price) {
@@ -49,6 +51,7 @@ function Sidebar({ active, onNavigate, onSignOut, sidebarOpen, setSidebarOpen, u
     { id: 'properties', label: 'My Properties', icon: Home },
     { id: 'add', label: 'Add Property', icon: Plus, href: '/dashboard/add' },
     { id: 'developers', label: 'Developers', icon: Code, href: '/dashboard/developers' },
+    { id: 'docs', label: 'Docs', icon: BookOpen, href: '/docs' },
     ...(userData?.apiAccess?.status === 'approved'
       ? [{ id: 'playground', label: 'Playground', icon: Sparkles, href: '/dashboard/playground' }]
       : []),
@@ -234,6 +237,14 @@ function PropertyCard({ property, onToggleVisibility, toggling }) {
             {property.visibility === true ? 'Live' : 'Draft'}
           </span>
         </div>
+        {/* Video Badge */}
+        {(property.videoUrl || property.aiVideo?.url) && (
+          <div className="absolute top-3 right-3">
+            <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full bg-black/60 text-white">
+              <Video className="w-3 h-3" />
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Details */}
@@ -382,6 +393,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const [properties, setProperties] = useState([]);
   const [propertiesLoading, setPropertiesLoading] = useState(true);
+  const [opinionsCount, setOpinionsCount] = useState(0);
   const [activeTab, setActiveTab] = useState('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [toggling, setToggling] = useState(false);
@@ -403,6 +415,21 @@ export default function DashboardPage() {
         const snapshot = await getDocs(q);
         const props = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
         setProperties(props);
+
+        // Fetch buyer opinions count
+        const propertyIds = props.map(p => p.id);
+        if (propertyIds.length > 0) {
+          let totalOpinions = 0;
+          // Firestore 'in' queries limited to 30 items per batch
+          for (let i = 0; i < propertyIds.length; i += 30) {
+            const batch = propertyIds.slice(i, i + 30);
+            const offersSnap = await getDocs(
+              query(collection(db, 'offers'), where('propertyId', 'in', batch))
+            );
+            totalOpinions += offersSnap.docs.filter(d => d.data().type === 'opinion').length;
+          }
+          setOpinionsCount(totalOpinions);
+        }
       } catch (err) {
         console.error('Error fetching properties:', err);
       } finally {
@@ -503,7 +530,7 @@ export default function DashboardPage() {
               <StatCard label="Total Properties" value={propertiesLoading ? '...' : properties.length} icon={Home} />
               <StatCard label="Live Campaigns" value={propertiesLoading ? '...' : liveProperties.length} icon={TrendingUp} />
               <StatCard label="Total Views" value={propertiesLoading ? '...' : totalViews} icon={Eye} />
-              <StatCard label="Buyer Opinions" value={propertiesLoading ? '...' : '--'} icon={MessageSquare} />
+              <StatCard label="Buyer Opinions" value={propertiesLoading ? '...' : opinionsCount} icon={MessageSquare} />
             </div>
           )}
 

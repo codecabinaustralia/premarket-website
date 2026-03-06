@@ -29,6 +29,8 @@ import {
   ChevronRight,
   Bath,
   Car,
+  Sparkles,
+  Video,
 } from 'lucide-react';
 
 const STEPS = {
@@ -69,10 +71,12 @@ export default function AddPropertyPage() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [images, setImages] = useState([]);
+  const [video, setVideo] = useState(null);
 
   // UX state
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -89,6 +93,11 @@ export default function AddPropertyPage() {
       });
     };
   }, [images]);
+
+  const videoPreviewUrl = useMemo(() => {
+    if (!video) return null;
+    return URL.createObjectURL(video);
+  }, [video]);
 
   const formattedPrice = useMemo(() => {
     if (!priceRaw) return '';
@@ -145,6 +154,43 @@ export default function AddPropertyPage() {
       if (removed?.preview) URL.revokeObjectURL(removed.preview);
       return newImages;
     });
+  };
+
+  const handleVideoUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (file) setVideo(file);
+  };
+
+  const removeVideo = () => {
+    setVideo(null);
+  };
+
+  const handleGenerateAI = async () => {
+    setIsGenerating(true);
+    try {
+      const selectedFeatures = Object.keys(features).filter((f) => features[f]);
+      const res = await fetch('/api/generate-listing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          propertyType: homeTypes[type - 1],
+          address,
+          bedrooms,
+          bathrooms,
+          squareFeatures: squareFootage,
+          features: selectedFeatures,
+          price: priceRaw,
+        }),
+      });
+      if (!res.ok) throw new Error('Failed to generate');
+      const data = await res.json();
+      if (data.title) setTitle(data.title);
+      if (data.description) setDescription(data.description);
+    } catch (err) {
+      console.error('AI generation failed:', err);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const toggleFeature = (feature) => {
@@ -215,7 +261,7 @@ export default function AddPropertyPage() {
         wantsPremiumListing: false,
         agent: true,
         userId: user.uid,
-        visibility: true,
+        visibility: false,
       };
 
       const docRef = await addDoc(collection(db, 'properties'), initialData);
@@ -255,6 +301,21 @@ export default function AddPropertyPage() {
         });
       }
 
+      // Upload video to Bunny CDN if provided
+      let videoUrl = null;
+      if (video) {
+        const videoFormData = new FormData();
+        videoFormData.append('file', video);
+        const videoRes = await fetch('/api/upload-image', {
+          method: 'POST',
+          body: videoFormData,
+        });
+        if (videoRes.ok) {
+          const videoData = await videoRes.json();
+          videoUrl = videoData.url;
+        }
+      }
+
       // Update with full data
       const propertyData = {
         address,
@@ -277,7 +338,7 @@ export default function AddPropertyPage() {
         squareFootage,
         title,
         active: true,
-        visibility: true,
+        visibility: false,
         acceptingOffers: true,
         campaignId: 'FqMZd0mWlNlSBl66s7BN',
         isEager: 80,
@@ -288,6 +349,7 @@ export default function AddPropertyPage() {
         agentManaged: true,
         userId: user.uid,
         stats: { views: 0 },
+        ...(videoUrl && { videoUrl }),
       };
 
       await updateDoc(doc(db, 'properties', propertyId), propertyData);
@@ -574,14 +636,62 @@ export default function AddPropertyPage() {
                     </div>
                   </div>
                 )}
+
+                {/* Video Upload */}
+                <div className="mt-8 pt-6 border-t border-slate-200">
+                  <h3 className="text-lg font-semibold text-slate-900 mb-2">Walkthrough video</h3>
+                  <p className="text-slate-500 text-sm mb-4">Upload a walkthrough video (optional)</p>
+
+                  {!video ? (
+                    <label htmlFor="video-upload" className="cursor-pointer">
+                      <div className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center hover:border-orange-400 hover:bg-orange-50 transition-all">
+                        <Video className="w-10 h-10 text-slate-400 mx-auto mb-3" />
+                        <p className="text-base font-semibold text-slate-900 mb-1">Click to upload video</p>
+                        <p className="text-sm text-slate-500">MP4, MOV, WebM up to 500MB</p>
+                      </div>
+                      <input
+                        type="file"
+                        id="video-upload"
+                        accept="video/mp4,video/quicktime,video/webm"
+                        onChange={handleVideoUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  ) : (
+                    <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-black">
+                      <video
+                        src={videoPreviewUrl}
+                        controls
+                        playsInline
+                        className="w-full max-h-64 rounded-xl"
+                      />
+                      <button
+                        onClick={removeVideo}
+                        className="absolute top-3 right-3 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
             {/* Step 6: Title & Description */}
             {step === STEPS.TITLE && (
               <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200">
-                <h2 className="text-2xl font-bold text-slate-900 mb-2">Listing details</h2>
-                <p className="text-slate-500 mb-6">Add a title and description for the listing.</p>
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-2xl font-bold text-slate-900">Listing details</h2>
+                  <button
+                    onClick={handleGenerateAI}
+                    disabled={isGenerating}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-sm font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-purple-500/25"
+                  >
+                    <Sparkles className={`w-4 h-4 ${isGenerating ? 'animate-spin' : ''}`} />
+                    {isGenerating ? 'Generating...' : 'Generate with AI'}
+                  </button>
+                </div>
+                <p className="text-slate-500 mb-6">Add a title and description, or let AI generate them for you.</p>
 
                 <div className="space-y-4">
                   <div>

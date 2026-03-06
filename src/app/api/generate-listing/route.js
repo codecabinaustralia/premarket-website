@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { generatePropertyTitleAndDescription } from '../../services/openAiService';
+import { generatePropertyTitleAndDescription } from '../services/openAiService';
 
 export async function POST(request) {
   try {

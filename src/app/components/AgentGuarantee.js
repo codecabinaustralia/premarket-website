@@ -18,7 +18,7 @@ export default function AgentGuarantee() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
         </svg>
       ),
-      text: 'Set up in 30 seconds'
+      text: 'Set up in 2 minutes'
     },
     {
       icon: (

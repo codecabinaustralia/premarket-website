@@ -64,7 +64,7 @@ const agentFAQs = [
   },
   {
     question: "How long does it take to set up a pre-market campaign?",
-    answer: "Adding a property to Premarket takes about 30 seconds. You can do it before your appraisal meeting or even during the meeting itself. The platform is designed to be fast and effortless for busy agents."
+    answer: "Adding a property to Premarket takes about 2 minutes. You can do it before your appraisal meeting or even during the meeting itself. The platform is designed to be fast and effortless for busy agents."
   },
   {
     question: "What kind of buyer feedback do agents receive?",

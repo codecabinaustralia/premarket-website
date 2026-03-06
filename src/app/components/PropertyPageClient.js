@@ -586,25 +586,46 @@ export default function PropertyPageClient() {
         <div className="max-w-7xl mx-auto px-4 pb-6 relative z-10">
           {imageUrls.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-3">
-              {/* Main large image */}
-              <div
-                className="md:col-span-2 relative aspect-[16/10] md:aspect-[16/9] cursor-pointer group rounded-xl overflow-hidden"
-                onClick={() => openLightbox(0)}
-              >
-                <Image
-                  src={imageUrls[0]}
-                  alt={title}
-                  fill
-                  className="object-cover group-hover:brightness-90 group-hover:scale-105 transition-all duration-300"
-                  unoptimized
-                  priority
-                />
-                <div className="absolute bottom-4 left-4 flex items-center gap-2">
-                  <span className="px-3 py-1.5 bg-gradient-to-r from-[#e48900] to-[#c64500] text-white text-xs font-bold rounded-lg shadow-lg">
-                    {displayPropertyType}
-                  </span>
+              {/* Main large image or video */}
+              {displayVideoUrl ? (
+                <div className="md:col-span-2 relative aspect-[16/10] md:aspect-[16/9] rounded-xl overflow-hidden bg-black">
+                  <video
+                    src={displayVideoUrl}
+                    controls
+                    playsInline
+                    preload="metadata"
+                    poster={imageUrls[0]}
+                    className="w-full h-full object-cover rounded-xl"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                    }}
+                  />
+                  <div className="absolute bottom-4 left-4 flex items-center gap-2 pointer-events-none">
+                    <span className="px-3 py-1.5 bg-gradient-to-r from-[#e48900] to-[#c64500] text-white text-xs font-bold rounded-lg shadow-lg">
+                      {displayPropertyType}
+                    </span>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div
+                  className="md:col-span-2 relative aspect-[16/10] md:aspect-[16/9] cursor-pointer group rounded-xl overflow-hidden"
+                  onClick={() => openLightbox(0)}
+                >
+                  <Image
+                    src={imageUrls[0]}
+                    alt={title}
+                    fill
+                    className="object-cover group-hover:brightness-90 group-hover:scale-105 transition-all duration-300"
+                    unoptimized
+                    priority
+                  />
+                  <div className="absolute bottom-4 left-4 flex items-center gap-2">
+                    <span className="px-3 py-1.5 bg-gradient-to-r from-[#e48900] to-[#c64500] text-white text-xs font-bold rounded-lg shadow-lg">
+                      {displayPropertyType}
+                    </span>
+                  </div>
+                </div>
+              )}
               {/* Side images */}
               <div className="hidden md:grid grid-rows-2 gap-3">
                 {imageUrls.slice(1, 3).map((url, index) => (
