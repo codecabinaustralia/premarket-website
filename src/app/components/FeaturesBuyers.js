@@ -7,7 +7,7 @@ const stages = [
   {
     tag: "For Buyers",
     title: "Access Exclusive Properties",
-    text: "Discover properties not found anywhere else. Get first access to homes before they hit realestate.com.au or domain.com.au. See what's available before the competition.",
+    text: "Discover properties not found anywhere else. Get first access to homes before they go public. See what's available before the competition.",
     benefits: [
       "Browse exclusive off-market properties first",
       "No competition from other platforms",

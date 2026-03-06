@@ -55,7 +55,7 @@ export default function Hero() {
                   className="text-base sm:text-lg lg:text-xl font-medium leading-relaxed text-white drop-shadow-lg"
 
                 >
-                  Get genuine price opinions from real buyers before committing to an agent. Run a free premarket campaign on your Australian property, receive buyer feedback within 24 hours, and make informed decisions. No open homes, no agent fees, no risk.
+                  Get genuine price opinions from real buyers before committing to an agent. Run a free premarket campaign on your Australian property, receive buyer feedback fast, and make informed decisions. No open homes, no agent fees, no risk.
                 </p>
               </div>
 

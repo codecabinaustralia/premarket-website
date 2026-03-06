@@ -5,12 +5,6 @@ import { motion } from 'framer-motion';
 export default function AgentTestimonials() {
   const testimonials = [
     {
-      name: 'Rebecca Leo',
-      agency: 'Gold Coast',
-      quote: 'I\'d been doing pre-market for years — badly. Just phone calls and hope. Premarket gave me a system. My last three appraisals, I walked in with buyer feedback already in hand. Signed all three.',
-      avatar: 'B'
-    },
-    {
       name: 'Greg Costello',
       agency: 'Kingscliff',
       quote: 'The moment I stopped asking vendors for marketing money and started offering unlimited premarket campaigns, everything changed. Less resistance. Better conversations. More listings.',

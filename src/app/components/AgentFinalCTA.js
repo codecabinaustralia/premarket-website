@@ -87,35 +87,6 @@ export default function AgentFinalCTA() {
             </div>
           </motion.div>
 
-          {/* Trust signals */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.6 }}
-            className="mt-16 pt-12 border-t border-white/10"
-          >
-            <div className="grid sm:grid-cols-3 gap-8 text-center">
-              <div>
-                <div className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-orange-400 to-orange-300 bg-clip-text text-transparent mb-2">
-                  500+
-                </div>
-                <div className="text-slate-400">Properties Listed</div>
-              </div>
-              <div>
-                <div className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-orange-400 to-orange-300 bg-clip-text text-transparent mb-2">
-                  200+
-                </div>
-                <div className="text-slate-400">Active Agents</div>
-              </div>
-              <div>
-                <div className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-orange-400 to-orange-300 bg-clip-text text-transparent mb-2">
-                  24hr
-                </div>
-                <div className="text-slate-400">Avg. First Response</div>
-              </div>
-            </div>
-          </motion.div>
         </motion.div>
       </div>
     </section>

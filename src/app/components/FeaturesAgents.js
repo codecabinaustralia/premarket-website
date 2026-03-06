@@ -22,7 +22,7 @@ const stages = [
   {
     tag: "Fish Upstream",
     title: "Capture Listings Before They Hit The Market",
-    text: "Why wait for vendors to appear on realestate.com.au and domain.com.au where they're bombarded by every agent in town? Premarket Agent Pro actively pushes vendors who weren't ready to list straight to your doorstep—turning hesitant homeowners into warm leads before your competitors even know they exist.",
+    text: "Why wait for vendors to appear on the major portals where they're bombarded by every agent in town? Premarket Agent Pro actively pushes vendors who weren't ready to list straight to your doorstep—turning hesitant homeowners into warm leads before your competitors even know they exist.",
     benefits: [
       "Agent Pro delivers exclusive seller leads directly to you before they go public",
       "Turn Premarket into a powerful prospect engine and lead generator",

@@ -57,7 +57,7 @@ export default function Hero() {
                   className="text-base sm:text-lg lg:text-xl font-medium leading-relaxed text-white drop-shadow-lg"
 
                 >
-                  Discover off-market properties across Sydney, Melbourne, Brisbane and all of Australia before they hit realestate.com.au or Domain. Express your interest and get first access when properties officially list.
+                  Discover off-market properties across Sydney, Melbourne, Brisbane and all of Australia before they go public. Express your interest and get first access when properties officially list.
                 </p>
               </div>
 

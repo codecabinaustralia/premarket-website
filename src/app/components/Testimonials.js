@@ -25,7 +25,7 @@ const testimonials = [
   {
     name: "Michael Torres",
     role: "Property Investor – Perth",
-    quote: "As an investor, getting early access to off-market properties is gold. I've secured two investment properties through Premarket before they hit realestate.com.au. No competition, better prices.",
+    quote: "As an investor, getting early access to off-market properties is gold. I've secured two investment properties through Premarket before they went public. No competition, better prices.",
     image: "assets/testimonials/4.png"
   },
   {
