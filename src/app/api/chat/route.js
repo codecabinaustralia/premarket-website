@@ -23,7 +23,7 @@ const TOOLS = [
   {
     name: 'get_buyer_score',
     description:
-      'Get the buyer intent score (0-100) for a location. Measures buyer demand based on price opinions, serious buyers, likes, and buyer diversity.',
+      'Get the buyer intent/sentiment score (0-100) for a location. Measures buyer demand based on price opinions, serious buyers, likes, and buyer diversity. Use this for buyer sentiment questions too — the breakdown contains sentiment signals.',
     input_schema: {
       type: 'object',
       properties: LOCATION_PROPERTIES,
@@ -32,7 +32,7 @@ const TOOLS = [
   {
     name: 'get_seller_score',
     description:
-      'Get the seller intent score (0-100) for a location. Measures selling activity based on active properties, go-to-market timelines, and seller eagerness.',
+      'Get the seller intent/sentiment score (0-100) for a location. Measures selling activity based on active properties, go-to-market timelines, and seller eagerness.',
     input_schema: {
       type: 'object',
       properties: LOCATION_PROPERTIES,
@@ -79,6 +79,24 @@ const TOOLS = [
       properties: LOCATION_PROPERTIES,
     },
   },
+  {
+    name: 'get_national_overview',
+    description:
+      'Get Australia-wide market overview: average buyer and seller scores, total properties, total suburbs tracked, top buyer areas, top seller areas, and score distribution. No location needed.',
+    input_schema: {
+      type: 'object',
+      properties: {},
+    },
+  },
+  {
+    name: 'get_upcoming_to_market',
+    description:
+      'Get properties likely going to market or likely to sell soon. Shows upcoming listings grouped by state and suburb, with likelihood scores based on go-to-market dates, serious buyer registrations, price opinions, and engagement. No location needed.',
+    input_schema: {
+      type: 'object',
+      properties: {},
+    },
+  },
 ];
 
 const TOOL_TO_ENDPOINT = {
@@ -88,17 +106,43 @@ const TOOL_TO_ENDPOINT = {
   get_trending_areas: 'trending-areas',
   get_historical_trends: 'historical-trends',
   get_property_insights: 'property-insights',
+  get_national_overview: 'national-overview',
+  get_upcoming_to_market: 'upcoming-to-market',
 };
 
 const SYSTEM_PROMPT = `You are Premarket's market intelligence assistant. You help users explore Australian property market data using the Premarket API.
 
 You have access to tools that query real property data:
-- Buyer scores: how much buyer demand exists in an area
-- Seller scores: how much selling intent exists
+- Buyer scores & sentiment: how much buyer demand exists in an area
+- Seller scores & sentiment: how much selling intent exists
 - Market forecasts: upcoming listings and price expectations
 - Trending areas: which suburbs are heating up
 - Historical trends: how scores have changed over time
 - Property insights: per-property engagement metrics
+- National overview: Australia-wide aggregated market stats
+- Upcoming to market: properties likely to sell or go to market soon, grouped by state/suburb
+
+BUYER SENTIMENT INTERPRETATION:
+When asked about "buyer sentiment" or "buyer mood", use the buyer score tool. Interpret the breakdown:
+- Score 0-20: Very Low sentiment — minimal buyer interest, market is cold
+- Score 21-40: Low sentiment — some interest but buyers are cautious
+- Score 41-60: Moderate sentiment — healthy buyer interest, balanced market
+- Score 61-80: High sentiment — strong buyer demand, competitive market
+- Score 81-100: Very High sentiment — intense buyer demand, hot market
+Key breakdown signals:
+- High seriousBuyers ratio = confident, committed buyers (bullish sentiment)
+- High passiveBuyers with low serious = window shoppers (cautious sentiment)
+- High seriousnessScore = buyers are actively ready to transact
+- High diversityRatio = broad market appeal (healthy sentiment)
+- High fhbCount = first-home buyer driven demand
+- High investorCount = investment-driven demand
+
+SELLER SENTIMENT INTERPRETATION:
+When asked about "seller sentiment" or "seller mood", use the seller score tool. Interpret the breakdown:
+- High eagerSellers = sellers are motivated, possibly under pressure
+- High goingToMarket30 = surge in upcoming supply
+- High activeProperties = established seller confidence
+- Low scores overall = sellers are holding, waiting for better conditions
 
 IMPORTANT — Location handling:
 When users mention ANY location (suburb, city, address, postcode, region), pass it as the "location" parameter exactly as they said it. The server will geocode it automatically via Mapbox.

@@ -51,7 +51,6 @@ function formatDate(ts) {
 function Sidebar({ active, onNavigate, onSignOut, sidebarOpen, setSidebarOpen, userName, userData }) {
   const navItems = [
     { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'properties', label: 'My Properties', icon: Home },
     { id: 'archived', label: 'Archive', icon: Archive },
     { id: 'add', label: 'Add Property', icon: Plus, href: '/dashboard/add' },
     { id: 'integrations', label: 'Integrations', icon: Plug, href: '/dashboard/integrations' },
@@ -563,14 +562,12 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-slate-900">
-                {activeTab === 'overview' ? 'Dashboard' : activeTab === 'archived' ? 'Archived Properties' : 'My Properties'}
+                {activeTab === 'archived' ? 'Archived Properties' : 'Dashboard'}
               </h1>
               <p className="text-sm text-slate-500 mt-1">
-                {activeTab === 'overview'
-                  ? `Welcome back, ${userData?.firstName || 'Agent'}`
-                  : activeTab === 'archived'
-                    ? `${archivedProperties.length} ${archivedProperties.length === 1 ? 'property' : 'properties'}`
-                    : `${activeProperties.length} ${activeProperties.length === 1 ? 'property' : 'properties'}`}
+                {activeTab === 'archived'
+                  ? `${archivedProperties.length} ${archivedProperties.length === 1 ? 'property' : 'properties'}`
+                  : `Welcome back, ${userData?.firstName || 'Agent'}`}
               </p>
             </div>
             <Link
@@ -594,34 +591,19 @@ export default function DashboardPage() {
 
           {/* Quick Actions (overview only) */}
           {activeTab === 'overview' && !propertiesLoading && properties.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Link
-                href="/dashboard/add"
-                className="bg-white rounded-xl border border-slate-200 p-5 flex items-center gap-4 hover:shadow-md transition-shadow group"
-              >
-                <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center group-hover:bg-slate-200 transition-colors">
-                  <Plus className="w-6 h-6 text-slate-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-semibold text-slate-900">Add Property</p>
-                  <p className="text-xs text-slate-500">List a new property for your client</p>
-                </div>
-                <ChevronRight className="w-5 h-5 text-slate-300" />
-              </Link>
-              <button
-                onClick={() => setActiveTab('properties')}
-                className="bg-white rounded-xl border border-slate-200 p-5 flex items-center gap-4 hover:shadow-md transition-shadow group text-left"
-              >
-                <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center group-hover:bg-slate-200 transition-colors">
-                  <Eye className="w-6 h-6 text-slate-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-semibold text-slate-900">View Reports</p>
-                  <p className="text-xs text-slate-500">See buyer opinions and insights</p>
-                </div>
-                <ChevronRight className="w-5 h-5 text-slate-300" />
-              </button>
-            </div>
+            <Link
+              href="/dashboard/add"
+              className="bg-white rounded-xl border border-slate-200 p-5 flex items-center gap-4 hover:shadow-md transition-shadow group"
+            >
+              <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center group-hover:bg-slate-200 transition-colors">
+                <Plus className="w-6 h-6 text-slate-600" />
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-slate-900">Add Property</p>
+                <p className="text-xs text-slate-500">List a new property for your client</p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-slate-300" />
+            </Link>
           )}
 
           {/* Properties Grid */}

@@ -212,17 +212,36 @@ export default function PropertyPageClient() {
   const incrementPropertyViews = async (propId) => {
     try {
       const docRef = doc(db, 'properties', propId);
-      
-      // Use increment to atomically increase the views count
+
+      // Generate or retrieve persistent visitor ID
+      let visitorId = localStorage.getItem('pm_visitor_id');
+      if (!visitorId) {
+        visitorId = `v_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+        localStorage.setItem('pm_visitor_id', visitorId);
+      }
+
+      // Check if this visitor has viewed this property before
+      const viewKey = `pm_viewed_${propId}`;
+      const lastViewStr = localStorage.getItem(viewKey);
+      const isReturn = !!lastViewStr;
+      localStorage.setItem(viewKey, Date.now().toString());
+
+      // Increment total views
       await updateDoc(docRef, {
         'stats.views': increment(1),
-        'stats.lastViewed': serverTimestamp()
+        'stats.lastViewed': serverTimestamp(),
+        ...(isReturn ? { 'stats.returnViews': increment(1) } : { 'stats.uniqueViews': increment(1) }),
       });
-      
-      console.log('Property view count incremented');
+
+      // Write detailed view event for analytics
+      await addDoc(collection(db, 'propertyViews'), {
+        propertyId: propId,
+        visitorId,
+        isReturn,
+        timestamp: serverTimestamp(),
+      });
     } catch (error) {
       console.error('Error incrementing property views:', error);
-      // Don't throw error - view counting shouldn't block page load
     }
   };
 

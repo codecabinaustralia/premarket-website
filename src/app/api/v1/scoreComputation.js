@@ -1,5 +1,6 @@
 import { adminDb } from '../../firebase/adminApp';
 import {
+  geocodeLocation,
   getPropertiesInRadius,
   getOffersForProperties,
   getLikesForProperties,
@@ -28,8 +29,64 @@ export function suburbKey(suburb, state) {
 }
 
 /**
+ * Australian state abbreviations for parsing address strings.
+ */
+const AU_STATES = ['NSW', 'VIC', 'QLD', 'SA', 'WA', 'TAS', 'NT', 'ACT'];
+
+/**
+ * Try to extract suburb and state from property data using multiple strategies:
+ * 1. Top-level suburb/state fields (AgentBox imports)
+ * 2. Nested location.suburb / location.state (Flutter app)
+ * 3. Parse from address string: "Suburb STATE Country"
+ * 4. Parse from formattedAddress: "123 Street, Suburb STATE 2000, Country"
+ */
+function extractSuburbState(data) {
+  // Strategy 1 & 2: direct fields
+  let suburb = data.suburb || data.location?.suburb || data.address?.suburb || '';
+  let state = data.state || data.location?.state || data.address?.state || '';
+
+  if (suburb && state) return { suburb, state };
+
+  // Strategy 3: parse the address string "Bondi NSW Australia"
+  const addr = typeof data.address === 'string' ? data.address : '';
+  if (addr) {
+    const parts = addr.split(/\s+/);
+    for (let i = 0; i < parts.length; i++) {
+      if (AU_STATES.includes(parts[i].toUpperCase())) {
+        state = parts[i].toUpperCase();
+        suburb = parts.slice(0, i).join(' ');
+        if (suburb && state) return { suburb, state };
+      }
+    }
+  }
+
+  // Strategy 4: parse formattedAddress "123 Bondi Rd, Bondi NSW 2026, Australia"
+  const formatted = data.formattedAddress || '';
+  if (formatted) {
+    const segments = formatted.split(',').map((s) => s.trim());
+    // The suburb+state segment is typically the second-to-last (before country)
+    for (const seg of segments) {
+      const words = seg.split(/\s+/);
+      for (let i = 0; i < words.length; i++) {
+        if (AU_STATES.includes(words[i].toUpperCase())) {
+          state = words[i].toUpperCase();
+          // Suburb is the word(s) before the state, excluding numbers (postcodes, street numbers)
+          const suburbWords = words.slice(0, i).filter((w) => !/^\d+$/.test(w));
+          if (suburbWords.length > 0) {
+            suburb = suburbWords.join(' ');
+            return { suburb, state };
+          }
+        }
+      }
+    }
+  }
+
+  return { suburb: suburb || null, state: state || null };
+}
+
+/**
  * Get all unique suburbs from the properties collection.
- * Returns array of { suburb, state, postcode, lat, lng }.
+ * Returns array of { key, suburb, state, postcode, lat, lng }.
  */
 export async function getUniqueSuburbs() {
   const snapshot = await adminDb.collection('properties').get();
@@ -37,8 +94,7 @@ export async function getUniqueSuburbs() {
 
   for (const doc of snapshot.docs) {
     const data = doc.data();
-    const suburb = data.suburb || data.location?.suburb;
-    const state = data.state || data.location?.state;
+    const { suburb, state } = extractSuburbState(data);
     if (!suburb || !state) continue;
 
     const key = suburbKey(suburb, state);
@@ -61,7 +117,19 @@ export async function getUniqueSuburbs() {
  * Uses a 10km radius from the suburb center point.
  */
 export async function computeSuburbScores(suburb, state, lat, lng) {
-  if (!lat || !lng) return null;
+  // Geocode if coordinates missing
+  if (!lat || !lng) {
+    try {
+      const geo = await geocodeLocation({ suburb, state });
+      if (geo) {
+        lat = geo.lat;
+        lng = geo.lng;
+      }
+    } catch (err) {
+      console.error(`Geocoding failed for ${suburb}, ${state}:`, err.message);
+    }
+    if (!lat || !lng) return null;
+  }
 
   const properties = await getPropertiesInRadius(lat, lng, 10);
   if (!properties.length) return null;
