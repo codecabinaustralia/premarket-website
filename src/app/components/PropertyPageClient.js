@@ -40,6 +40,7 @@ export default function PropertyPageClient() {
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
   
   // Price opinion state
   const [priceOpinion, setPriceOpinion] = useState(0);
@@ -586,46 +587,43 @@ export default function PropertyPageClient() {
         <div className="max-w-7xl mx-auto px-4 pb-6 relative z-10">
           {imageUrls.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-3">
-              {/* Main large image or video */}
-              {displayVideoUrl ? (
-                <div className="md:col-span-2 relative aspect-[16/10] md:aspect-[16/9] rounded-xl overflow-hidden bg-black">
-                  <video
-                    src={displayVideoUrl}
-                    controls
-                    playsInline
-                    preload="metadata"
-                    poster={imageUrls[0]}
-                    className="w-full h-full object-cover rounded-xl"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                    }}
-                  />
-                  <div className="absolute bottom-4 left-4 flex items-center gap-2 pointer-events-none">
-                    <span className="px-3 py-1.5 bg-gradient-to-r from-[#e48900] to-[#c64500] text-white text-xs font-bold rounded-lg shadow-lg">
-                      {displayPropertyType}
-                    </span>
+              {/* Main large image — with video play button if video exists */}
+              <div
+                className="md:col-span-2 relative aspect-[16/10] md:aspect-[16/9] cursor-pointer group rounded-xl overflow-hidden"
+                onClick={() => displayVideoUrl ? setVideoModalOpen(true) : openLightbox(0)}
+              >
+                <Image
+                  src={imageUrls[0]}
+                  alt={title}
+                  fill
+                  className="object-cover group-hover:brightness-90 group-hover:scale-105 transition-all duration-300"
+                  unoptimized
+                  priority
+                />
+                {/* Video play button overlay */}
+                {displayVideoUrl && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-20 h-20 bg-black/60 group-hover:bg-black/80 rounded-full flex items-center justify-center transition-all group-hover:scale-110 shadow-2xl backdrop-blur-sm">
+                      <svg className="w-9 h-9 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div
-                  className="md:col-span-2 relative aspect-[16/10] md:aspect-[16/9] cursor-pointer group rounded-xl overflow-hidden"
-                  onClick={() => openLightbox(0)}
-                >
-                  <Image
-                    src={imageUrls[0]}
-                    alt={title}
-                    fill
-                    className="object-cover group-hover:brightness-90 group-hover:scale-105 transition-all duration-300"
-                    unoptimized
-                    priority
-                  />
-                  <div className="absolute bottom-4 left-4 flex items-center gap-2">
-                    <span className="px-3 py-1.5 bg-gradient-to-r from-[#e48900] to-[#c64500] text-white text-xs font-bold rounded-lg shadow-lg">
-                      {displayPropertyType}
+                )}
+                <div className="absolute bottom-4 left-4 flex items-center gap-2">
+                  <span className="px-3 py-1.5 bg-gradient-to-r from-[#e48900] to-[#c64500] text-white text-xs font-bold rounded-lg shadow-lg">
+                    {displayPropertyType}
+                  </span>
+                  {displayVideoUrl && (
+                    <span className="px-3 py-1.5 bg-black/60 backdrop-blur-sm text-white text-xs font-bold rounded-lg shadow-lg flex items-center gap-1.5">
+                      <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                      Video Tour
                     </span>
-                  </div>
+                  )}
                 </div>
-              )}
+              </div>
               {/* Side images */}
               <div className="hidden md:grid grid-rows-2 gap-3">
                 {imageUrls.slice(1, 3).map((url, index) => (
@@ -1854,6 +1852,38 @@ export default function PropertyPageClient() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Video Modal */}
+      {videoModalOpen && displayVideoUrl && (
+        <div
+          className="fixed inset-0 bg-black/95 z-[60] flex items-center justify-center"
+          onClick={() => setVideoModalOpen(false)}
+        >
+          {/* Close Button */}
+          <button
+            onClick={() => setVideoModalOpen(false)}
+            className="absolute top-4 right-4 z-10 w-12 h-12 flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-full transition-colors"
+          >
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+
+          <div
+            className="relative w-full max-w-5xl mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <video
+              src={displayVideoUrl}
+              controls
+              autoPlay
+              playsInline
+              className="w-full rounded-xl"
+              style={{ maxHeight: '85vh' }}
+            />
+          </div>
         </div>
       )}
 

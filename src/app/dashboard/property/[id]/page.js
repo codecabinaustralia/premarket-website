@@ -42,6 +42,10 @@ import {
   Link2,
   Check,
   ExternalLink,
+  Video,
+  Upload,
+  Pencil,
+  Archive,
 } from 'lucide-react';
 
 function formatPrice(price) {
@@ -412,6 +416,8 @@ export default function PropertyReportPage() {
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [archiving, setArchiving] = useState(false);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -483,6 +489,56 @@ export default function PropertyReportPage() {
     }
   };
 
+  const handleVideoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !property) return;
+    setUploadingVideo(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/upload-image', {
+        method: 'POST',
+        body: formData,
+      });
+      if (!res.ok) throw new Error('Upload failed');
+      const data = await res.json();
+      await updateDoc(doc(db, 'properties', property.id), { videoUrl: data.url });
+      setProperty(prev => ({ ...prev, videoUrl: data.url }));
+    } catch (err) {
+      console.error('Video upload error:', err);
+    } finally {
+      setUploadingVideo(false);
+    }
+  };
+
+  const handleRemoveVideo = async () => {
+    if (!property) return;
+    try {
+      await updateDoc(doc(db, 'properties', property.id), { videoUrl: null });
+      setProperty(prev => ({ ...prev, videoUrl: null }));
+    } catch (err) {
+      console.error('Error removing video:', err);
+    }
+  };
+
+  const handleArchive = async () => {
+    if (!property) return;
+    setArchiving(true);
+    try {
+      if (property.archived) {
+        await updateDoc(doc(db, 'properties', property.id), { archived: false });
+        setProperty(prev => ({ ...prev, archived: false }));
+      } else {
+        await updateDoc(doc(db, 'properties', property.id), { archived: true, visibility: false });
+        router.push('/dashboard');
+      }
+    } catch (err) {
+      console.error('Error archiving property:', err);
+    } finally {
+      setArchiving(false);
+    }
+  };
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -543,6 +599,23 @@ export default function PropertyReportPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {/* Edit button */}
+            <Link
+              href={`/dashboard/edit/${property.id}`}
+              className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+              Edit
+            </Link>
+            {/* Archive / Unarchive */}
+            <button
+              onClick={handleArchive}
+              disabled={archiving}
+              className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors disabled:opacity-50"
+            >
+              <Archive className="w-3.5 h-3.5" />
+              {property.archived ? 'Unarchive' : 'Archive'}
+            </button>
             {/* Live / Draft indicator */}
             <button
               onClick={toggleVisibility}
@@ -559,12 +632,12 @@ export default function PropertyReportPage() {
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                   </span>
-                  Live
+                  Public
                 </>
               ) : (
                 <>
                   <ToggleLeft className="w-4 h-4" />
-                  Draft
+                  Private
                 </>
               )}
             </button>
@@ -578,8 +651,7 @@ export default function PropertyReportPage() {
         </div>
 
         {/* Property Link Bar */}
-        {property.visibility && (
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-3">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-3">
             <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-xl p-4 shadow-sm">
               <div className="flex items-center justify-between mb-2.5">
                 <div className="flex items-center gap-2">
@@ -617,7 +689,6 @@ export default function PropertyReportPage() {
               <p className="text-xs text-white/40 mt-2">Send this link to your buyers and social media</p>
             </div>
           </div>
-        )}
       </div>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
@@ -625,8 +696,8 @@ export default function PropertyReportPage() {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* Video + Image Gallery */}
           <div className="lg:col-span-3 space-y-4">
-            {(property.aiVideo?.url || property.videoUrl) && (
-              <div className="rounded-xl overflow-hidden bg-black">
+            {(property.aiVideo?.url || property.videoUrl) ? (
+              <div className="relative rounded-xl overflow-hidden bg-black group">
                 <video
                   src={property.aiVideo?.url || property.videoUrl}
                   controls
@@ -639,7 +710,48 @@ export default function PropertyReportPage() {
                     e.target.parentElement.innerHTML = '<div class="flex items-center justify-center py-12 text-white/60 text-sm">Video unavailable</div>';
                   }}
                 />
+                {/* Replace / Remove video controls */}
+                <div className="absolute top-3 right-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <label className="cursor-pointer px-3 py-1.5 bg-white/90 backdrop-blur-sm text-slate-700 rounded-lg text-xs font-semibold hover:bg-white transition-colors">
+                    Replace
+                    <input
+                      type="file"
+                      accept="video/mp4,video/quicktime,video/webm"
+                      onChange={handleVideoUpload}
+                      className="hidden"
+                      disabled={uploadingVideo}
+                    />
+                  </label>
+                  <button
+                    onClick={handleRemoveVideo}
+                    className="px-3 py-1.5 bg-red-500/90 backdrop-blur-sm text-white rounded-lg text-xs font-semibold hover:bg-red-600 transition-colors"
+                  >
+                    Remove
+                  </button>
+                </div>
               </div>
+            ) : (
+              <label className={`cursor-pointer block border-2 border-dashed border-slate-300 rounded-xl p-8 text-center hover:border-orange-400 hover:bg-orange-50 transition-all ${uploadingVideo ? 'opacity-50 pointer-events-none' : ''}`}>
+                {uploadingVideo ? (
+                  <>
+                    <div className="animate-spin rounded-full h-10 w-10 border-b-4 border-orange-500 mx-auto mb-3" />
+                    <p className="text-sm font-semibold text-slate-900">Uploading video...</p>
+                  </>
+                ) : (
+                  <>
+                    <Video className="w-10 h-10 text-slate-400 mx-auto mb-3" />
+                    <p className="text-sm font-semibold text-slate-900 mb-1">Add walkthrough video</p>
+                    <p className="text-xs text-slate-500">MP4, MOV, WebM up to 500MB</p>
+                  </>
+                )}
+                <input
+                  type="file"
+                  accept="video/mp4,video/quicktime,video/webm"
+                  onChange={handleVideoUpload}
+                  className="hidden"
+                  disabled={uploadingVideo}
+                />
+              </label>
             )}
             <ImageGallery images={property.imageUrls} />
           </div>
@@ -649,11 +761,13 @@ export default function PropertyReportPage() {
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <span className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-full ${
-                  property.visibility
-                    ? 'bg-slate-900 text-white'
-                    : 'bg-slate-100 text-slate-500'
+                  property.archived
+                    ? 'bg-amber-100 text-amber-700'
+                    : property.visibility
+                      ? 'bg-slate-900 text-white'
+                      : 'bg-slate-100 text-slate-500'
                 }`}>
-                  {property.visibility ? 'Live' : 'Draft'}
+                  {property.archived ? 'Archived' : property.visibility ? 'Public' : 'Private'}
                 </span>
               </div>
               <h2 className="text-xl font-bold text-slate-900 mb-1">
@@ -681,7 +795,7 @@ export default function PropertyReportPage() {
                 disabled={toggling}
                 className="flex-1 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all bg-slate-100 text-slate-700 hover:bg-slate-200"
               >
-                {property.visibility ? 'Set to Draft' : 'Go Live'}
+                {property.visibility ? 'Set Private' : 'Set Public'}
               </button>
             </div>
           </div>

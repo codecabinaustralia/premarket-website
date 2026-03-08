@@ -29,6 +29,9 @@ import {
   Sparkles,
   BookOpen,
   Video,
+  Plug,
+  Pencil,
+  Archive,
 } from 'lucide-react';
 
 function formatPrice(price) {
@@ -49,7 +52,9 @@ function Sidebar({ active, onNavigate, onSignOut, sidebarOpen, setSidebarOpen, u
   const navItems = [
     { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'properties', label: 'My Properties', icon: Home },
+    { id: 'archived', label: 'Archive', icon: Archive },
     { id: 'add', label: 'Add Property', icon: Plus, href: '/dashboard/add' },
+    { id: 'integrations', label: 'Integrations', icon: Plug, href: '/dashboard/integrations' },
     { id: 'developers', label: 'Developers', icon: Code, href: '/dashboard/developers' },
     { id: 'docs', label: 'Docs', icon: BookOpen, href: '/docs' },
     ...(userData?.apiAccess?.status === 'approved'
@@ -205,7 +210,7 @@ function StatCard({ label, value, icon: Icon }) {
 }
 
 // --- Property Card ---
-function PropertyCard({ property, onToggleVisibility, toggling }) {
+function PropertyCard({ property, onToggleVisibility, toggling, onArchive, archiving, isArchived }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -230,11 +235,13 @@ function PropertyCard({ property, onToggleVisibility, toggling }) {
         {/* Status Badge */}
         <div className="absolute top-3 left-3">
           <span className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-full ${
-            property.visibility === true
-              ? 'bg-slate-900 text-white'
-              : 'bg-slate-100 text-slate-500'
+            property.archived === true
+              ? 'bg-amber-100 text-amber-700'
+              : property.visibility === true
+                ? 'bg-slate-900 text-white'
+                : 'bg-slate-100 text-slate-500'
           }`}>
-            {property.visibility === true ? 'Live' : 'Draft'}
+            {property.archived === true ? 'Archived' : property.visibility === true ? 'Public' : 'Private'}
           </span>
         </div>
         {/* Video Badge */}
@@ -277,12 +284,29 @@ function PropertyCard({ property, onToggleVisibility, toggling }) {
           >
             View Report
           </Link>
-          <button
-            onClick={() => onToggleVisibility(property)}
-            disabled={toggling}
-            className="px-3 py-2 text-xs font-semibold text-slate-600 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50"
+          <Link
+            href={`/dashboard/edit/${property.id}`}
+            className="px-3 py-2 text-xs font-semibold text-slate-600 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors flex items-center gap-1"
           >
-            {property.visibility ? 'Set Draft' : 'Go Live'}
+            <Pencil className="w-3 h-3" />
+            Edit
+          </Link>
+          {!isArchived && (
+            <button
+              onClick={() => onToggleVisibility(property)}
+              disabled={toggling}
+              className="px-3 py-2 text-xs font-semibold text-slate-600 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50"
+            >
+              {property.visibility ? 'Set Private' : 'Set Public'}
+            </button>
+          )}
+          <button
+            onClick={() => onArchive(property)}
+            disabled={archiving}
+            className="px-3 py-2 text-xs font-semibold text-amber-600 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1"
+          >
+            <Archive className="w-3 h-3" />
+            {isArchived ? 'Unarchive' : 'Archive'}
           </button>
         </div>
       </div>
@@ -397,6 +421,7 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [toggling, setToggling] = useState(false);
+  const [archiving, setArchiving] = useState(false);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -459,6 +484,34 @@ export default function DashboardPage() {
     }
   };
 
+  const archiveProperty = async (property) => {
+    setArchiving(true);
+    try {
+      await updateDoc(doc(db, 'properties', property.id), { archived: true, visibility: false });
+      setProperties(prev =>
+        prev.map(p => p.id === property.id ? { ...p, archived: true, visibility: false } : p)
+      );
+    } catch (err) {
+      console.error('Error archiving property:', err);
+    } finally {
+      setArchiving(false);
+    }
+  };
+
+  const unarchiveProperty = async (property) => {
+    setArchiving(true);
+    try {
+      await updateDoc(doc(db, 'properties', property.id), { archived: false });
+      setProperties(prev =>
+        prev.map(p => p.id === property.id ? { ...p, archived: false } : p)
+      );
+    } catch (err) {
+      console.error('Error unarchiving property:', err);
+    } finally {
+      setArchiving(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -470,8 +523,11 @@ export default function DashboardPage() {
   if (!user) return null;
 
   const userName = [userData?.firstName, userData?.lastName].filter(Boolean).join(' ') || 'Agent';
-  const liveProperties = properties.filter(p => p.visibility === true);
-  const totalViews = properties.reduce((sum, p) => sum + (p.stats?.views || 0), 0);
+  const activeProperties = properties.filter(p => p.archived !== true);
+  const archivedProperties = properties.filter(p => p.archived === true);
+  const liveProperties = activeProperties.filter(p => p.visibility === true);
+  const totalViews = activeProperties.reduce((sum, p) => sum + (p.stats?.views || 0), 0);
+  const displayProperties = activeTab === 'archived' ? archivedProperties : activeProperties;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -507,12 +563,14 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-slate-900">
-                {activeTab === 'overview' ? 'Dashboard' : 'My Properties'}
+                {activeTab === 'overview' ? 'Dashboard' : activeTab === 'archived' ? 'Archived Properties' : 'My Properties'}
               </h1>
               <p className="text-sm text-slate-500 mt-1">
                 {activeTab === 'overview'
                   ? `Welcome back, ${userData?.firstName || 'Agent'}`
-                  : `${properties.length} ${properties.length === 1 ? 'property' : 'properties'}`}
+                  : activeTab === 'archived'
+                    ? `${archivedProperties.length} ${archivedProperties.length === 1 ? 'property' : 'properties'}`
+                    : `${activeProperties.length} ${activeProperties.length === 1 ? 'property' : 'properties'}`}
               </p>
             </div>
             <Link
@@ -527,8 +585,8 @@ export default function DashboardPage() {
           {/* Overview Stats */}
           {activeTab === 'overview' && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard label="Total Properties" value={propertiesLoading ? '...' : properties.length} icon={Home} />
-              <StatCard label="Live Campaigns" value={propertiesLoading ? '...' : liveProperties.length} icon={TrendingUp} />
+              <StatCard label="Total Properties" value={propertiesLoading ? '...' : activeProperties.length} icon={Home} />
+              <StatCard label="Public Listings" value={propertiesLoading ? '...' : liveProperties.length} icon={TrendingUp} />
               <StatCard label="Total Views" value={propertiesLoading ? '...' : totalViews} icon={Eye} />
               <StatCard label="Buyer Opinions" value={propertiesLoading ? '...' : opinionsCount} icon={MessageSquare} />
             </div>
@@ -571,16 +629,24 @@ export default function DashboardPage() {
             <div className="flex items-center justify-center py-20">
               <div className="animate-spin rounded-full h-10 w-10 border-b-4 border-orange-500" />
             </div>
-          ) : properties.length === 0 ? (
+          ) : activeTab !== 'archived' && properties.length === 0 ? (
             <EmptyState />
+          ) : displayProperties.length === 0 ? (
+            <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
+              <Archive className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+              <p className="text-sm text-slate-500">No archived properties</p>
+            </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {properties.map(property => (
+              {displayProperties.map(property => (
                 <PropertyCard
                   key={property.id}
                   property={property}
                   onToggleVisibility={toggleVisibility}
                   toggling={toggling}
+                  onArchive={activeTab === 'archived' ? unarchiveProperty : archiveProperty}
+                  archiving={archiving}
+                  isArchived={property.archived === true}
                 />
               ))}
             </div>
