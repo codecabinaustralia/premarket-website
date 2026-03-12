@@ -89,6 +89,35 @@ const BUYER_EDUCATION = [
   }
 ];
 
+// Extract lat/lng from various location formats (plain object, GeoPoint, nested geopoint)
+function getCoords(p) {
+  const loc = p.location;
+  if (!loc) return null;
+  // Firestore GeoPoint objects (client SDK) have _lat/_long or latitude/longitude getters
+  if (typeof loc.latitude === 'number' && typeof loc.longitude === 'number') {
+    return { lat: loc.latitude, lng: loc.longitude };
+  }
+  // Firestore GeoPoint serialised with underscore-prefixed fields
+  if (typeof loc._latitude === 'number' && typeof loc._longitude === 'number') {
+    return { lat: loc._latitude, lng: loc._longitude };
+  }
+  // Nested geopoint field (GeoFirestore format)
+  const gp = loc.geopoint;
+  if (gp) {
+    if (typeof gp.latitude === 'number' && typeof gp.longitude === 'number') {
+      return { lat: gp.latitude, lng: gp.longitude };
+    }
+    if (typeof gp._latitude === 'number' && typeof gp._longitude === 'number') {
+      return { lat: gp._latitude, lng: gp._longitude };
+    }
+  }
+  // Short-form keys
+  if (typeof loc.lat === 'number' && typeof loc.lng === 'number') {
+    return { lat: loc.lat, lng: loc.lng };
+  }
+  return null;
+}
+
 function haversineDistance(lat1, lng1, lat2, lng2) {
   const toRad = (deg) => (deg * Math.PI) / 180;
   const R = 6371; // Earth radius in km
@@ -324,10 +353,9 @@ function ListingsContent() {
       const maxDist = parseFloat(radius);
       filtered = filtered
         .map(p => {
-          const pLat = p.location?.latitude;
-          const pLng = p.location?.longitude;
-          if (pLat == null || pLng == null) return null;
-          const dist = haversineDistance(searchCoords.lat, searchCoords.lng, pLat, pLng);
+          const coords = getCoords(p);
+          if (!coords) return null;
+          const dist = haversineDistance(searchCoords.lat, searchCoords.lng, coords.lat, coords.lng);
           if (dist > maxDist) return null;
           return { ...p, _distance: dist };
         })
@@ -337,10 +365,9 @@ function ListingsContent() {
       // Coords set but no radius — sort by distance, show all
       filtered = filtered
         .map(p => {
-          const pLat = p.location?.latitude;
-          const pLng = p.location?.longitude;
-          if (pLat == null || pLng == null) return { ...p, _distance: Infinity };
-          return { ...p, _distance: haversineDistance(searchCoords.lat, searchCoords.lng, pLat, pLng) };
+          const coords = getCoords(p);
+          if (!coords) return { ...p, _distance: Infinity };
+          return { ...p, _distance: haversineDistance(searchCoords.lat, searchCoords.lng, coords.lat, coords.lng) };
         })
         .sort((a, b) => a._distance - b._distance);
     }
