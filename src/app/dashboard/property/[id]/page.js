@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -42,8 +42,6 @@ import {
   Link2,
   Check,
   ExternalLink,
-  Video,
-  Upload,
   Pencil,
   Archive,
   Send,
@@ -100,83 +98,33 @@ function MedianCard({ label, value }) {
   );
 }
 
-// --- Media Gallery (Video + Images combined) ---
-function MediaGallery({ images, videoUrl, onVideoUpload, onVideoDrop, onVideoRemove, uploadingVideo, videoDragging, setVideoDragging, mediaError, setMediaError }) {
+// --- Media Gallery (Video + Images) ---
+function MediaGallery({ images, videoUrl }) {
   const [current, setCurrent] = useState(0);
   const hasVideo = !!videoUrl;
   const imageList = images || [];
-  // Video is slide 0 (or upload prompt if no video), images follow
-  const totalSlides = imageList.length + 1; // +1 for video/upload slot
-  const isVideoSlide = current === 0;
+  // Video is slide 0 if it exists, images follow
+  const totalSlides = imageList.length + (hasVideo ? 1 : 0);
+  const isVideoSlide = hasVideo && current === 0;
+  const imageIndex = hasVideo ? current - 1 : current;
 
   return (
     <div className="relative w-full rounded-xl overflow-hidden bg-slate-100">
       {/* Video slide */}
       {isVideoSlide && (
-        <div className="w-full">
-          {hasVideo ? (
-            <div className="relative bg-black group">
-              <video
-                src={videoUrl}
-                controls
-                playsInline
-                preload="metadata"
-                poster={imageList[0]}
-                className="w-full rounded-xl"
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                  e.target.parentElement.innerHTML = '<div class="flex items-center justify-center py-12 text-white/60 text-sm">Video unavailable</div>';
-                }}
-              />
-              <div className="absolute top-3 right-12 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <label className="cursor-pointer px-3 py-1.5 bg-white/90 backdrop-blur-sm text-slate-700 rounded-lg text-xs font-semibold hover:bg-white transition-colors">
-                  Replace
-                  <input
-                    type="file"
-                    accept="video/mp4,video/quicktime,video/webm,video/x-m4v,.mp4,.mov,.webm,.m4v"
-                    onChange={onVideoUpload}
-                    className="hidden"
-                    disabled={uploadingVideo}
-                  />
-                </label>
-                <button
-                  onClick={onVideoRemove}
-                  className="px-3 py-1.5 bg-red-500/90 backdrop-blur-sm text-white rounded-lg text-xs font-semibold hover:bg-red-600 transition-colors"
-                >
-                  Remove
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div
-              onDragOver={(e) => { if (!uploadingVideo) { e.preventDefault(); setVideoDragging(true); } }}
-              onDragLeave={() => setVideoDragging(false)}
-              onDrop={onVideoDrop}
-              onClick={() => { if (!uploadingVideo) document.getElementById('property-video-upload').click(); }}
-              className={`cursor-pointer h-64 sm:h-80 flex flex-col items-center justify-center transition-all ${uploadingVideo ? 'opacity-50 pointer-events-none' : videoDragging ? 'bg-orange-50' : 'hover:bg-orange-50'}`}
-            >
-              {uploadingVideo ? (
-                <>
-                  <div className="animate-spin rounded-full h-10 w-10 border-b-4 border-orange-500 mx-auto mb-3" />
-                  <p className="text-sm font-semibold text-slate-900">Uploading video...</p>
-                </>
-              ) : (
-                <>
-                  <Video className="w-10 h-10 text-slate-400 mx-auto mb-3" />
-                  <p className="text-sm font-semibold text-slate-900 mb-1">Click or drag to add video</p>
-                  <p className="text-xs text-slate-500">MP4, MOV, WebM, M4V up to 500MB</p>
-                </>
-              )}
-              <input
-                type="file"
-                id="property-video-upload"
-                accept="video/mp4,video/quicktime,video/webm,video/x-m4v,.mp4,.mov,.webm,.m4v"
-                onChange={onVideoUpload}
-                className="hidden"
-                disabled={uploadingVideo}
-              />
-            </div>
-          )}
+        <div className="relative bg-black">
+          <video
+            src={videoUrl}
+            controls
+            playsInline
+            preload="metadata"
+            poster={imageList[0]}
+            className="w-full rounded-xl"
+            onError={(e) => {
+              e.target.style.display = 'none';
+              e.target.parentElement.innerHTML = '<div class="flex items-center justify-center py-12 text-white/60 text-sm">Video unavailable</div>';
+            }}
+          />
         </div>
       )}
 
@@ -184,8 +132,8 @@ function MediaGallery({ images, videoUrl, onVideoUpload, onVideoDrop, onVideoRem
       {!isVideoSlide && imageList.length > 0 && (
         <div className="relative w-full h-64 sm:h-80">
           <Image
-            src={imageList[current - 1]}
-            alt={`Property image ${current}`}
+            src={imageList[imageIndex]}
+            alt={`Property image ${imageIndex + 1}`}
             fill
             className="object-cover"
             unoptimized
@@ -193,8 +141,8 @@ function MediaGallery({ images, videoUrl, onVideoUpload, onVideoDrop, onVideoRem
         </div>
       )}
 
-      {/* Empty state when no images and on an image slide */}
-      {!isVideoSlide && imageList.length === 0 && (
+      {/* Empty state */}
+      {totalSlides === 0 && (
         <div className="w-full h-64 sm:h-80 flex items-center justify-center">
           <Home className="w-16 h-16 text-slate-300" />
         </div>
@@ -230,17 +178,9 @@ function MediaGallery({ images, videoUrl, onVideoUpload, onVideoDrop, onVideoRem
       )}
 
       {/* Slide counter + label */}
-      <div className="absolute top-3 right-3 px-2.5 py-1 bg-black/50 rounded-lg text-white text-xs font-medium z-10">
-        {isVideoSlide ? (hasVideo ? 'Video' : 'Add Video') : `${current} / ${imageList.length}`}
-      </div>
-
-      {/* Media error banner */}
-      {mediaError && (
-        <div className="absolute bottom-12 left-3 right-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between z-10">
-          <p className="text-sm text-red-600">{mediaError}</p>
-          <button onClick={() => setMediaError(null)}>
-            <X className="w-4 h-4 text-red-400" />
-          </button>
+      {totalSlides > 0 && (
+        <div className="absolute top-3 right-3 px-2.5 py-1 bg-black/50 rounded-lg text-white text-xs font-medium z-10">
+          {isVideoSlide ? 'Video' : `${imageIndex + 1} / ${imageList.length}`}
         </div>
       )}
     </div>
@@ -380,38 +320,178 @@ function BuyerBreakdown({ seriousBuyers, passiveBuyers, opinions }) {
   );
 }
 
+// --- Price Timeline ---
+function PriceTimeline({ opinions }) {
+  const points = useMemo(() => {
+    return opinions
+      .filter(o => o.createdAt && (parseFloat(o.offerAmount) || 0) > 0)
+      .map(o => {
+        const d = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
+        return { date: d, price: parseFloat(o.offerAmount), serious: !!o.serious };
+      })
+      .filter(p => !isNaN(p.date.getTime()))
+      .sort((a, b) => a.date - b.date);
+  }, [opinions]);
+
+  if (points.length < 2) return null;
+
+  const W = 600, H = 220;
+  const pad = { top: 20, right: 20, bottom: 40, left: 70 };
+  const chartW = W - pad.left - pad.right;
+  const chartH = H - pad.top - pad.bottom;
+
+  const prices = points.map(p => p.price);
+  const minPrice = Math.min(...prices);
+  const maxPrice = Math.max(...prices);
+  const priceRange = maxPrice - minPrice || 1;
+  const minTime = points[0].date.getTime();
+  const maxTime = points[points.length - 1].date.getTime();
+  const timeRange = maxTime - minTime || 1;
+
+  const toX = (t) => pad.left + ((t - minTime) / timeRange) * chartW;
+  const toY = (p) => pad.top + chartH - ((p - minPrice) / priceRange) * chartH;
+
+  // Y-axis labels (4 levels)
+  const yLabels = [];
+  for (let i = 0; i <= 3; i++) {
+    const val = minPrice + (priceRange * i) / 3;
+    yLabels.push({ val, y: toY(val) });
+  }
+
+  // Build line path
+  const linePath = points.map((p, i) => {
+    const x = toX(p.date.getTime());
+    const y = toY(p.price);
+    return `${i === 0 ? 'M' : 'L'}${x},${y}`;
+  }).join(' ');
+
+  // X-axis date labels (first, middle, last)
+  const xLabels = [points[0], points[Math.floor(points.length / 2)], points[points.length - 1]].map(p => ({
+    x: toX(p.date.getTime()),
+    label: p.date.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }),
+  }));
+
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 p-6">
+      <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center gap-2">
+        <TrendingUp className="w-4 h-4 text-slate-500" />
+        Price Opinion Timeline
+      </h3>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" preserveAspectRatio="xMidYMid meet">
+        {/* Grid lines */}
+        {yLabels.map((l, i) => (
+          <g key={i}>
+            <line x1={pad.left} y1={l.y} x2={W - pad.right} y2={l.y} stroke="#F1F5F9" strokeWidth="1" />
+            <text x={pad.left - 8} y={l.y + 4} textAnchor="end" fill="#94A3B8" fontSize="10">
+              {formatPrice(l.val)}
+            </text>
+          </g>
+        ))}
+
+        {/* Axes */}
+        <line x1={pad.left} y1={pad.top} x2={pad.left} y2={pad.top + chartH} stroke="#CBD5E1" strokeWidth="1" />
+        <line x1={pad.left} y1={pad.top + chartH} x2={W - pad.right} y2={pad.top + chartH} stroke="#CBD5E1" strokeWidth="1" />
+
+        {/* Line */}
+        <path d={linePath} fill="none" stroke="#94A3B8" strokeWidth="2" />
+
+        {/* Dots */}
+        {points.map((p, i) => {
+          const x = toX(p.date.getTime());
+          const y = toY(p.price);
+          return (
+            <circle
+              key={i}
+              cx={x}
+              cy={y}
+              r={p.serious ? 5 : 3.5}
+              fill={p.serious ? '#1E293B' : '#F97316'}
+              stroke="#fff"
+              strokeWidth="1.5"
+            />
+          );
+        })}
+
+        {/* X-axis labels */}
+        {xLabels.map((l, i) => (
+          <text key={i} x={l.x} y={H - 8} textAnchor="middle" fill="#94A3B8" fontSize="10">
+            {l.label}
+          </text>
+        ))}
+      </svg>
+
+      {/* Legend */}
+      <div className="flex items-center gap-4 mt-3 text-xs text-slate-500">
+        <span className="flex items-center gap-1.5">
+          <span className="w-3 h-3 rounded-full bg-slate-900 inline-block" />
+          Serious
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-orange-500 inline-block" />
+          Passive
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function fmtBuyerType(type) {
+  if (!type) return '--';
+  const map = { cash: 'Cash', approved_finance: 'Approved Finance', pre_approval: 'Pre-Approval', not_yet: 'Not Yet' };
+  return map[type] || type;
+}
+
+function fmtInterestLevel(level) {
+  if (!level) return '--';
+  const map = { just_browsing: 'Just Browsing', interested: 'Interested', very_interested: 'Very Interested', ready_to_buy: 'Ready to Buy' };
+  return map[level] || level;
+}
+
+function fmtBudget(val) {
+  if (!val) return null;
+  if (val >= 1000000) return `$${(val / 1000000).toFixed(val % 1000000 === 0 ? 0 : 1)}M`;
+  if (val >= 1000) return `$${Math.round(val / 1000)}K`;
+  return formatPrice(val);
+}
+
 // --- Opinions Table ---
 function OpinionsTable({ opinions }) {
-  const [sortField, setSortField] = useState('offerAmount');
-  const [sortDir, setSortDir] = useState('desc');
+  const [showAnonymous, setShowAnonymous] = useState(false);
+  const [anonSortField, setAnonSortField] = useState('offerAmount');
+  const [anonSortDir, setAnonSortDir] = useState('desc');
 
-  const sorted = useMemo(() => {
-    return [...opinions].sort((a, b) => {
+  const seriousOpinions = useMemo(() => {
+    return [...opinions]
+      .filter(o => o.serious === true)
+      .sort((a, b) => (parseFloat(b.offerAmount) || 0) - (parseFloat(a.offerAmount) || 0));
+  }, [opinions]);
+
+  const anonymousOpinions = useMemo(() => {
+    const anon = opinions.filter(o => o.serious !== true);
+    return [...anon].sort((a, b) => {
       let aVal, bVal;
-      if (sortField === 'offerAmount') {
+      if (anonSortField === 'offerAmount') {
         aVal = parseFloat(a.offerAmount) || 0;
         bVal = parseFloat(b.offerAmount) || 0;
-      } else if (sortField === 'serious') {
-        aVal = a.serious ? 1 : 0;
-        bVal = b.serious ? 1 : 0;
-      } else if (sortField === 'seriousnessLevel') {
-        aVal = a.seriousnessLevel || 0;
-        bVal = b.seriousnessLevel || 0;
+      } else if (anonSortField === 'createdAt') {
+        const aTs = a.createdAt?.toDate ? a.createdAt.toDate() : (a.createdAt ? new Date(a.createdAt) : new Date(0));
+        const bTs = b.createdAt?.toDate ? b.createdAt.toDate() : (b.createdAt ? new Date(b.createdAt) : new Date(0));
+        aVal = aTs.getTime();
+        bVal = bTs.getTime();
       } else {
-        aVal = a[sortField] || '';
-        bVal = b[sortField] || '';
+        aVal = a[anonSortField] || '';
+        bVal = b[anonSortField] || '';
       }
-      if (sortDir === 'asc') return aVal > bVal ? 1 : -1;
-      return aVal < bVal ? 1 : -1;
+      return anonSortDir === 'asc' ? (aVal > bVal ? 1 : -1) : (aVal < bVal ? 1 : -1);
     });
-  }, [opinions, sortField, sortDir]);
+  }, [opinions, anonSortField, anonSortDir]);
 
-  const toggleSort = (field) => {
-    if (sortField === field) {
-      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+  const toggleAnonSort = (field) => {
+    if (anonSortField === field) {
+      setAnonSortDir(d => d === 'asc' ? 'desc' : 'asc');
     } else {
-      setSortField(field);
-      setSortDir('desc');
+      setAnonSortField(field);
+      setAnonSortDir('desc');
     }
   };
 
@@ -424,76 +504,153 @@ function OpinionsTable({ opinions }) {
     );
   }
 
-  const SortHeader = ({ field, children }) => (
+  const AnonSortHeader = ({ field, children }) => (
     <th
-      onClick={() => toggleSort(field)}
+      onClick={() => toggleAnonSort(field)}
       className="text-left px-4 py-3 font-semibold text-slate-600 cursor-pointer hover:text-slate-900 select-none"
     >
       <span className="flex items-center gap-1">
         {children}
-        {sortField === field && (
-          <span className="text-xs">{sortDir === 'asc' ? '\u2191' : '\u2193'}</span>
+        {anonSortField === field && (
+          <span className="text-xs">{anonSortDir === 'asc' ? '\u2191' : '\u2193'}</span>
         )}
       </span>
     </th>
   );
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-      <div className="px-6 py-4 border-b border-slate-200">
-        <h3 className="text-sm font-semibold text-slate-900">Buyer Opinions ({opinions.length})</h3>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-slate-50 border-b border-slate-200">
-              <SortHeader field="buyerName">Buyer</SortHeader>
-              <SortHeader field="offerAmount">Price Opinion</SortHeader>
-              <SortHeader field="serious">Type</SortHeader>
-              <SortHeader field="seriousnessLevel">Seriousness</SortHeader>
-              <th className="text-left px-4 py-3 font-semibold text-slate-600">Badges</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sorted.map((op) => (
-              <tr
-                key={op.id}
-                className="border-b border-slate-100 last:border-0 hover:bg-slate-50"
-              >
-                <td className="px-4 py-3 font-medium text-slate-900">
-                  {op.buyerName || op.userName || 'Anonymous'}
-                </td>
-                <td className="px-4 py-3 text-slate-700 font-semibold">
-                  {formatPrice(op.offerAmount)}
-                </td>
-                <td className="px-4 py-3">
-                  <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${
-                    op.serious
-                      ? 'bg-slate-900 text-white'
-                      : 'bg-slate-100 text-slate-600'
-                  }`}>
-                    {op.serious ? 'Serious' : 'Passive'}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-slate-600">
-                  {op.seriousnessLevel || '--'}
-                </td>
-                <td className="px-4 py-3 space-x-1">
-                  {op.isFirstHomeBuyer && (
-                    <span className="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full bg-slate-200 text-slate-700">FHB</span>
+    <div className="space-y-6">
+      {/* Serious / Registered Buyers */}
+      {seriousOpinions.length > 0 && (
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+              <UserCheck className="w-4 h-4 text-slate-500" />
+              Registered Buyers ({seriousOpinions.length})
+            </h3>
+          </div>
+          <div className="divide-y divide-slate-100">
+            {seriousOpinions.map((op) => (
+              <div key={op.id} className="px-6 py-4">
+                {/* Top row: name/contact + price/date */}
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold text-slate-900">
+                        {op.resolvedBuyerName || op.buyerName || op.userName || 'Anonymous'}
+                      </span>
+                      {op.isFirstHomeBuyer && (
+                        <span className="inline-flex px-2 py-0.5 text-[10px] font-semibold rounded-full bg-slate-100 text-slate-600">FHB</span>
+                      )}
+                      {op.isInvestor && (
+                        <span className="inline-flex px-2 py-0.5 text-[10px] font-semibold rounded-full bg-slate-100 text-slate-600">Investor</span>
+                      )}
+                    </div>
+                    {(op.resolvedEmail || op.resolvedPhone) && (
+                      <div className="text-xs text-slate-400 mt-0.5 flex items-center gap-2 flex-wrap">
+                        {op.resolvedEmail && <span>{op.resolvedEmail}</span>}
+                        {op.resolvedPhone && <span>{op.resolvedPhone}</span>}
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="text-lg font-bold text-slate-900">{formatPrice(op.offerAmount)}</div>
+                    <div className="text-xs text-slate-400">{formatDate(op.createdAt)}</div>
+                  </div>
+                </div>
+
+                {/* Detail grid */}
+                <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-2 text-xs">
+                  <div>
+                    <span className="text-slate-400">Finance</span>
+                    <p className="font-semibold text-slate-700">{fmtBuyerType(op.buyerType)}</p>
+                  </div>
+                  <div>
+                    <span className="text-slate-400">Interest Level</span>
+                    <p className="font-semibold text-slate-700">{fmtInterestLevel(op.seriousnessLevel)}</p>
+                  </div>
+                  {op.preferredLocations?.length > 0 && (
+                    <div>
+                      <span className="text-slate-400">Preferred Locations</span>
+                      <p className="font-semibold text-slate-700">{op.preferredLocations.join(', ')}</p>
+                    </div>
                   )}
-                  {op.isInvestor && (
-                    <span className="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full bg-slate-200 text-slate-700">Investor</span>
+                  {op.preferredType && (
+                    <div>
+                      <span className="text-slate-400">Property Type</span>
+                      <p className="font-semibold text-slate-700">{op.preferredType}</p>
+                    </div>
                   )}
-                  {!op.isFirstHomeBuyer && !op.isInvestor && (
-                    <span className="text-slate-400">--</span>
+                  {op.minBedrooms && (
+                    <div>
+                      <span className="text-slate-400">Min Bedrooms</span>
+                      <p className="font-semibold text-slate-700">{op.minBedrooms}+</p>
+                    </div>
                   )}
-                </td>
-              </tr>
+                  {(op.minBudget || op.maxBudget) && (
+                    <div>
+                      <span className="text-slate-400">Budget Range</span>
+                      <p className="font-semibold text-slate-700">{fmtBudget(op.minBudget) || 'Any'} – {fmtBudget(op.maxBudget) || 'Any'}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
             ))}
-          </tbody>
-        </table>
-      </div>
+          </div>
+        </div>
+      )}
+
+      {/* Anonymous / Passive Opinions */}
+      {anonymousOpinions.length > 0 && (
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+          <button
+            onClick={() => setShowAnonymous(!showAnonymous)}
+            className="w-full px-6 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors"
+          >
+            <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+              <Users className="w-4 h-4 text-slate-400" />
+              Anonymous Opinions ({anonymousOpinions.length})
+            </h3>
+            <ChevronRight className={`w-4 h-4 text-slate-400 transition-transform ${showAnonymous ? 'rotate-90' : ''}`} />
+          </button>
+          {showAnonymous && (
+            <div className="border-t border-slate-200 overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200">
+                    <AnonSortHeader field="offerAmount">Price Opinion</AnonSortHeader>
+                    <AnonSortHeader field="createdAt">Date</AnonSortHeader>
+                    <th className="text-left px-4 py-3 font-semibold text-slate-600">Badges</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {anonymousOpinions.map((op) => (
+                    <tr key={op.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
+                      <td className="px-4 py-3 text-slate-700 font-semibold">
+                        {formatPrice(op.offerAmount)}
+                      </td>
+                      <td className="px-4 py-3 text-slate-500 text-xs whitespace-nowrap">
+                        {formatDate(op.createdAt)}
+                      </td>
+                      <td className="px-4 py-3 space-x-1">
+                        {op.isFirstHomeBuyer && (
+                          <span className="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full bg-slate-200 text-slate-700">FHB</span>
+                        )}
+                        {op.isInvestor && (
+                          <span className="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full bg-slate-200 text-slate-700">Investor</span>
+                        )}
+                        {!op.isFirstHomeBuyer && !op.isInvestor && (
+                          <span className="text-slate-400">--</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -513,9 +670,6 @@ export default function PropertyReportPage() {
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [uploadingVideo, setUploadingVideo] = useState(false);
-  const [videoDragging, setVideoDragging] = useState(false);
-  const [mediaError, setMediaError] = useState(null);
   const [archiving, setArchiving] = useState(false);
   const [showSendReport, setShowSendReport] = useState(false);
   const [sendingReport, setSendingReport] = useState(false);
@@ -557,7 +711,45 @@ export default function PropertyReportPage() {
           return;
         }
 
-        setOffers(offersSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+        const rawOffers = offersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        // Batch-fetch user docs for serious offers with userId
+        const seriousWithUserId = rawOffers.filter(o => o.type === 'opinion' && o.serious === true && o.userId);
+        const uniqueUserIds = [...new Set(seriousWithUserId.map(o => o.userId))];
+        const userMap = {};
+        if (uniqueUserIds.length > 0) {
+          const userSnaps = await Promise.all(
+            uniqueUserIds.map(uid => getDoc(doc(db, 'users', uid)))
+          );
+          userSnaps.forEach(snap => {
+            if (snap.exists()) userMap[snap.id] = snap.data();
+          });
+        }
+
+        // Enrich offers with resolved buyer name, contact info, and preferences
+        const enrichedOffers = rawOffers.map(o => {
+          if (o.type === 'opinion' && o.serious === true && o.userId && userMap[o.userId]) {
+            const u = userMap[o.userId];
+            const resolvedName = (u.firstName && u.lastName)
+              ? `${u.firstName} ${u.lastName}`.trim()
+              : (u.firstName || o.buyerName || o.userName || 'Anonymous');
+            const prefs = u.buyerPreferences || {};
+            return {
+              ...o,
+              resolvedBuyerName: resolvedName,
+              resolvedEmail: u.email || null,
+              resolvedPhone: u.phone || null,
+              preferredLocations: prefs.locations || [],
+              preferredType: prefs.propertyType || null,
+              minBedrooms: prefs.minBedrooms || null,
+              minBudget: prefs.minBudget || null,
+              maxBudget: prefs.maxBudget || null,
+            };
+          }
+          return { ...o, resolvedBuyerName: 'Anonymous' };
+        });
+
+        setOffers(enrichedOffers);
         setLikes(likesSnap.docs.map(d => ({ id: d.id, ...d.data() })));
       } catch (err) {
         console.error('Error fetching report data:', err);
@@ -591,84 +783,6 @@ export default function PropertyReportPage() {
     } catch (err) {
       console.error('Error deleting property:', err);
       setDeleting(false);
-    }
-  };
-
-  const validateVideoFile = (file) => {
-    const allowedVideoExts = ['.mp4', '.mov', '.webm', '.m4v'];
-    const ext = (file.name || '').toLowerCase().replace(/.*(\.\w+)$/, '$1');
-    if (file.size > 500 * 1024 * 1024) {
-      setMediaError('Video file exceeds 500MB limit. Please choose a smaller file.');
-      return false;
-    }
-    if (!allowedVideoExts.includes(ext)) {
-      setMediaError(`Unsupported video format "${ext}". Please use MP4, MOV, WebM, or M4V.`);
-      return false;
-    }
-    setMediaError(null);
-    return true;
-  };
-
-  const handleVideoUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file || !property) return;
-    if (!validateVideoFile(file)) return;
-    setUploadingVideo(true);
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const res = await fetch('/api/upload-image', {
-        method: 'POST',
-        body: formData,
-      });
-      if (!res.ok) throw new Error('Upload failed');
-      const data = await res.json();
-      await updateDoc(doc(db, 'properties', property.id), { videoUrl: data.url });
-      setProperty(prev => ({ ...prev, videoUrl: data.url }));
-    } catch (err) {
-      console.error('Video upload error:', err);
-    } finally {
-      setUploadingVideo(false);
-    }
-  };
-
-  const handleVideoDrop = async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setVideoDragging(false);
-    const allowedVideoExts = ['.mp4', '.mov', '.webm', '.m4v'];
-    const file = Array.from(e.dataTransfer.files).find(f => {
-      const ext = (f.name || '').toLowerCase().replace(/.*(\.\w+)$/, '$1');
-      return f.type.startsWith('video/') || allowedVideoExts.includes(ext);
-    });
-    if (!file || !property) return;
-    if (!validateVideoFile(file)) return;
-    setUploadingVideo(true);
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const res = await fetch('/api/upload-image', {
-        method: 'POST',
-        body: formData,
-      });
-      if (!res.ok) throw new Error('Upload failed');
-      const data = await res.json();
-      await updateDoc(doc(db, 'properties', property.id), { videoUrl: data.url });
-      setProperty(prev => ({ ...prev, videoUrl: data.url }));
-    } catch (err) {
-      console.error('Video upload error:', err);
-    } finally {
-      setUploadingVideo(false);
-    }
-  };
-
-  const handleRemoveVideo = async () => {
-    if (!property) return;
-    try {
-      await updateDoc(doc(db, 'properties', property.id), { videoUrl: null });
-      setProperty(prev => ({ ...prev, videoUrl: null }));
-    } catch (err) {
-      console.error('Error removing video:', err);
     }
   };
 
@@ -886,14 +1000,6 @@ export default function PropertyReportPage() {
             <MediaGallery
               images={property.imageUrls}
               videoUrl={property.aiVideo?.url || property.videoUrl}
-              onVideoUpload={handleVideoUpload}
-              onVideoDrop={handleVideoDrop}
-              onVideoRemove={handleRemoveVideo}
-              uploadingVideo={uploadingVideo}
-              videoDragging={videoDragging}
-              setVideoDragging={setVideoDragging}
-              mediaError={mediaError}
-              setMediaError={setMediaError}
             />
           </div>
 
@@ -1005,6 +1111,9 @@ export default function PropertyReportPage() {
             opinions={opinions}
           />
         </div>
+
+        {/* Price Timeline */}
+        <PriceTimeline opinions={opinions} />
 
         {/* Opinions Table */}
         <OpinionsTable opinions={opinions} />

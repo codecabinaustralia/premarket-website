@@ -16,6 +16,32 @@ function fmtMoney(v) {
   return '$' + Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
+function fmtFinance(type) {
+  if (!type) return '--';
+  const map = { cash: 'Cash', approved_finance: 'Approved Finance', pre_approval: 'Pre-Approval', not_yet: 'Not Yet' };
+  return map[type] || type;
+}
+
+function fmtSeriousness(level) {
+  if (!level) return '--';
+  const map = { just_browsing: 'Just Browsing', interested: 'Interested', very_interested: 'Very Interested', ready_to_buy: 'Ready to Buy' };
+  return map[level] || level;
+}
+
+function fmtBudget(val) {
+  if (!val) return null;
+  if (val >= 1000000) return `$${(val / 1000000).toFixed(val % 1000000 === 0 ? 0 : 1)}M`;
+  if (val >= 1000) return `$${Math.round(val / 1000)}K`;
+  return fmtMoney(val);
+}
+
+function fmtTimestamp(ts) {
+  if (!ts) return '--';
+  const d = ts.toDate ? ts.toDate() : (ts._seconds ? new Date(ts._seconds * 1000) : new Date(ts));
+  if (isNaN(d.getTime())) return '--';
+  return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
 function buildPriceDistribution(opinions, bucketCount = 5) {
   const amounts = opinions.map(o => o.offerAmount || 0).filter(a => a > 0);
   if (!amounts.length) return [];
@@ -57,6 +83,46 @@ async function buildReport(propertyId) {
     else passive.push(data);
   }
 
+  // Batch-fetch user docs for serious buyers with userId
+  const seriousUserIds = [...new Set(serious.filter(o => o.userId).map(o => o.userId))];
+  const userMap = {};
+  if (seriousUserIds.length > 0) {
+    const chunks = [];
+    for (let i = 0; i < seriousUserIds.length; i += 10) {
+      chunks.push(seriousUserIds.slice(i, i + 10));
+    }
+    for (const chunk of chunks) {
+      const userSnaps = await Promise.all(chunk.map(uid => adminDb.collection('users').doc(uid).get()));
+      userSnaps.forEach(snap => {
+        if (snap.exists) userMap[snap.id] = snap.data();
+      });
+    }
+  }
+
+  // Build serious buyer details with all registration data
+  const seriousBuyerDetails = serious.map(o => {
+    const u = o.userId ? userMap[o.userId] : null;
+    const name = (u?.firstName && u?.lastName) ? `${u.firstName} ${u.lastName}`.trim()
+      : (u?.firstName || o.buyerName || o.userName || 'Anonymous');
+    const prefs = u?.buyerPreferences || {};
+    return {
+      name,
+      email: u?.email || null,
+      phone: u?.phone || null,
+      price: o.offerAmount || 0,
+      buyerType: o.buyerType || null,
+      seriousness: o.seriousnessLevel || null,
+      isFirstHomeBuyer: !!o.isFirstHomeBuyer,
+      isInvestor: !!o.isInvestor,
+      createdAt: o.createdAt || null,
+      preferredLocations: prefs.locations || [],
+      preferredType: prefs.propertyType || null,
+      minBedrooms: prefs.minBedrooms || null,
+      minBudget: prefs.minBudget || null,
+      maxBudget: prefs.maxBudget || null,
+    };
+  });
+
   const seriousMedian = median(serious.map((o) => o.offerAmount || 0));
   const passiveMedian = median(passive.map((o) => o.offerAmount || 0));
   const combinedMedian = median([
@@ -82,20 +148,6 @@ async function buildReport(propertyId) {
     ? Math.round(((combinedMedian - listingNum) / listingNum) * 100)
     : null;
 
-  const agentsSnap = await adminDb.collection('agents').get();
-  let agents = agentsSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
-
-  if (property.latitude && property.longitude) {
-    agents.forEach((a) => {
-      if (a.latitude && a.longitude) {
-        a.dist = Math.pow(a.latitude - property.latitude, 2) + Math.pow(a.longitude - property.longitude, 2);
-      } else {
-        a.dist = Number.MAX_VALUE;
-      }
-    });
-    agents.sort((a, b) => a.dist - b.dist);
-  }
-
   return {
     property,
     seriousCount: serious.length,
@@ -110,7 +162,8 @@ async function buildReport(propertyId) {
     priceMax,
     priceDistribution,
     listingVsMedianPct,
-    agents: agents.slice(0, 3),
+    seriousBuyerDetails,
+    allOpinions,
   };
 }
 
@@ -257,6 +310,152 @@ async function generateReportPDF(report) {
       doc.moveDown(1);
     }
 
+    // --- Serious Buyer Details ---
+    if (report.seriousBuyerDetails && report.seriousBuyerDetails.length > 0) {
+      if (doc.y > doc.page.height - 200) doc.addPage();
+
+      doc.fontSize(14).fillColor(dark).text('Serious Buyer Details');
+      doc.moveTo(50, doc.y + 2).lineTo(50 + pageWidth, doc.y + 2).strokeColor('#E2E8F0').lineWidth(1).stroke();
+      doc.moveDown(0.5);
+
+      report.seriousBuyerDetails.forEach((b) => {
+        const cardH = 70;
+        if (doc.y > doc.page.height - cardH - 40) doc.addPage();
+
+        const cardTop = doc.y;
+        // Background
+        doc.rect(50, cardTop, pageWidth, cardH).fillColor('#F8FAFC').fill();
+        doc.rect(50, cardTop, pageWidth, cardH).strokeColor('#E2E8F0').lineWidth(0.5).stroke();
+
+        // Name + contact (left)
+        doc.fontSize(11).fillColor(dark).font('Helvetica-Bold');
+        doc.text(b.name, 58, cardTop + 8, { width: 250 });
+        doc.font('Helvetica').fontSize(8).fillColor(grey);
+        const contactParts = [b.email, b.phone].filter(Boolean);
+        if (contactParts.length) {
+          doc.text(contactParts.join('  |  '), 58, cardTop + 22, { width: 250 });
+        }
+
+        // Price + date (right)
+        doc.fontSize(14).fillColor(dark).font('Helvetica-Bold');
+        doc.text(fmtMoney(b.price), 350, cardTop + 8, { width: 190, align: 'right' });
+        doc.font('Helvetica').fontSize(8).fillColor(grey);
+        doc.text(fmtTimestamp(b.createdAt), 350, cardTop + 24, { width: 190, align: 'right' });
+
+        // Row 2: Finance, Interest, Badges
+        const row2Y = cardTop + 40;
+        doc.fontSize(8).fillColor(grey);
+        doc.text(`Finance: `, 58, row2Y);
+        doc.fillColor(dark).text(fmtFinance(b.buyerType), 100, row2Y);
+
+        doc.fillColor(grey).text(`Interest: `, 200, row2Y);
+        doc.fillColor(dark).text(fmtSeriousness(b.seriousness), 242, row2Y);
+
+        const badges = [];
+        if (b.isFirstHomeBuyer) badges.push('FHB');
+        if (b.isInvestor) badges.push('Investor');
+        if (badges.length) {
+          doc.fillColor(grey).text(badges.join(', '), 370, row2Y);
+        }
+
+        // Row 3: Preferences (if any)
+        const budgetStr = (b.minBudget || b.maxBudget) ? `${fmtBudget(b.minBudget) || 'Any'} – ${fmtBudget(b.maxBudget) || 'Any'}` : null;
+        const prefsItems = [
+          b.preferredLocations.length ? `Locations: ${b.preferredLocations.join(', ')}` : null,
+          b.preferredType ? `Type: ${b.preferredType}` : null,
+          b.minBedrooms ? `Min Beds: ${b.minBedrooms}+` : null,
+          budgetStr ? `Budget: ${budgetStr}` : null,
+        ].filter(Boolean);
+
+        if (prefsItems.length) {
+          doc.fontSize(7).fillColor(grey).text(prefsItems.join('  |  '), 58, row2Y + 14, { width: pageWidth - 16 });
+        }
+
+        doc.y = cardTop + cardH + 8;
+      });
+
+      doc.moveDown(0.5);
+    }
+
+    // --- Opinion Timeline Chart ---
+    const opinionsWithDate = (report.allOpinions || []).filter(o => {
+      if (!o.createdAt || !(o.offerAmount > 0)) return false;
+      const d = o.createdAt.toDate ? o.createdAt.toDate() : (o.createdAt._seconds ? new Date(o.createdAt._seconds * 1000) : new Date(o.createdAt));
+      return !isNaN(d.getTime());
+    });
+
+    if (opinionsWithDate.length >= 2) {
+      if (doc.y > doc.page.height - 250) doc.addPage();
+
+      doc.fontSize(14).fillColor(dark).text('Price Opinion Timeline');
+      doc.moveTo(50, doc.y + 2).lineTo(50 + pageWidth, doc.y + 2).strokeColor('#E2E8F0').lineWidth(1).stroke();
+      doc.moveDown(0.5);
+
+      const chartX = 90, chartW = pageWidth - 60, chartH = 150;
+      const chartY = doc.y;
+
+      // Parse dates and sort
+      const points = opinionsWithDate.map(o => {
+        const d = o.createdAt.toDate ? o.createdAt.toDate() : (o.createdAt._seconds ? new Date(o.createdAt._seconds * 1000) : new Date(o.createdAt));
+        return { date: d, price: o.offerAmount, serious: !!o.serious };
+      }).sort((a, b) => a.date - b.date);
+
+      const minTime = points[0].date.getTime();
+      const maxTime = points[points.length - 1].date.getTime();
+      const timeRange = maxTime - minTime || 1;
+      const prices = points.map(p => p.price);
+      const minPrice = Math.min(...prices);
+      const maxPrice = Math.max(...prices);
+      const priceRange = maxPrice - minPrice || 1;
+
+      // Draw axes
+      doc.strokeColor('#CBD5E1').lineWidth(1);
+      doc.moveTo(chartX, chartY).lineTo(chartX, chartY + chartH).stroke();
+      doc.moveTo(chartX, chartY + chartH).lineTo(chartX + chartW, chartY + chartH).stroke();
+
+      // Y-axis labels (4 levels)
+      doc.fontSize(7).fillColor(grey);
+      for (let i = 0; i <= 3; i++) {
+        const yVal = minPrice + (priceRange * (3 - i)) / 3;
+        const yPos = chartY + (chartH * i) / 3;
+        doc.text(fmtMoney(yVal), 50, yPos - 4, { width: 36, align: 'right' });
+        if (i > 0) {
+          doc.strokeColor('#F1F5F9').moveTo(chartX, yPos).lineTo(chartX + chartW, yPos).stroke();
+        }
+      }
+
+      // Plot points and connecting line
+      const plotPoints = points.map(p => ({
+        x: chartX + ((p.date.getTime() - minTime) / timeRange) * chartW,
+        y: chartY + chartH - ((p.price - minPrice) / priceRange) * chartH,
+        serious: p.serious,
+      }));
+
+      // Line
+      doc.strokeColor('#94A3B8').lineWidth(1);
+      plotPoints.forEach((pt, i) => {
+        if (i === 0) doc.moveTo(pt.x, pt.y);
+        else doc.lineTo(pt.x, pt.y);
+      });
+      doc.stroke();
+
+      // Dots
+      plotPoints.forEach(pt => {
+        const radius = pt.serious ? 4 : 3;
+        const color = pt.serious ? dark : orange;
+        doc.circle(pt.x, pt.y, radius).fillColor(color).fill();
+      });
+
+      // Legend
+      const legendY = chartY + chartH + 16;
+      doc.circle(chartX, legendY, 4).fillColor(dark).fill();
+      doc.fontSize(8).fillColor(grey).text('Serious', chartX + 8, legendY - 4);
+      doc.circle(chartX + 70, legendY, 3).fillColor(orange).fill();
+      doc.text('Passive', chartX + 78, legendY - 4);
+
+      doc.y = legendY + 20;
+    }
+
     // --- Footer ---
     doc.moveDown(2);
     doc.moveTo(50, doc.y).lineTo(50 + pageWidth, doc.y).strokeColor('#E2E8F0').lineWidth(1).stroke();
@@ -273,40 +472,6 @@ async function generateReportPDF(report) {
 
 export async function gatherReport(email, propertyId, name) {
   const report = await buildReport(propertyId);
-
-  const userSnap = await adminDb.collection('users').doc(report.property.userId).get();
-  const userData = userSnap.exists ? userSnap.data() : {};
-
-  let agents = [];
-  if (userData.agentPro === true && userData.agentId) {
-    const agentSnap = await adminDb.collection('agents').doc(userData.agentId).get();
-    if (agentSnap.exists) {
-      agents.push({ id: agentSnap.id, ...agentSnap.data() });
-    }
-  } else {
-    agents = report.agents;
-  }
-
-  const agentHtml = agents
-    .map(
-      (agent) => `
-    <tr>
-      <td style="padding:12px; border:1px solid #eee;">
-        <table width="100%">
-          <tr>
-            <td style="width:50px; vertical-align:middle;">
-              ${agent.logo ? `<img src="${agent.logo}" width="50" height="50" style="border-radius:6px;" />` : `<div style="width:50px; height:50px; background:#ddd; border-radius:6px;"></div>`}
-            </td>
-            <td style="padding-left:12px; vertical-align:middle;">
-              <strong style="color:#333;">${agent.companyName || 'Unknown Company'}</strong><br/>
-              <span style="font-size:12px; color:#777;">${agent.suburb || ''}</span>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>`
-    )
-    .join('');
 
   let confidence = { label: 'Low', color: '#EF4444' };
   if (report.seriousCount > 1) confidence = { label: 'High', color: '#22C55E' };
@@ -466,8 +631,94 @@ export async function gatherReport(email, propertyId, name) {
         </tr>
       </table>
 
-      <h3 style="margin-top:30px; color:#111;">Recommended Agent${agents.length > 1 ? 's' : ''}</h3>
-      <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:10px; border:1px solid #eee;">${agentHtml}</table>
+      <!-- Serious Buyer Details -->
+      ${report.seriousBuyerDetails.length > 0 ? `
+      <h3 style="margin-top:24px; color:#111; font-size:16px;">Serious Buyer Details</h3>
+      ${report.seriousBuyerDetails.map((b) => {
+        const badges = [b.isFirstHomeBuyer ? 'First Home Buyer' : null, b.isInvestor ? 'Investor' : null].filter(Boolean);
+        const budgetStr = (b.minBudget || b.maxBudget) ? `${fmtBudget(b.minBudget) || 'Any'} – ${fmtBudget(b.maxBudget) || 'Any'}` : null;
+        const prefsItems = [
+          b.preferredLocations.length ? `Locations: ${b.preferredLocations.join(', ')}` : null,
+          b.preferredType ? `Type: ${b.preferredType}` : null,
+          b.minBedrooms ? `Min Beds: ${b.minBedrooms}+` : null,
+          budgetStr ? `Budget: ${budgetStr}` : null,
+        ].filter(Boolean);
+        return `
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin:8px 0; border:1px solid #E2E8F0; border-radius:8px; overflow:hidden;">
+          <tr style="background:#F8FAFC;">
+            <td style="padding:12px 14px;">
+              <div style="font-size:15px; font-weight:bold; color:#1E293B; margin-bottom:2px;">${b.name}</div>
+              <div style="font-size:12px; color:#64748B;">
+                ${b.email ? `${b.email}` : ''}${b.email && b.phone ? ' &middot; ' : ''}${b.phone ? `${b.phone}` : ''}
+              </div>
+            </td>
+            <td style="padding:12px 14px; text-align:right; vertical-align:top;">
+              <div style="font-size:18px; font-weight:bold; color:#1E293B;">${fmtMoney(b.price)}</div>
+              <div style="font-size:11px; color:#64748B;">${fmtTimestamp(b.createdAt)}</div>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="2" style="padding:8px 14px 12px;">
+              <table cellpadding="0" cellspacing="0" style="font-size:12px;">
+                <tr>
+                  <td style="padding:2px 16px 2px 0; color:#64748B;">Finance:</td>
+                  <td style="padding:2px 24px 2px 0; color:#1E293B; font-weight:600;">${fmtFinance(b.buyerType)}</td>
+                  <td style="padding:2px 16px 2px 0; color:#64748B;">Interest:</td>
+                  <td style="padding:2px 0; color:#1E293B; font-weight:600;">${fmtSeriousness(b.seriousness)}</td>
+                </tr>
+              </table>
+              ${badges.length ? `<div style="margin-top:6px;">${badges.map(badge => `<span style="display:inline-block; padding:2px 8px; background:#F1F5F9; border-radius:4px; font-size:11px; color:#475569; margin-right:4px;">${badge}</span>`).join('')}</div>` : ''}
+              ${prefsItems.length ? `<div style="margin-top:6px; padding-top:6px; border-top:1px solid #F1F5F9; font-size:11px; color:#64748B;">${prefsItems.join(' &middot; ')}</div>` : ''}
+            </td>
+          </tr>
+        </table>`;
+      }).join('')}
+      ` : ''}
+
+      <!-- Opinion Timeline -->
+      ${(() => {
+        const opinionsWithDate = report.allOpinions.filter(o => o.createdAt && (o.offerAmount || 0) > 0);
+        if (opinionsWithDate.length < 2) return '';
+        // Group by week
+        const weeks = {};
+        opinionsWithDate.forEach(o => {
+          const d = o.createdAt.toDate ? o.createdAt.toDate() : (o.createdAt._seconds ? new Date(o.createdAt._seconds * 1000) : new Date(o.createdAt));
+          if (isNaN(d.getTime())) return;
+          const weekStart = new Date(d);
+          weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+          const key = weekStart.toISOString().slice(0, 10);
+          if (!weeks[key]) weeks[key] = { prices: [], serious: 0, passive: 0 };
+          weeks[key].prices.push(o.offerAmount);
+          if (o.serious) weeks[key].serious++; else weeks[key].passive++;
+        });
+        const sortedWeeks = Object.entries(weeks).sort(([a], [b]) => a.localeCompare(b));
+        if (sortedWeeks.length < 1) return '';
+        return `
+        <h3 style="margin-top:24px; color:#111; font-size:16px;">Opinion Timeline</h3>
+        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; font-size:13px; margin-top:10px; border:1px solid #E2E8F0; border-radius:8px;">
+          <tr style="background:#F8FAFC;">
+            <td style="padding:8px 12px; color:#64748B; font-size:11px; font-weight:bold;">Week of</td>
+            <td style="padding:8px 12px; color:#64748B; font-size:11px; font-weight:bold;">Opinions</td>
+            <td style="padding:8px 12px; color:#64748B; font-size:11px; font-weight:bold;">Avg Price</td>
+            <td style="padding:8px 12px; color:#64748B; font-size:11px; font-weight:bold;">Serious</td>
+            <td style="padding:8px 12px; color:#64748B; font-size:11px; font-weight:bold;">Passive</td>
+          </tr>
+          ${sortedWeeks.map(([weekKey, data]) => {
+            const avg = Math.round(data.prices.reduce((s, p) => s + p, 0) / data.prices.length);
+            const weekDate = new Date(weekKey);
+            const label = weekDate.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+            return `
+          <tr>
+            <td style="padding:8px 12px; color:#1E293B;">${label}</td>
+            <td style="padding:8px 12px; color:#1E293B;">${data.prices.length}</td>
+            <td style="padding:8px 12px; color:#1E293B; font-weight:600;">${fmtMoney(avg)}</td>
+            <td style="padding:8px 12px; color:#1E293B;">${data.serious}</td>
+            <td style="padding:8px 12px; color:#64748B;">${data.passive}</td>
+          </tr>`;
+          }).join('')}
+        </table>`;
+      })()}
+
       <p style="margin-top:30px; font-size:12px; color:#777;">This report is powered by Premarket to help sellers and buyers make better, more confident decisions.</p>
     </div>`;
 

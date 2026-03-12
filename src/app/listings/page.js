@@ -798,9 +798,12 @@ function ListingsContent() {
                           </span>
                         </div>
                       )}
-                      <a
-                        href={`/find-property?propertyId=${property.id}&mode=ipad`}
-                        onClick={(e) => e.stopPropagation()}
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          window.open(`/find-property?propertyId=${property.id}&mode=ipad`, '_blank');
+                        }}
                         className="absolute bottom-3 left-3 px-2.5 py-1.5 bg-black/60 hover:bg-black/80 backdrop-blur-sm text-white rounded-lg text-xs font-semibold shadow-lg transition-colors flex items-center gap-1.5 opacity-0 group-hover:opacity-100"
                         title="Open in iPad mode for open homes"
                       >
@@ -808,7 +811,7 @@ function ListingsContent() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                         </svg>
                         iPad
-                      </a>
+                      </button>
                     </div>
                     <div className="p-4">
                       <h3 className="font-bold text-slate-900 text-lg mb-1 truncate group-hover:text-orange-600 transition-colors">

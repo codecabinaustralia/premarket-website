@@ -34,7 +34,7 @@ import {
   Building2,
 } from 'lucide-react';
 
-// --- Connect Modal ---
+// --- Agentbox Connect Modal ---
 function ConnectModal({ onClose, onConnect, onConnectDemo, connecting }) {
   const [clientId, setClientId] = useState('');
   const [apiKey, setApiKey] = useState('');
@@ -154,20 +154,161 @@ function ConnectModal({ onClose, onConnect, onConnectDemo, connecting }) {
   );
 }
 
+// --- Rex Connect Modal ---
+function RexConnectModal({ onClose, onConnect, onConnectDemo, connecting }) {
+  const [accountId, setAccountId] = useState('');
+  const [apiSecret, setApiSecret] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (accountId.trim() && apiSecret.trim()) {
+      onConnect(accountId.trim(), apiSecret.trim());
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+        className="bg-white rounded-2xl w-full max-w-lg p-6 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
+              <span className="text-sm font-bold text-white">RX</span>
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">Connect Rex</h2>
+              <p className="text-xs text-slate-500">Enter your Rex API credentials</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+            <X className="w-5 h-5 text-slate-400" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5">Account ID</label>
+            <input
+              type="text"
+              value={accountId}
+              onChange={(e) => setAccountId(e.target.value)}
+              placeholder="Your Rex Account ID"
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-900 bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5">API Secret</label>
+            <input
+              type="password"
+              value={apiSecret}
+              onChange={(e) => setApiSecret(e.target.value)}
+              placeholder="Your Rex API Secret"
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-900 bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+              required
+            />
+          </div>
+
+          <div className="bg-slate-50 rounded-xl p-3">
+            <p className="text-xs text-slate-500">
+              Contact your Rex administrator or visit{' '}
+              <span className="font-medium text-slate-700">rexsoftware.com</span>{' '}
+              to obtain your API credentials.
+            </p>
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-3 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={connecting || !accountId.trim() || !apiSecret.trim()}
+              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-all disabled:opacity-50"
+            >
+              {connecting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Connecting...
+                </>
+              ) : (
+                <>
+                  <Link2 className="w-4 h-4" />
+                  Connect &amp; Verify
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+
+        <div className="mt-4 pt-4 border-t border-slate-200">
+          <button
+            type="button"
+            onClick={onConnectDemo}
+            disabled={connecting}
+            className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-slate-600 bg-white border border-dashed border-slate-300 hover:bg-slate-50 hover:border-slate-400 rounded-xl transition-all disabled:opacity-50"
+          >
+            <Building2 className="w-4 h-4" />
+            Use Demo Data (12 test properties)
+          </button>
+          <p className="text-[11px] text-slate-400 text-center mt-2">Try out the Rex integration with sample Australian properties — no credentials needed.</p>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 // --- Listing Card ---
-function ListingCard({ listing, onImport, onToggle, importing }) {
+function ListingCard({ listing, onImport, onToggle, importing, source }) {
   const isImported = listing._imported;
   const premarket = listing._premarket;
   const isLive = premarket?.visibility === true;
 
+  // Handle both AgentBox and Rex image formats
   const images = listing.images || listing.photos || [];
-  const imageUrl = images[0]?.url || images[0]?.original || images[0]?.medium || (typeof images[0] === 'string' ? images[0] : null);
-  const address = listing.streetAddress || listing.address?.street ||
-    [listing.unitNumber, listing.streetNumber, listing.streetName].filter(Boolean).join(' ');
-  const suburb = listing.suburb || listing.address?.suburb || '';
+  const imageUrl = images[0]?.url || images[0]?.uri || images[0]?.original || images[0]?.medium || (typeof images[0] === 'string' ? images[0] : null);
+
+  // Handle both AgentBox and Rex address formats
+  let address, suburb;
+  if (source === 'rex') {
+    const prop = listing.property || {};
+    address = [prop.adr_unit_number, prop.adr_street_number, prop.adr_street_name].filter(Boolean).join(' ');
+    suburb = prop.adr_suburb_or_town || '';
+  } else {
+    address = listing.streetAddress || listing.address?.street ||
+      [listing.unitNumber, listing.streetNumber, listing.streetName].filter(Boolean).join(' ');
+    suburb = listing.suburb || listing.address?.suburb || '';
+  }
   const fullAddress = [address, suburb].filter(Boolean).join(', ');
 
-  const price = listing.displayPrice || listing.price || listing.searchPrice || '';
+  // Handle both AgentBox and Rex price formats
+  const price = source === 'rex'
+    ? (listing.price_match || listing.price_advertise_as || '')
+    : (listing.displayPrice || listing.price || listing.searchPrice || '');
+
+  // Handle both AgentBox and Rex attribute names
+  const bedrooms = source === 'rex' ? listing.attr_bedrooms : listing.bedrooms;
+  const bathrooms = source === 'rex' ? listing.attr_bathrooms : listing.bathrooms;
+  const carSpaces = source === 'rex' ? (listing.attr_garages || listing.attr_carspaces) : (listing.carSpaces || listing.garages);
+  const propertyType = source === 'rex' ? listing.property_category : listing.type;
+
+  const badgeLabel = source === 'rex' ? 'Rex' : 'Agentbox';
 
   return (
     <motion.div
@@ -192,8 +333,10 @@ function ListingCard({ listing, onImport, onToggle, importing }) {
         )}
         {/* Source Badge */}
         <div className="absolute top-3 left-3">
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full bg-slate-900 text-white">
-            Agentbox
+          <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full text-white ${
+            source === 'rex' ? 'bg-blue-600' : 'bg-slate-900'
+          }`}>
+            {badgeLabel}
           </span>
         </div>
         {/* Status Badge */}
@@ -216,17 +359,17 @@ function ListingCard({ listing, onImport, onToggle, importing }) {
         </p>
 
         <div className="flex items-center gap-3 text-xs text-slate-500 mb-4">
-          {listing.bedrooms != null && (
-            <span className="flex items-center gap-1"><Bed className="w-3.5 h-3.5" />{listing.bedrooms}</span>
+          {bedrooms != null && (
+            <span className="flex items-center gap-1"><Bed className="w-3.5 h-3.5" />{bedrooms}</span>
           )}
-          {listing.bathrooms != null && (
-            <span className="flex items-center gap-1"><Bath className="w-3.5 h-3.5" />{listing.bathrooms}</span>
+          {bathrooms != null && (
+            <span className="flex items-center gap-1"><Bath className="w-3.5 h-3.5" />{bathrooms}</span>
           )}
-          {(listing.carSpaces != null || listing.garages != null) && (
-            <span className="flex items-center gap-1"><Car className="w-3.5 h-3.5" />{listing.carSpaces || listing.garages}</span>
+          {carSpaces != null && carSpaces > 0 && (
+            <span className="flex items-center gap-1"><Car className="w-3.5 h-3.5" />{carSpaces}</span>
           )}
-          {listing.type && (
-            <span className="text-slate-400">{listing.type}</span>
+          {propertyType && (
+            <span className="text-slate-400">{propertyType}</span>
           )}
         </div>
 
@@ -322,13 +465,19 @@ export default function IntegrationsPage() {
   const { user, userData, loading } = useAuth();
   const router = useRouter();
 
-  // Integration state
+  // Agentbox state
   const [integration, setIntegration] = useState(null);
   const [showConnectModal, setShowConnectModal] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [connectError, setConnectError] = useState('');
 
-  // Listings state
+  // Rex state
+  const [rexIntegration, setRexIntegration] = useState(null);
+  const [showRexConnectModal, setShowRexConnectModal] = useState(false);
+  const [rexConnecting, setRexConnecting] = useState(false);
+  const [rexConnectError, setRexConnectError] = useState('');
+
+  // Listings state (shared between views — only one active at a time)
   const [listings, setListings] = useState([]);
   const [listingsLoading, setListingsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -336,8 +485,15 @@ export default function IntegrationsPage() {
   const [syncing, setSyncing] = useState(false);
   const [toast, setToast] = useState(null);
 
+  // Rex listings state
+  const [rexListings, setRexListings] = useState([]);
+  const [rexListingsLoading, setRexListingsLoading] = useState(false);
+  const [rexSearchQuery, setRexSearchQuery] = useState('');
+  const [rexImporting, setRexImporting] = useState(null);
+  const [rexSyncing, setRexSyncing] = useState(false);
+
   // View state
-  const [view, setView] = useState('hub'); // 'hub' | 'agentbox'
+  const [view, setView] = useState('hub'); // 'hub' | 'agentbox' | 'rex'
 
   useEffect(() => {
     if (!loading && !user) {
@@ -352,12 +508,13 @@ export default function IntegrationsPage() {
       if (snap.exists()) {
         const data = snap.data();
         setIntegration(data?.integrations?.agentbox || null);
+        setRexIntegration(data?.integrations?.rex || null);
       }
     });
     return () => unsub();
   }, [user]);
 
-  // Fetch listings when connected and viewing agentbox
+  // Fetch Agentbox listings when connected and viewing agentbox
   const fetchListings = useCallback(async () => {
     if (!user || integration?.status !== 'connected') return;
     setListingsLoading(true);
@@ -374,17 +531,41 @@ export default function IntegrationsPage() {
     }
   }, [user, integration?.status]);
 
+  // Fetch Rex listings when connected and viewing rex
+  const fetchRexListings = useCallback(async () => {
+    if (!user || rexIntegration?.status !== 'connected') return;
+    setRexListingsLoading(true);
+    try {
+      const res = await fetch(`/api/integrations/rex/listings?uid=${user.uid}&limit=100`);
+      if (!res.ok) throw new Error('Failed to fetch');
+      const data = await res.json();
+      setRexListings(data.listings || []);
+    } catch (err) {
+      console.error('Failed to fetch Rex listings:', err);
+      showToast('Failed to load Rex listings', 'error');
+    } finally {
+      setRexListingsLoading(false);
+    }
+  }, [user, rexIntegration?.status]);
+
   useEffect(() => {
     if (view === 'agentbox' && integration?.status === 'connected') {
       fetchListings();
     }
   }, [view, integration?.status, fetchListings]);
 
+  useEffect(() => {
+    if (view === 'rex' && rexIntegration?.status === 'connected') {
+      fetchRexListings();
+    }
+  }, [view, rexIntegration?.status, fetchRexListings]);
+
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
   };
 
+  // --- Agentbox handlers ---
   const handleConnect = async (clientId, apiKey) => {
     setConnecting(true);
     setConnectError('');
@@ -468,7 +649,7 @@ export default function IntegrationsPage() {
       if (!res.ok) throw new Error(data.error || 'Failed to import');
 
       showToast(`Imported ${data.imported} listing${data.imported !== 1 ? 's' : ''}`);
-      await fetchListings(); // Refresh to show updated import status
+      await fetchListings();
     } catch (err) {
       console.error(err);
       showToast('Failed to import listing', 'error');
@@ -481,7 +662,7 @@ export default function IntegrationsPage() {
     const unimported = filteredListings.filter(l => !l._imported);
     if (unimported.length === 0) return;
 
-    const batch = unimported.slice(0, 20); // Max 20 at a time
+    const batch = unimported.slice(0, 20);
     setImporting('all');
     try {
       const res = await fetch('/api/integrations/agentbox/import', {
@@ -539,6 +720,161 @@ export default function IntegrationsPage() {
     }
   };
 
+  // --- Rex handlers ---
+  const handleRexConnect = async (accountId, apiSecret) => {
+    setRexConnecting(true);
+    setRexConnectError('');
+    try {
+      const res = await fetch('/api/integrations/rex/connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid: user.uid, clientId: accountId, clientSecret: apiSecret }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setRexConnectError(data.error || 'Failed to connect');
+        return;
+      }
+
+      setShowRexConnectModal(false);
+      setView('rex');
+      showToast('Connected to Rex successfully');
+    } catch (err) {
+      console.error(err);
+      setRexConnectError('Connection failed. Please check your credentials.');
+    } finally {
+      setRexConnecting(false);
+    }
+  };
+
+  const handleRexConnectDemo = async () => {
+    setRexConnecting(true);
+    setRexConnectError('');
+    try {
+      const res = await fetch('/api/integrations/rex/connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid: user.uid, demo: true }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setRexConnectError(data.error || 'Failed to connect demo');
+        return;
+      }
+
+      setShowRexConnectModal(false);
+      setView('rex');
+      showToast('Connected to Rex with demo data');
+    } catch (err) {
+      console.error(err);
+      setRexConnectError('Demo connection failed.');
+    } finally {
+      setRexConnecting(false);
+    }
+  };
+
+  const handleRexDisconnect = async () => {
+    if (!confirm('Disconnect from Rex? Your imported properties will remain but syncing will stop.')) return;
+    try {
+      const res = await fetch('/api/integrations/rex/disconnect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid: user.uid }),
+      });
+      if (!res.ok) throw new Error('Failed to disconnect');
+      setView('hub');
+      showToast('Disconnected from Rex');
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to disconnect', 'error');
+    }
+  };
+
+  const handleRexImport = async (listingId) => {
+    setRexImporting(listingId);
+    try {
+      const res = await fetch('/api/integrations/rex/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid: user.uid, listingIds: [String(listingId)] }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to import');
+
+      showToast(`Imported ${data.imported} listing${data.imported !== 1 ? 's' : ''}`);
+      await fetchRexListings();
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to import listing', 'error');
+    } finally {
+      setRexImporting(null);
+    }
+  };
+
+  const handleRexImportAll = async () => {
+    const unimported = filteredRexListings.filter(l => !l._imported);
+    if (unimported.length === 0) return;
+
+    const batch = unimported.slice(0, 20);
+    setRexImporting('all');
+    try {
+      const res = await fetch('/api/integrations/rex/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid: user.uid, listingIds: batch.map(l => String(l.id)) }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to import');
+
+      showToast(`Imported ${data.imported} listing${data.imported !== 1 ? 's' : ''}`);
+      await fetchRexListings();
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to import listings', 'error');
+    } finally {
+      setRexImporting(null);
+    }
+  };
+
+  const handleRexToggle = async (propertyId, visibility) => {
+    try {
+      const res = await fetch(`/api/integrations/rex/toggle/${propertyId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid: user.uid, visibility }),
+      });
+      if (!res.ok) throw new Error('Failed to toggle');
+      await fetchRexListings();
+      showToast(visibility ? 'Property is now live' : 'Property set to draft');
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to update property', 'error');
+    }
+  };
+
+  const handleRexSync = async () => {
+    setRexSyncing(true);
+    try {
+      const res = await fetch('/api/integrations/rex/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid: user.uid }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to sync');
+
+      showToast(`Synced ${data.updated} properties`);
+      await fetchRexListings();
+    } catch (err) {
+      console.error(err);
+      showToast('Sync failed', 'error');
+    } finally {
+      setRexSyncing(false);
+    }
+  };
+
   if (loading || !user) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -548,8 +884,9 @@ export default function IntegrationsPage() {
   }
 
   const isConnected = integration?.status === 'connected';
+  const isRexConnected = rexIntegration?.status === 'connected';
 
-  // Filter listings by search
+  // Filter Agentbox listings by search
   const filteredListings = listings.filter((l) => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
@@ -561,12 +898,26 @@ export default function IntegrationsPage() {
   const importedCount = filteredListings.filter(l => l._imported).length;
   const unimportedCount = filteredListings.filter(l => !l._imported).length;
 
+  // Filter Rex listings by search
+  const filteredRexListings = rexListings.filter((l) => {
+    if (!rexSearchQuery) return true;
+    const q = rexSearchQuery.toLowerCase();
+    const prop = l.property || {};
+    const addr = [prop.adr_street_number, prop.adr_street_name].filter(Boolean).join(' ').toLowerCase();
+    const sub = (prop.adr_suburb_or_town || '').toLowerCase();
+    const headline = (l.headline || '').toLowerCase();
+    return addr.includes(q) || sub.includes(q) || headline.includes(q);
+  });
+
+  const rexImportedCount = filteredRexListings.filter(l => l._imported).length;
+  const rexUnimportedCount = filteredRexListings.filter(l => !l._imported).length;
+
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
       <div className="bg-white border-b border-slate-200 sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-4">
-          {view === 'agentbox' ? (
+          {view === 'agentbox' || view === 'rex' ? (
             <button onClick={() => setView('hub')} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
               <ArrowLeft className="w-5 h-5 text-slate-600" />
             </button>
@@ -580,7 +931,7 @@ export default function IntegrationsPage() {
               <Plug className="w-4 h-4 text-white" />
             </div>
             <h1 className="text-lg font-bold text-slate-900">
-              {view === 'agentbox' ? 'Agentbox' : 'Integrations'}
+              {view === 'agentbox' ? 'Agentbox' : view === 'rex' ? 'Rex' : 'Integrations'}
             </h1>
           </div>
         </div>
@@ -609,7 +960,8 @@ export default function IntegrationsPage() {
                 name="Rex"
                 logo="RX"
                 description="Sync your Rex listings"
-                comingSoon
+                status={isRexConnected ? 'connected' : 'disconnected'}
+                onConnect={() => isRexConnected ? setView('rex') : setShowRexConnectModal(true)}
               />
               <CrmCard
                 name="Vault RE"
@@ -762,6 +1114,7 @@ export default function IntegrationsPage() {
                   <ListingCard
                     key={listing.id}
                     listing={listing}
+                    source="agentbox"
                     onImport={handleImport}
                     onToggle={handleToggle}
                     importing={importing === listing.id || importing === 'all'}
@@ -771,9 +1124,134 @@ export default function IntegrationsPage() {
             )}
           </div>
         )}
+
+        {/* --- REX VIEW --- */}
+        {view === 'rex' && (
+          <div className="space-y-6">
+            {/* Connection Status Bar */}
+            <div className="bg-white rounded-xl border border-slate-200 p-4 flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-slate-900 text-sm flex items-center gap-2">
+                    Connected to Rex
+                    {rexIntegration?.mode === 'demo' && (
+                      <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-100 text-amber-700 rounded-full uppercase">Demo</span>
+                    )}
+                  </p>
+                  {rexIntegration?.lastSync && (
+                    <p className="text-xs text-slate-500">
+                      Last synced: {new Date(rexIntegration.lastSync?.seconds ? rexIntegration.lastSync.seconds * 1000 : rexIntegration.lastSync).toLocaleString('en-AU')}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleRexSync}
+                  disabled={rexSyncing}
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-4 h-4 ${rexSyncing ? 'animate-spin' : ''}`} />
+                  {rexSyncing ? 'Syncing...' : 'Sync Now'}
+                </button>
+                <button
+                  onClick={handleRexDisconnect}
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+                >
+                  <Unlink className="w-4 h-4" />
+                  Disconnect
+                </button>
+              </div>
+            </div>
+
+            {/* Search & Filter Bar */}
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex-1 relative min-w-[200px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  value={rexSearchQuery}
+                  onChange={(e) => setRexSearchQuery(e.target.value)}
+                  placeholder="Search listings by address..."
+                  className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white transition-all"
+                />
+              </div>
+              {rexUnimportedCount > 0 && (
+                <button
+                  onClick={handleRexImportAll}
+                  disabled={rexImporting === 'all'}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-all disabled:opacity-50"
+                >
+                  {rexImporting === 'all' ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Import className="w-4 h-4" />
+                  )}
+                  Import All ({rexUnimportedCount})
+                </button>
+              )}
+            </div>
+
+            {/* Stats */}
+            <div className="flex gap-3">
+              <div className="bg-white rounded-lg border border-slate-200 px-4 py-2">
+                <span className="text-xs text-slate-500">Total</span>
+                <span className="ml-2 text-sm font-bold text-slate-900">{filteredRexListings.length}</span>
+              </div>
+              <div className="bg-white rounded-lg border border-slate-200 px-4 py-2">
+                <span className="text-xs text-slate-500">On Premarket</span>
+                <span className="ml-2 text-sm font-bold text-emerald-600">{rexImportedCount}</span>
+              </div>
+              <div className="bg-white rounded-lg border border-slate-200 px-4 py-2">
+                <span className="text-xs text-slate-500">Not Imported</span>
+                <span className="ml-2 text-sm font-bold text-slate-600">{rexUnimportedCount}</span>
+              </div>
+            </div>
+
+            {/* Listings Grid */}
+            {rexListingsLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <div className="text-center">
+                  <Loader2 className="w-8 h-8 animate-spin text-blue-500 mx-auto mb-3" />
+                  <p className="text-sm text-slate-500">Fetching your Rex listings...</p>
+                </div>
+              </div>
+            ) : filteredRexListings.length === 0 ? (
+              <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
+                <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Home className="w-8 h-8 text-slate-300" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 mb-2">
+                  {rexSearchQuery ? 'No listings match your search' : 'No listings found'}
+                </h3>
+                <p className="text-sm text-slate-500">
+                  {rexSearchQuery
+                    ? 'Try a different search term.'
+                    : 'Your Rex account doesn\'t have any active listings.'}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredRexListings.map((listing) => (
+                  <ListingCard
+                    key={listing.id}
+                    listing={listing}
+                    source="rex"
+                    onImport={handleRexImport}
+                    onToggle={handleRexToggle}
+                    importing={rexImporting === listing.id || rexImporting === 'all'}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Connect Modal */}
+      {/* Agentbox Connect Modal */}
       <AnimatePresence>
         {showConnectModal && (
           <ConnectModal
@@ -781,6 +1259,18 @@ export default function IntegrationsPage() {
             onConnect={handleConnect}
             onConnectDemo={handleConnectDemo}
             connecting={connecting}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Rex Connect Modal */}
+      <AnimatePresence>
+        {showRexConnectModal && (
+          <RexConnectModal
+            onClose={() => { setShowRexConnectModal(false); setRexConnectError(''); }}
+            onConnect={handleRexConnect}
+            onConnectDemo={handleRexConnectDemo}
+            connecting={rexConnecting}
           />
         )}
       </AnimatePresence>
@@ -810,7 +1300,7 @@ export default function IntegrationsPage() {
 
       {/* Connect Error Toast */}
       <AnimatePresence>
-        {connectError && (
+        {(connectError || rexConnectError) && (
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
@@ -818,7 +1308,7 @@ export default function IntegrationsPage() {
             className="fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl shadow-lg bg-red-600 text-white flex items-center gap-2 text-sm font-medium"
           >
             <AlertCircle className="w-4 h-4" />
-            {connectError}
+            {connectError || rexConnectError}
           </motion.div>
         )}
       </AnimatePresence>
