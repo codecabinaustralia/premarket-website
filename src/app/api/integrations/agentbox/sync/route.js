@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getCredentials, fetchListings, mapListingToProperty, updateSyncStatus, syncContacts } from '../../../../api/services/agentboxService';
+import { DEMO_LISTINGS } from '../../../../api/services/agentboxDemoData';
 import { adminDb } from '../../../../firebase/adminApp';
 import { FieldValue } from 'firebase-admin/firestore';
 
@@ -17,10 +18,17 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Not connected to Agentbox' }, { status: 400 });
     }
 
-    // Fetch current listings from Agentbox
-    const data = await fetchListings(creds.clientId, creds.apiKey, { limit: 100 });
-    const listings = data?.response?.listings || data?.listings || data?.response || [];
-    const listingsArray = Array.isArray(listings) ? listings : [];
+    const isDemo = creds.mode === 'demo';
+
+    // Fetch current listings — demo data or real API
+    let listingsArray;
+    if (isDemo) {
+      listingsArray = DEMO_LISTINGS;
+    } else {
+      const data = await fetchListings(creds.clientId, creds.apiKey, { limit: 100 });
+      const listings = data?.response?.listings || data?.listings || data?.response || [];
+      listingsArray = Array.isArray(listings) ? listings : [];
+    }
 
     // Get existing imported properties
     const propsSnapshot = await adminDb.collection('properties')
@@ -75,12 +83,14 @@ export async function POST(request) {
       }
     }
 
-    // Sync contacts silently alongside listings
+    // Sync contacts silently alongside listings (skip for demo)
     let contactResult = { synced: 0, total: 0, errors: [] };
-    try {
-      contactResult = await syncContacts(uid, creds.clientId, creds.apiKey);
-    } catch (err) {
-      console.error('Contact sync failed during manual sync:', err);
+    if (!isDemo) {
+      try {
+        contactResult = await syncContacts(uid, creds.clientId, creds.apiKey);
+      } catch (err) {
+        console.error('Contact sync failed during manual sync:', err);
+      }
     }
 
     await updateSyncStatus(uid, errors.length === 0 ? 'success' : 'partial', errors);

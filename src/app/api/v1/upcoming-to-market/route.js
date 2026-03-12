@@ -4,38 +4,52 @@ import { adminDb } from '../../../firebase/adminApp';
 
 const AU_STATES = ['NSW', 'VIC', 'QLD', 'SA', 'WA', 'TAS', 'NT', 'ACT'];
 
-function extractSuburbState(data) {
-  let suburb = data.suburb || data.location?.suburb || '';
-  let state = data.state || data.location?.state || '';
-  if (suburb && state) return { suburb, state };
+const STREET_SUFFIXES = new Set([
+  'street', 'st', 'road', 'rd', 'drive', 'dr', 'avenue', 'ave', 'way',
+  'lane', 'ln', 'place', 'pl', 'court', 'ct', 'crescent', 'cres', 'cr',
+  'circuit', 'cct', 'parade', 'pde', 'terrace', 'tce', 'boulevard', 'blvd',
+  'highway', 'hwy', 'close', 'cl', 'grove', 'gr', 'view', 'rise', 'trail',
+  'esplanade', 'esp', 'promenade', 'walk', 'mews', 'gardens', 'meadows',
+]);
 
-  const addr = typeof data.address === 'string' ? data.address : '';
-  if (addr) {
-    const parts = addr.split(/\s+/);
-    for (let i = 0; i < parts.length; i++) {
-      if (AU_STATES.includes(parts[i].toUpperCase())) {
-        state = parts[i].toUpperCase();
-        suburb = parts.slice(0, i).join(' ');
-        if (suburb && state) return { suburb, state };
-      }
+function parseSuburbFromSegment(text) {
+  const words = text.split(/\s+/);
+  for (let i = 0; i < words.length; i++) {
+    if (AU_STATES.includes(words[i].toUpperCase())) {
+      const state = words[i].toUpperCase();
+      const suburbWords = words.slice(0, i).filter((w) => !/^\d+$/.test(w));
+      if (suburbWords.length > 0) return { suburb: suburbWords.join(' '), state };
     }
   }
+  return null;
+}
+
+function extractSuburbState(data) {
+  const suburb = data.suburb || data.location?.suburb || data.address?.suburb || '';
+  const state = data.state || data.location?.state || data.address?.state || '';
+  if (suburb && state) return { suburb, state };
 
   const formatted = data.formattedAddress || '';
   if (formatted) {
     const segments = formatted.split(',').map((s) => s.trim());
     for (const seg of segments) {
-      const words = seg.split(/\s+/);
-      for (let i = 0; i < words.length; i++) {
-        if (AU_STATES.includes(words[i].toUpperCase())) {
-          state = words[i].toUpperCase();
-          const suburbWords = words.slice(0, i).filter((w) => !/^\d+$/.test(w));
-          if (suburbWords.length > 0) {
-            suburb = suburbWords.join(' ');
-            return { suburb, state };
-          }
-        }
-      }
+      const segWords = seg.split(/\s+/);
+      if (segWords.some((w) => STREET_SUFFIXES.has(w.toLowerCase()))) continue;
+      const result = parseSuburbFromSegment(seg);
+      if (result) return result;
+    }
+    for (const seg of segments) {
+      const result = parseSuburbFromSegment(seg);
+      if (result) return result;
+    }
+  }
+
+  const addr = typeof data.address === 'string' ? data.address : '';
+  if (addr) {
+    const addrWords = addr.split(/\s+/);
+    if (!addrWords.some((w) => STREET_SUFFIXES.has(w.toLowerCase()))) {
+      const result = parseSuburbFromSegment(addr);
+      if (result) return result;
     }
   }
 

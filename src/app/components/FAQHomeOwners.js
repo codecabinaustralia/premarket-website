@@ -63,7 +63,7 @@ export default function FAQHomeOwners() {
       icon: "🔍"
     },
     {
-      question: "Are you part of REA, Domain, or other platforms?",
+      question: "Are you part of other property platforms?",
       answer: "No, we're completely independent. Premarket was founded in Northern Rivers, NSW by three dads who wanted to create a better, fairer system for everyone. No corporate ties, just genuine innovation.",
       color: "bg-violet-50 border-violet-200",
       icon: "🌊"

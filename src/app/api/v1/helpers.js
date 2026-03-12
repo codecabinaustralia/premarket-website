@@ -68,7 +68,7 @@ function getBoundingBox(lat, lng, radiusKm) {
  * Get all properties within a radius of a point.
  * Uses bounding box for Firestore query, then Haversine for exact filtering.
  */
-export async function getPropertiesInRadius(lat, lng, radiusKm = 5) {
+export async function getPropertiesInRadius(lat, lng, radiusKm = 5, { maxAgeDays } = {}) {
   const { minLat, maxLat, minLng, maxLng } = getBoundingBox(lat, lng, radiusKm);
 
   const snapshot = await adminDb
@@ -77,15 +77,23 @@ export async function getPropertiesInRadius(lat, lng, radiusKm = 5) {
     .where('location.latitude', '<=', maxLat)
     .get();
 
-  // Post-filter by longitude and exact haversine distance
+  const cutoff = maxAgeDays ? Date.now() - maxAgeDays * 86400000 : null;
+
+  // Post-filter by longitude, distance, active status, and age
   return snapshot.docs
     .map((doc) => ({ id: doc.id, ...doc.data() }))
     .filter((p) => {
+      if (p.active === false || p.archived === true) return false;
       const pLat = p.location?.latitude;
       const pLng = p.location?.longitude;
       if (pLat == null || pLng == null) return false;
       if (pLng < minLng || pLng > maxLng) return false;
-      return haversineDistance(lat, lng, pLat, pLng) <= radiusKm;
+      if (haversineDistance(lat, lng, pLat, pLng) > radiusKm) return false;
+      if (cutoff) {
+        const created = toTimestamp(p.createdAt);
+        if (created && created < cutoff) return false;
+      }
+      return true;
     });
 }
 

@@ -4,6 +4,7 @@ import {
   getUniqueSuburbs,
   computeSuburbScores,
   writeScoreToFirestore,
+  clearAllMarketScores,
 } from '../../v1/scoreComputation';
 
 export const maxDuration = 300;
@@ -16,14 +17,24 @@ export async function POST(request) {
   }
 
   try {
-    const suburbs = await getUniqueSuburbs();
+    // Parse optional maxAgeDays from request body
+    let maxAgeDays;
+    try {
+      const body = await request.json();
+      maxAgeDays = body.maxAgeDays ? parseInt(body.maxAgeDays) : undefined;
+    } catch { /* no body or invalid JSON */ }
+
+    // Clear stale entries before recomputing so old bad suburb names are removed
+    const cleared = await clearAllMarketScores();
+
+    const suburbs = await getUniqueSuburbs(maxAgeDays);
     let computed = 0;
     let skipped = 0;
     const errors = [];
 
     for (const s of suburbs) {
       try {
-        const scores = await computeSuburbScores(s.suburb, s.state, s.lat, s.lng);
+        const scores = await computeSuburbScores(s.suburb, s.state, s.lat, s.lng, { maxAgeDays });
         if (scores) {
           await writeScoreToFirestore(s.key, s.suburb, s.state, s.postcode, s.lat, s.lng, scores);
           computed++;
@@ -42,6 +53,7 @@ export async function POST(request) {
       totalSuburbs: suburbs.length,
       computed,
       skipped,
+      cleared,
       errors: errors.slice(0, 10),
     });
   } catch (err) {

@@ -813,7 +813,7 @@ function DocsContent({ isAdmin, isTokenAccess, linkToken, user }) {
               <div>
                 <h4 className="font-medium text-slate-900 mb-1">1. Search and filter</h4>
                 <p className="text-slate-600 text-sm leading-relaxed">
-                  The buyer&apos;s agent logs into the web platform and filters by suburb, price range, property type, and bedroom/bathroom count — matching properties against their active client briefs. They&apos;re looking for opportunities that haven&apos;t surfaced on Domain, REA, or other public portals.
+                  The buyer&apos;s agent logs into the web platform and filters by suburb, price range, property type, and bedroom/bathroom count — matching properties against their active client briefs. They&apos;re looking for opportunities that haven&apos;t surfaced on public portals.
                 </p>
               </div>
 
@@ -960,7 +960,7 @@ function DocsContent({ isAdmin, isTokenAccess, linkToken, user }) {
               <div>
                 <h4 className="font-medium text-slate-900 mb-1">1. Browse the showcase</h4>
                 <p className="text-slate-600 text-sm leading-relaxed">
-                  The buyer visits premarket.homes and explores listings that are off-market, private, or in early campaign phase. These are properties that haven&apos;t surfaced on Domain, REA, or any other public portal — genuine early access.
+                  The buyer visits premarket.homes and explores listings that are off-market, private, or in early campaign phase. These are properties that haven&apos;t surfaced on any public portal — genuine early access.
                 </p>
               </div>
 

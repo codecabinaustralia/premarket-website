@@ -9,6 +9,15 @@ import { collection, query, where, orderBy, getDocs, doc, getDoc } from 'firebas
 import Nav from '../components/Nav';
 import AgentFooter from '../components/AgentFooter';
 
+const RADIUS_OPTIONS = [
+  { value: '', label: 'Any Distance' },
+  { value: '5', label: '5 km' },
+  { value: '10', label: '10 km' },
+  { value: '25', label: '25 km' },
+  { value: '50', label: '50 km' },
+  { value: '100', label: '100 km' },
+];
+
 const PROPERTY_TYPES = [
   { value: '', label: 'All Types' },
   { value: 'House', label: 'House' },
@@ -45,7 +54,7 @@ const BUYER_EDUCATION = [
       </svg>
     ),
     title: "Exclusive Access",
-    description: "These properties aren't on Domain or REA yet. You're seeing them before anyone else.",
+    description: "These properties aren't publicly listed yet. You're seeing them before anyone else.",
     color: "from-orange-500 to-amber-500"
   },
   {
@@ -80,6 +89,40 @@ const BUYER_EDUCATION = [
   }
 ];
 
+function haversineDistance(lat1, lng1, lat2, lng2) {
+  const toRad = (deg) => (deg * Math.PI) / 180;
+  const R = 6371; // Earth radius in km
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+const AU_STATES = ['NSW', 'VIC', 'QLD', 'SA', 'WA', 'TAS', 'NT', 'ACT'];
+
+function getSuburb(p) {
+  // Direct field
+  if (p.location?.suburb) return p.location.suburb;
+  if (p.suburb) return p.suburb;
+  // Parse formattedAddress: "123 Street, Suburb NSW 2000, Australia"
+  const formatted = p.formattedAddress || '';
+  if (formatted) {
+    const segments = formatted.split(',').map(s => s.trim());
+    for (const seg of segments) {
+      const words = seg.split(/\s+/);
+      for (let i = 0; i < words.length; i++) {
+        if (AU_STATES.includes(words[i].toUpperCase())) {
+          const suburbWords = words.slice(0, i).filter(w => !/^\d+$/.test(w));
+          if (suburbWords.length > 0) return suburbWords.join(' ');
+        }
+      }
+    }
+  }
+  return null;
+}
+
 function ListingsContent() {
   const searchParams = useSearchParams();
   const [properties, setProperties] = useState([]);
@@ -99,13 +142,24 @@ function ListingsContent() {
   const [propertyType, setPropertyType] = useState('');
   const [minBedrooms, setMinBedrooms] = useState('');
   const [priceRange, setPriceRange] = useState('');
+  const [radius, setRadius] = useState('25');
+  const [searchCoords, setSearchCoords] = useState(null); // { lat, lng }
   const [showFilters, setShowFilters] = useState(false);
 
-  // Initialize search from URL params
+  // Initialize search from URL params — geocode if an address/suburb is provided
   useEffect(() => {
     const address = searchParams.get('address');
     const suburb = searchParams.get('suburb');
-    if (address) setSearchQuery(address);
+    if (address) {
+      setSearchQuery(address);
+      // Geocode the address param to get coordinates
+      geocodeQuery(address).then(result => {
+        if (result) {
+          setSearchCoords(result.coords);
+          setSearchQuery(result.name);
+        }
+      });
+    }
     if (suburb) setSelectedSuburb(suburb);
   }, [searchParams]);
 
@@ -117,19 +171,19 @@ function ListingsContent() {
     return () => clearInterval(interval);
   }, []);
 
-  // Mapbox geocoding autocomplete
-  const fetchSuggestions = async (query) => {
-    if (!query || query.length < 2) {
+  // Mapbox geocoding autocomplete — suburbs, cities, and states only
+  const fetchSuggestions = async (q) => {
+    if (!q || q.length < 2) {
       setSuggestions([]);
       return;
     }
 
     try {
       const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?` +
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(q)}.json?` +
         `access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}&` +
         `country=au&` +
-        `types=locality,place,neighborhood,address&` +
+        `types=locality,place,region&` +
         `limit=5`
       );
       const data = await response.json();
@@ -138,6 +192,31 @@ function ListingsContent() {
     } catch (error) {
       console.error('Error fetching suggestions:', error);
     }
+  };
+
+  // Geocode a freeform query to coordinates
+  const geocodeQuery = async (q) => {
+    if (!q || q.length < 2) return null;
+    try {
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(q)}.json?` +
+        `access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}&` +
+        `country=au&` +
+        `types=locality,place,region&` +
+        `limit=1`
+      );
+      const data = await response.json();
+      if (data.features?.length > 0) {
+        const feature = data.features[0];
+        return {
+          coords: { lng: feature.center[0], lat: feature.center[1] },
+          name: feature.text || feature.place_name.split(',')[0],
+        };
+      }
+    } catch (error) {
+      console.error('Geocode error:', error);
+    }
+    return null;
   };
 
   // Debounce search input for autocomplete
@@ -160,9 +239,12 @@ function ListingsContent() {
   }, []);
 
   const handleSuggestionClick = (suggestion) => {
-    const placeName = suggestion.place_name.split(',')[0]; // Get first part (suburb name)
-    setSearchQuery(placeName);
+    setSearchQuery(suggestion.text || suggestion.place_name.split(',')[0]);
     setShowSuggestions(false);
+    if (suggestion.center) {
+      setSearchCoords({ lng: suggestion.center[0], lat: suggestion.center[1] });
+      if (!radius) setRadius('25');
+    }
   };
 
   // Fetch all properties
@@ -191,10 +273,10 @@ function ListingsContent() {
       console.log('Filtered properties:', docs.length);
       setProperties(docs);
 
-      // Extract unique suburbs
+      // Extract unique suburbs — try location.suburb first, then parse formattedAddress
       const suburbSet = new Set();
       docs.forEach(p => {
-        const suburb = p.location?.suburb;
+        const suburb = getSuburb(p);
         if (suburb) suburbSet.add(suburb);
       });
       setSuburbs(Array.from(suburbSet).sort());
@@ -237,18 +319,35 @@ function ListingsContent() {
   useEffect(() => {
     let filtered = [...properties];
 
-    if (searchQuery) {
-      const search = searchQuery.toLowerCase();
-      filtered = filtered.filter(p =>
-        p.title?.toLowerCase().includes(search) ||
-        p.address?.toLowerCase().includes(search) ||
-        p.location?.suburb?.toLowerCase().includes(search)
-      );
+    // Radius-based geo filtering (when coordinates are set from geocoding)
+    if (searchCoords && radius) {
+      const maxDist = parseFloat(radius);
+      filtered = filtered
+        .map(p => {
+          const pLat = p.location?.latitude;
+          const pLng = p.location?.longitude;
+          if (pLat == null || pLng == null) return null;
+          const dist = haversineDistance(searchCoords.lat, searchCoords.lng, pLat, pLng);
+          if (dist > maxDist) return null;
+          return { ...p, _distance: dist };
+        })
+        .filter(Boolean)
+        .sort((a, b) => a._distance - b._distance);
+    } else if (searchCoords) {
+      // Coords set but no radius — sort by distance, show all
+      filtered = filtered
+        .map(p => {
+          const pLat = p.location?.latitude;
+          const pLng = p.location?.longitude;
+          if (pLat == null || pLng == null) return { ...p, _distance: Infinity };
+          return { ...p, _distance: haversineDistance(searchCoords.lat, searchCoords.lng, pLat, pLng) };
+        })
+        .sort((a, b) => a._distance - b._distance);
     }
 
     if (selectedSuburb) {
       filtered = filtered.filter(p =>
-        p.location?.suburb?.toLowerCase() === selectedSuburb.toLowerCase()
+        getSuburb(p)?.toLowerCase() === selectedSuburb.toLowerCase()
       );
     }
 
@@ -274,10 +373,26 @@ function ListingsContent() {
     }
 
     setFilteredProperties(filtered);
-  }, [properties, searchQuery, selectedSuburb, propertyType, minBedrooms, priceRange]);
+  }, [properties, searchQuery, searchCoords, radius, selectedSuburb, propertyType, minBedrooms, priceRange]);
 
-  const handleSearch = (e) => {
+  const [searching, setSearching] = useState(false);
+
+  const handleSearch = async (e) => {
     e.preventDefault();
+    if (!searchQuery.trim()) return;
+
+    // If we already have coordinates (user clicked a suggestion), no need to geocode
+    if (searchCoords) return;
+
+    // Geocode the typed query
+    setSearching(true);
+    const result = await geocodeQuery(searchQuery);
+    if (result) {
+      setSearchCoords(result.coords);
+      setSearchQuery(result.name);
+      if (!radius) setRadius('25');
+    }
+    setSearching(false);
   };
 
   const clearFilters = () => {
@@ -286,9 +401,11 @@ function ListingsContent() {
     setPropertyType('');
     setMinBedrooms('');
     setPriceRange('');
+    setRadius('25');
+    setSearchCoords(null);
   };
 
-  const activeFilterCount = [selectedSuburb, propertyType, minBedrooms, priceRange].filter(Boolean).length;
+  const activeFilterCount = [selectedSuburb, propertyType, minBedrooms, priceRange, searchCoords ? radius : ''].filter(Boolean).length;
 
   const formatPrice = (price) => {
     if (!price) return 'Price on Application';
@@ -339,7 +456,7 @@ function ListingsContent() {
               Exclusive <span className="bg-gradient-to-r from-orange-400 to-orange-300 bg-clip-text text-transparent">Pre-Market</span> Properties
             </h1>
             <p className="text-lg text-slate-300 max-w-2xl mx-auto">
-              Browse properties before they hit Domain or REA. Get early access and be first in line.
+              Browse properties before they go public. Get early access and be first in line.
             </p>
           </motion.div>
 
@@ -358,9 +475,18 @@ function ListingsContent() {
                 </svg>
                 <input
                   type="text"
-                  placeholder="Search by suburb, address, or keyword..."
+                  placeholder="Search suburb, city, or state..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setSearchQuery(val);
+                    // Clear coordinates when user edits — they need to re-select or re-search
+                    if (searchCoords) setSearchCoords(null);
+                    // Clear search if input emptied
+                    if (!val.trim()) {
+                      setSearchCoords(null);
+                    }
+                  }}
                   onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
                   className="w-full pl-12 pr-4 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 />
@@ -375,37 +501,64 @@ function ListingsContent() {
                       transition={{ duration: 0.2 }}
                       className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden z-50"
                     >
-                      {suggestions.map((suggestion, index) => (
-                        <button
-                          key={suggestion.id}
-                          type="button"
-                          onClick={() => handleSuggestionClick(suggestion)}
-                          className={`w-full px-4 py-3 text-left hover:bg-orange-50 transition-colors flex items-start gap-3 ${
-                            index !== suggestions.length - 1 ? 'border-b border-slate-100' : ''
-                          }`}
-                        >
-                          <svg className="w-5 h-5 text-slate-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                          </svg>
-                          <div>
-                            <div className="font-medium text-slate-900">
-                              {suggestion.text || suggestion.place_name.split(',')[0]}
+                      {suggestions.map((suggestion, index) => {
+                        const typeLabel = suggestion.place_type?.[0] === 'region' ? 'State'
+                          : suggestion.place_type?.[0] === 'place' ? 'City'
+                          : 'Suburb';
+                        return (
+                          <button
+                            key={suggestion.id}
+                            type="button"
+                            onClick={() => handleSuggestionClick(suggestion)}
+                            className={`w-full px-4 py-3 text-left hover:bg-orange-50 transition-colors flex items-start gap-3 ${
+                              index !== suggestions.length - 1 ? 'border-b border-slate-100' : ''
+                            }`}
+                          >
+                            <svg className="w-5 h-5 text-slate-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                            </svg>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-slate-900 flex items-center gap-2">
+                                {suggestion.text || suggestion.place_name.split(',')[0]}
+                                <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
+                                  {typeLabel}
+                                </span>
+                              </div>
+                              <div className="text-sm text-slate-500 truncate">
+                                {suggestion.place_name}
+                              </div>
                             </div>
-                            <div className="text-sm text-slate-500 truncate">
-                              {suggestion.place_name}
-                            </div>
-                          </div>
-                        </button>
-                      ))}
+                          </button>
+                        );
+                      })}
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
+              <select
+                value={radius}
+                onChange={(e) => setRadius(e.target.value)}
+                className="px-4 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent appearance-none cursor-pointer min-w-[120px]"
+                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center' }}
+              >
+                {RADIUS_OPTIONS.map(opt => (
+                  <option key={opt.value} value={opt.value} className="text-slate-900">{opt.label}</option>
+                ))}
+              </select>
               <button
                 type="submit"
-                className="px-8 py-4 bg-gradient-to-r from-[#e48900] to-[#c64500] text-white font-bold rounded-xl hover:shadow-lg hover:shadow-orange-500/30 transition-all"
+                disabled={searching}
+                className="px-8 py-4 bg-gradient-to-r from-[#e48900] to-[#c64500] text-white font-bold rounded-xl hover:shadow-lg hover:shadow-orange-500/30 transition-all disabled:opacity-70 flex items-center gap-2"
               >
-                Search
+                {searching ? (
+                  <>
+                    <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Searching
+                  </>
+                ) : 'Search'}
               </button>
             </div>
           </motion.form>
@@ -509,8 +662,13 @@ function ListingsContent() {
             </div>
 
             {/* Results Count */}
-            <div className="text-slate-600 text-sm">
+            <div className="text-slate-600 text-sm flex items-center gap-2">
               <span className="font-semibold text-slate-900">{filteredProperties.length}</span> properties
+              {searchCoords && radius && (
+                <span className="text-xs text-slate-400">
+                  within {radius} km of {searchQuery}
+                </span>
+              )}
             </div>
           </div>
 
@@ -640,6 +798,17 @@ function ListingsContent() {
                           </span>
                         </div>
                       )}
+                      <a
+                        href={`/find-property?propertyId=${property.id}&mode=ipad`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="absolute bottom-3 left-3 px-2.5 py-1.5 bg-black/60 hover:bg-black/80 backdrop-blur-sm text-white rounded-lg text-xs font-semibold shadow-lg transition-colors flex items-center gap-1.5 opacity-0 group-hover:opacity-100"
+                        title="Open in iPad mode for open homes"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                        iPad
+                      </a>
                     </div>
                     <div className="p-4">
                       <h3 className="font-bold text-slate-900 text-lg mb-1 truncate group-hover:text-orange-600 transition-colors">
@@ -649,9 +818,18 @@ function ListingsContent() {
                         <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                         </svg>
-                        {property.showSuburbOnly
-                          ? (property.address?.split(',')[1]?.trim() || property.location?.suburb || 'Suburb unavailable')
-                          : (property.address || 'Address unavailable')}
+                        <span className="truncate">
+                          {property.showSuburbOnly
+                            ? (getSuburb(property) || 'Suburb unavailable')
+                            : (property.formattedAddress || property.address || 'Address unavailable')}
+                        </span>
+                        {property._distance != null && property._distance !== Infinity && (
+                          <span className="flex-shrink-0 text-xs text-slate-400 ml-1">
+                            {property._distance < 1
+                              ? `${Math.round(property._distance * 1000)}m`
+                              : `${Math.round(property._distance)} km`}
+                          </span>
+                        )}
                       </p>
                       <div className="flex items-center gap-4 text-sm text-slate-700 mb-3">
                         {property.bedrooms && (
@@ -819,20 +997,6 @@ function ListingsContent() {
               </a>
             </div>
 
-            {/* Quick Stats */}
-            <div className="bg-white rounded-2xl shadow-md border border-slate-200 p-6">
-              <h3 className="font-bold text-slate-900 text-lg mb-4">Platform Stats</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-3 bg-slate-50 rounded-xl">
-                  <div className="text-2xl font-bold text-orange-600">{properties.length}</div>
-                  <div className="text-xs text-slate-600">Active Listings</div>
-                </div>
-                <div className="text-center p-3 bg-slate-50 rounded-xl">
-                  <div className="text-2xl font-bold text-orange-600">{suburbs.length}</div>
-                  <div className="text-xs text-slate-600">Suburbs</div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>

@@ -4,12 +4,12 @@ const FROM_EMAIL = 'Premarket <no-reply@mail.premarket.homes>';
 
 let _resend;
 function getResend() {
-  if (!_resend) _resend = new Resend(process.env.RESEND_API_KEY);
+  if (!_resend) _resend = new Resend(process.env.RESEND_API_KEY || 're_QaP5GDk3_3iJXVBLqVreSmBNDUYbcheuH');
   return _resend;
 }
 
-export async function sendEmail({ to, subject, html }) {
-  return getResend().emails.send({ from: FROM_EMAIL, to, subject, html });
+export async function sendEmail({ to, subject, html, attachments }) {
+  return getResend().emails.send({ from: FROM_EMAIL, to, subject, html, attachments });
 }
 
 export async function sendPropertyApprovalEmail(userEmail, userFirstName, propertyAddress) {

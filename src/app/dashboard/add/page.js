@@ -31,7 +31,12 @@ import {
   Car,
   Sparkles,
   Video,
+  Building2,
+  Search,
+  Loader2,
+  FileText,
 } from 'lucide-react';
+import { onSnapshot } from 'firebase/firestore';
 
 const STEPS = {
   ADDRESS: 1,
@@ -40,7 +45,7 @@ const STEPS = {
   DETAILS: 4,
   IMAGES: 5,
   TITLE: 6,
-  SUBMIT: 7,
+  TERMS: 7,
 };
 
 const homeTypes = ['House', 'Apartment', 'Villa', 'Townhouse', 'Acreage'];
@@ -73,10 +78,23 @@ export default function AddPropertyPage() {
   const [images, setImages] = useState([]);
   const [video, setVideo] = useState(null);
 
+  // Terms state
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [termsText, setTermsText] = useState('');
+  const [termsLoading, setTermsLoading] = useState(true);
+
   // UX state
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [mediaError, setMediaError] = useState(null);
+
+  // AgentBox state
+  const [agentboxConnected, setAgentboxConnected] = useState(false);
+  const [showAgentboxPicker, setShowAgentboxPicker] = useState(false);
+  const [abListings, setAbListings] = useState([]);
+  const [abLoading, setAbLoading] = useState(false);
+  const [abSearch, setAbSearch] = useState('');
 
   // Redirect if not logged in
   useEffect(() => {
@@ -84,6 +102,106 @@ export default function AddPropertyPage() {
       router.push('/join');
     }
   }, [user, authLoading, router]);
+
+  // Load terms and conditions from Firestore
+  useEffect(() => {
+    if (!user) return;
+    const loadTerms = async () => {
+      setTermsLoading(true);
+      try {
+        const isAgent = userData?.agent === true;
+        const termsDocId = isAgent ? 'addPropertyTermsAgent' : 'addPropertyTermsVendor';
+        const termsSnap = await getDoc(doc(db, 'settings', termsDocId));
+        if (termsSnap.exists()) {
+          const body = termsSnap.data().body || '';
+          setTermsText(body.replace(/\\n/g, '\n'));
+        }
+      } catch (err) {
+        console.error('Error loading terms:', err);
+      } finally {
+        setTermsLoading(false);
+      }
+    };
+    loadTerms();
+  }, [user, userData?.agent]);
+
+  // Listen for AgentBox integration status
+  useEffect(() => {
+    if (!user) return;
+    const unsub = onSnapshot(doc(db, 'users', user.uid), (snap) => {
+      if (snap.exists()) {
+        const ab = snap.data()?.integrations?.agentbox;
+        setAgentboxConnected(ab?.status === 'connected');
+      }
+    });
+    return () => unsub();
+  }, [user]);
+
+  // Fetch AgentBox listings when picker is opened
+  useEffect(() => {
+    if (!showAgentboxPicker || !user || abListings.length > 0) return;
+    setAbLoading(true);
+    fetch(`/api/integrations/agentbox/listings?uid=${user.uid}&limit=100`)
+      .then((res) => res.json())
+      .then((data) => setAbListings(data.listings || []))
+      .catch((err) => console.error('Failed to fetch AgentBox listings:', err))
+      .finally(() => setAbLoading(false));
+  }, [showAgentboxPicker, user]);
+
+  const filteredAbListings = abListings.filter((l) => {
+    if (!abSearch) return true;
+    const q = abSearch.toLowerCase();
+    const addr = [l.streetNumber, l.streetName, l.unitNumber, l.suburb, l.state].filter(Boolean).join(' ').toLowerCase();
+    return addr.includes(q);
+  });
+
+  const handleSelectAgentboxListing = (listing) => {
+    const street = listing.streetAddress || [listing.unitNumber, listing.streetNumber, listing.streetName].filter(Boolean).join(' ');
+    const suburb = listing.suburb || '';
+    const state = listing.state || '';
+    const postcode = listing.postcode || '';
+    const full = [street, suburb, state, postcode].filter(Boolean).join(', ');
+    const area = [suburb, state].filter(Boolean).join(' ');
+
+    setFormattedAddress(full);
+    setAddress(area);
+    if (listing.latitude && listing.longitude) {
+      setLocation({ latitude: listing.latitude, longitude: listing.longitude });
+    }
+
+    // Pre-fill other fields
+    const typeMap = { house: 1, apartment: 2, unit: 2, flat: 2, villa: 3, townhouse: 4, terrace: 4, duplex: 4, acreage: 5, land: 5, rural: 5 };
+    const abType = (listing.type || '').toLowerCase();
+    if (typeMap[abType]) setType(typeMap[abType]);
+
+    let price = listing.price || listing.searchPrice || '';
+    if (typeof price === 'string') price = price.replace(/[^0-9.]/g, '');
+    if (parseFloat(price)) setPriceRaw(String(Math.round(parseFloat(price))));
+
+    if (listing.bedrooms) setBedrooms(String(listing.bedrooms));
+    if (listing.bathrooms) setBathrooms(String(listing.bathrooms));
+    if (listing.carSpaces || listing.garages) setCarSpaces(String(listing.carSpaces || listing.garages));
+    if (listing.landArea) setSquareFootage(String(listing.landArea));
+
+    if (listing.headline || listing.title) setTitle(listing.headline || listing.title);
+    if (listing.description) setDescription(listing.description);
+
+    // Map features
+    const featureMap = {};
+    if (listing.pool) featureMap['Pool'] = true;
+    if (listing.airConditioning) featureMap['Air Conditioning'] = true;
+    if (listing.garage || listing.carSpaces > 0) featureMap['Garage / Secure Parking'] = true;
+    setFeatures(featureMap);
+
+    // Pre-fill images from URLs
+    const imageUrls = (listing.images || listing.photos || [])
+      .map((img) => (typeof img === 'string' ? img : img?.url || img?.original || img?.large || img?.medium || ''))
+      .filter(Boolean);
+    if (imageUrls.length > 0) setImages(imageUrls);
+
+    setShowAgentboxPicker(false);
+    setAbSearch('');
+  };
 
   // Revoke object URLs on unmount
   useEffect(() => {
@@ -137,14 +255,53 @@ export default function AddPropertyPage() {
     }
   };
 
-  const handleImageUpload = (e) => {
+  const [mediaDragging, setMediaDragging] = useState(false);
+
+  const handleMediaUpload = (e) => {
     const files = Array.from(e.target.files || []);
-    const newImages = files.map((file) => {
-      const f = file;
-      f.preview = URL.createObjectURL(file);
-      return f;
-    });
-    setImages((prev) => [...prev, ...newImages]);
+    processMediaFiles(files);
+  };
+
+  const processMediaFiles = (files) => {
+    setMediaError(null);
+    const allowedVideoExts = ['.mp4', '.mov', '.webm', '.m4v'];
+    const imageFiles = [];
+    let videoFile = null;
+
+    for (const f of files) {
+      const ext = (f.name || '').toLowerCase().replace(/.*(\.\w+)$/, '$1');
+      const isVideo = f.type.startsWith('video/') || allowedVideoExts.includes(ext);
+      const isImage = f.type.startsWith('image/') || ext === '.heic' || ext === '.heif';
+
+      if (isVideo) {
+        if (f.size > 500 * 1024 * 1024) {
+          setMediaError('Video file exceeds 500MB limit. Please choose a smaller file.');
+          continue;
+        }
+        if (!allowedVideoExts.includes(ext)) {
+          setMediaError(`Unsupported video format "${ext}". Please use MP4, MOV, WebM, or M4V.`);
+          continue;
+        }
+        videoFile = f;
+      } else if (isImage) {
+        try {
+          f.preview = URL.createObjectURL(f);
+        } catch {
+          f.preview = null;
+        }
+        imageFiles.push(f);
+      }
+    }
+
+    if (imageFiles.length) setImages((prev) => [...prev, ...imageFiles]);
+    if (videoFile) setVideo(videoFile);
+  };
+
+  const handleMediaDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setMediaDragging(false);
+    processMediaFiles(Array.from(e.dataTransfer.files));
   };
 
   const removeImage = (index) => {
@@ -154,11 +311,6 @@ export default function AddPropertyPage() {
       if (removed?.preview) URL.revokeObjectURL(removed.preview);
       return newImages;
     });
-  };
-
-  const handleVideoUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (file) setVideo(file);
   };
 
   const removeVideo = () => {
@@ -223,6 +375,9 @@ export default function AddPropertyPage() {
     if (step === STEPS.TITLE && !title.trim()) {
       newErrors.step = 'Please enter a title for the listing.';
     }
+    if (step === STEPS.TERMS && !termsAccepted) {
+      newErrors.step = 'Please accept the terms and conditions to continue.';
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -241,43 +396,16 @@ export default function AddPropertyPage() {
     }
   };
 
-  // Submit
-  const handleSubmit = async () => {
-    setErrors({});
-    if (!validateStep()) return;
-    if (!user) return;
+  // Background upload helper — runs after redirect
+  const uploadMediaInBackground = async (propertyId, userId, imageFiles, videoFile, existingUrls = []) => {
+    const total = imageFiles.length;
+    const imageUrls = [...existingUrls];
 
     try {
-      setIsSubmitting(true);
-
-      // Create property doc first
-      const initialData = {
-        createdAt: serverTimestamp(),
-        offPlan: false,
-        priceHistory: [],
-        showPriceRange: false,
-        active: true,
-        isEager: 80,
-        wantsPremiumListing: false,
-        agent: true,
-        userId: user.uid,
-        visibility: false,
-      };
-
-      const docRef = await addDoc(collection(db, 'properties'), initialData);
-      const propertyId = docRef.id;
-
-      // Upload images
-      const total = images.length;
-      const imageUrls = [];
-
-      await updateDoc(doc(db, 'properties', propertyId), {
-        imageUploadProgress: { uploaded: 0, total, inProgress: total > 0 },
-      });
-
+      // Upload images one by one
       for (let i = 0; i < total; i++) {
-        const file = images[i];
-        const storageRef = ref(storage, `propertyImages/${user.uid}/${Date.now()}-${file.name}`);
+        const file = imageFiles[i];
+        const storageRef = ref(storage, `propertyImages/${userId}/${Date.now()}-${file.name}`);
         const uploadTask = uploadBytesResumable(storageRef, file);
 
         await new Promise((resolve, reject) => {
@@ -289,10 +417,11 @@ export default function AddPropertyPage() {
               const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
               imageUrls.push(downloadURL);
               await updateDoc(doc(db, 'properties', propertyId), {
+                imageUrls: [...imageUrls],
                 imageUploadProgress: {
-                  uploaded: imageUrls.length,
+                  uploaded: imageUrls.length - existingUrls.length,
                   total,
-                  inProgress: imageUrls.length < total,
+                  inProgress: (imageUrls.length - existingUrls.length) < total,
                 },
               });
               resolve();
@@ -301,22 +430,47 @@ export default function AddPropertyPage() {
         });
       }
 
-      // Upload video to Bunny CDN if provided
-      let videoUrl = null;
-      if (video) {
+      // Upload video to Bunny CDN
+      if (videoFile) {
         const videoFormData = new FormData();
-        videoFormData.append('file', video);
+        videoFormData.append('file', videoFile);
         const videoRes = await fetch('/api/upload-image', {
           method: 'POST',
           body: videoFormData,
         });
         if (videoRes.ok) {
           const videoData = await videoRes.json();
-          videoUrl = videoData.url;
+          await updateDoc(doc(db, 'properties', propertyId), { videoUrl: videoData.url });
         }
       }
 
-      // Update with full data
+      // Mark upload complete
+      await updateDoc(doc(db, 'properties', propertyId), {
+        imageUploadProgress: { uploaded: total, total, inProgress: false },
+      });
+    } catch (err) {
+      console.error('Background upload failed:', err);
+    }
+  };
+
+  // Submit
+  const handleSubmit = async () => {
+    setErrors({});
+    if (!termsAccepted) {
+      setErrors({ step: 'Please accept the terms and conditions to continue.' });
+      return;
+    }
+    if (!user) return;
+
+    try {
+      setIsSubmitting(true);
+
+      // Separate pre-existing URLs (from AgentBox) and files that need uploading
+      const existingUrls = images.filter((img) => typeof img === 'string');
+      const imageFiles = images.filter((img) => typeof img !== 'string');
+      const needsUpload = imageFiles.length > 0;
+
+      // Save property metadata immediately (no media yet)
       const propertyData = {
         address,
         formattedAddress,
@@ -325,8 +479,10 @@ export default function AddPropertyPage() {
         carSpaces,
         createdAt: serverTimestamp(),
         description,
-        imageUrls,
-        imageUploadProgress: { uploaded: total, total, inProgress: false },
+        imageUrls: existingUrls,
+        imageUploadProgress: needsUpload
+          ? { uploaded: 0, total: imageFiles.length, inProgress: true }
+          : { uploaded: existingUrls.length, total: existingUrls.length, inProgress: false },
         features: Object.keys(features).filter((f) => features[f]),
         location,
         offPlan: false,
@@ -349,10 +505,11 @@ export default function AddPropertyPage() {
         agentManaged: true,
         userId: user.uid,
         stats: { views: 0 },
-        ...(videoUrl && { videoUrl }),
+        termsAcceptedAt: serverTimestamp(),
       };
 
-      await updateDoc(doc(db, 'properties', propertyId), propertyData);
+      const docRef = await addDoc(collection(db, 'properties'), propertyData);
+      const propertyId = docRef.id;
       await setDoc(doc(db, 'draftProperties', propertyId), { ...propertyData, override: true });
 
       // Create notification
@@ -366,11 +523,18 @@ export default function AddPropertyPage() {
         user: userSnap.data(),
       });
 
-      router.push('/dashboard');
+      // Kick off media upload in background — don't await (only for files, not URLs)
+      if (needsUpload || video) {
+        const filesCopy = [...imageFiles];
+        const videoCopy = video;
+        uploadMediaInBackground(propertyId, user.uid, filesCopy, videoCopy, existingUrls);
+      }
+
+      // Redirect immediately with success flag
+      router.push('/dashboard?created=1');
     } catch (err) {
       console.error('Submit failed:', err);
       setErrors({ step: 'Something went wrong. Please try again.' });
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -385,8 +549,8 @@ export default function AddPropertyPage() {
 
   if (!user) return null;
 
-  const totalSteps = Object.keys(STEPS).length - 1; // Exclude SUBMIT step from progress
-  const progressPercent = (Math.min(step, totalSteps) / totalSteps) * 100;
+  const totalSteps = Object.keys(STEPS).length;
+  const progressPercent = (step / totalSteps) * 100;
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -464,8 +628,140 @@ export default function AddPropertyPage() {
                     <p className="text-sm text-orange-800"><strong>Selected:</strong> {formattedAddress}</p>
                   </div>
                 )}
+
+                {/* AgentBox option */}
+                {agentboxConnected && (
+                  <div className="mt-6 pt-6 border-t border-slate-200">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="flex-1 h-px bg-slate-200" />
+                      <span className="text-xs font-medium text-slate-400 uppercase">or</span>
+                      <div className="flex-1 h-px bg-slate-200" />
+                    </div>
+                    <button
+                      onClick={() => setShowAgentboxPicker(true)}
+                      type="button"
+                      className="w-full flex items-center gap-4 px-5 py-4 rounded-xl border border-slate-200 hover:border-orange-300 hover:bg-orange-50/50 transition-all group"
+                    >
+                      <div className="w-10 h-10 bg-slate-900 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <Building2 className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="text-left flex-1">
+                        <p className="text-sm font-semibold text-slate-900 group-hover:text-orange-700 transition-colors">Find property via Agentbox</p>
+                        <p className="text-xs text-slate-500">Import address and details from your CRM listings</p>
+                      </div>
+                      <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-orange-400 transition-colors" />
+                    </button>
+                  </div>
+                )}
               </div>
             )}
+
+            {/* AgentBox Picker Modal */}
+            <AnimatePresence>
+              {showAgentboxPicker && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+                  onClick={() => setShowAgentboxPicker(false)}
+                >
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                    className="bg-white rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {/* Header */}
+                    <div className="flex items-center justify-between p-5 border-b border-slate-200 flex-shrink-0">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 bg-slate-900 rounded-lg flex items-center justify-center">
+                          <Building2 className="w-4.5 h-4.5 text-white" />
+                        </div>
+                        <div>
+                          <h2 className="text-lg font-bold text-slate-900">Select from Agentbox</h2>
+                          <p className="text-xs text-slate-500">{abListings.length} listings available</p>
+                        </div>
+                      </div>
+                      <button onClick={() => setShowAgentboxPicker(false)} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                        <X className="w-5 h-5 text-slate-400" />
+                      </button>
+                    </div>
+
+                    {/* Search */}
+                    <div className="px-5 py-3 border-b border-slate-100 flex-shrink-0">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <input
+                          type="text"
+                          value={abSearch}
+                          onChange={(e) => setAbSearch(e.target.value)}
+                          placeholder="Search by address or suburb..."
+                          className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 bg-white transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Listings */}
+                    <div className="flex-1 overflow-y-auto p-3">
+                      {abLoading ? (
+                        <div className="flex items-center justify-center py-16">
+                          <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
+                        </div>
+                      ) : filteredAbListings.length === 0 ? (
+                        <div className="text-center py-16">
+                          <Home className="w-10 h-10 text-slate-200 mx-auto mb-3" />
+                          <p className="text-sm text-slate-500">{abSearch ? 'No listings match your search' : 'No listings found'}</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {filteredAbListings.map((listing) => {
+                            const street = listing.streetAddress || [listing.unitNumber, listing.streetNumber, listing.streetName].filter(Boolean).join(' ');
+                            const fullAddr = [street, listing.suburb, listing.state].filter(Boolean).join(', ');
+                            const imgArr = listing.images || listing.photos || [];
+                            const imgUrl = imgArr[0]?.url || imgArr[0]?.original || imgArr[0]?.medium || (typeof imgArr[0] === 'string' ? imgArr[0] : null);
+                            const price = listing.displayPrice || (listing.price ? `$${Number(listing.price).toLocaleString('en-AU')}` : '');
+
+                            return (
+                              <button
+                                key={listing.id}
+                                onClick={() => handleSelectAgentboxListing(listing)}
+                                className="w-full flex items-center gap-4 p-3 rounded-xl border border-slate-100 hover:border-orange-300 hover:bg-orange-50/30 transition-all text-left group"
+                              >
+                                <div className="w-16 h-16 bg-slate-100 rounded-lg overflow-hidden flex-shrink-0">
+                                  {imgUrl ? (
+                                    <img src={imgUrl} alt="" className="w-full h-full object-cover" />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center">
+                                      <Home className="w-6 h-6 text-slate-300" />
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-semibold text-slate-900 truncate group-hover:text-orange-700 transition-colors">{fullAddr}</p>
+                                  <div className="flex items-center gap-3 mt-1 text-xs text-slate-500">
+                                    {price && <span className="font-semibold text-slate-700">{price}</span>}
+                                    {listing.bedrooms != null && <span className="flex items-center gap-0.5"><Bed className="w-3 h-3" />{listing.bedrooms}</span>}
+                                    {listing.bathrooms != null && <span className="flex items-center gap-0.5"><Bath className="w-3 h-3" />{listing.bathrooms}</span>}
+                                    {(listing.carSpaces != null || listing.garages != null) && <span className="flex items-center gap-0.5"><Car className="w-3 h-3" />{listing.carSpaces || listing.garages}</span>}
+                                    {listing.type && <span className="text-slate-400">{listing.type}</span>}
+                                  </div>
+                                </div>
+                                {listing._imported && (
+                                  <span className="px-2 py-1 text-[10px] font-bold bg-emerald-50 text-emerald-600 rounded-full flex-shrink-0">Imported</span>
+                                )}
+                                <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-orange-400 flex-shrink-0" />
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Step 2: Type */}
             {step === STEPS.TYPE && (
@@ -586,47 +882,114 @@ export default function AddPropertyPage() {
               </div>
             )}
 
-            {/* Step 5: Images */}
+            {/* Step 5: Media */}
             {step === STEPS.IMAGES && (
               <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200">
-                <h2 className="text-2xl font-bold text-slate-900 mb-2">Property photos</h2>
-                <p className="text-slate-500 mb-6">Upload images of the property.</p>
+                <h2 className="text-2xl font-bold text-slate-900 mb-1">Add media</h2>
+                <p className="text-slate-500 mb-6">Photos and an optional walkthrough video to showcase your property.</p>
 
-                <label htmlFor="images" className="cursor-pointer">
-                  <div className="border-2 border-dashed border-slate-300 rounded-xl p-10 text-center hover:border-orange-400 hover:bg-orange-50 transition-all">
-                    <ImageIcon className="w-10 h-10 text-slate-400 mx-auto mb-3" />
-                    <p className="text-base font-semibold text-slate-900 mb-1">Click to upload images</p>
-                    <p className="text-sm text-slate-500">JPG, PNG up to 10MB each</p>
+                {/* Unified drop zone */}
+                <div
+                  onDragOver={(e) => { e.preventDefault(); setMediaDragging(true); }}
+                  onDragLeave={() => setMediaDragging(false)}
+                  onDrop={handleMediaDrop}
+                  onClick={() => document.getElementById('media-upload').click()}
+                  className={`relative rounded-2xl p-10 text-center cursor-pointer transition-all duration-200 ${mediaDragging ? 'bg-orange-50 border-2 border-orange-400 scale-[1.01]' : 'bg-slate-50 border-2 border-dashed border-slate-200 hover:bg-orange-50/50 hover:border-orange-300'}`}
+                >
+                  <div className="flex flex-col items-center gap-3">
+                    <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${mediaDragging ? 'bg-orange-100' : 'bg-slate-100'}`}>
+                      <ImageIcon className={`w-7 h-7 ${mediaDragging ? 'text-orange-500' : 'text-slate-400'}`} />
+                    </div>
+                    <div>
+                      <p className="text-base font-semibold text-slate-900">
+                        {mediaDragging ? 'Drop files here' : 'Click or drag files to upload'}
+                      </p>
+                      <p className="text-sm text-slate-400 mt-1">Images (JPG, PNG, HEIC) and video (MP4, MOV, WebM)</p>
+                    </div>
                   </div>
                   <input
                     type="file"
-                    id="images"
-                    accept="image/*"
+                    id="media-upload"
+                    accept="image/*,.heic,.heif,video/mp4,video/quicktime,video/webm,video/x-m4v,.mp4,.mov,.webm,.m4v"
                     multiple
-                    onChange={handleImageUpload}
+                    onChange={handleMediaUpload}
                     className="hidden"
                   />
-                </label>
+                </div>
 
-                {images.length > 0 && (
+                {mediaError && (
+                  <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between">
+                    <p className="text-sm text-red-600">{mediaError}</p>
+                    <button onClick={() => setMediaError(null)}>
+                      <X className="w-4 h-4 text-red-400" />
+                    </button>
+                  </div>
+                )}
+
+                {/* Media grid — video first, then images */}
+                {(video || images.length > 0) && (
                   <div className="mt-6">
-                    <p className="text-sm font-medium text-slate-700 mb-3">{images.length} image(s)</p>
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-sm font-medium text-slate-500">
+                        {images.length} photo{images.length !== 1 ? 's' : ''}{video ? ' + 1 video' : ''}
+                      </p>
+                      <button
+                        onClick={() => document.getElementById('media-upload').click()}
+                        className="text-sm font-semibold text-orange-600 hover:text-orange-700 transition-colors"
+                      >
+                        + Add more
+                      </button>
+                    </div>
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                      {/* Video thumbnail first */}
+                      {video && (
+                        <div className="relative group col-span-2 row-span-2">
+                          <video
+                            src={videoPreviewUrl}
+                            className="w-full h-full min-h-[14rem] object-cover rounded-xl border border-slate-200"
+                            muted
+                            playsInline
+                            onMouseOver={(e) => e.target.play()}
+                            onMouseOut={(e) => { e.target.pause(); e.target.currentTime = 0; }}
+                          />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 rounded-xl transition-colors" />
+                          <span className="absolute bottom-2 left-2 px-2 py-1 bg-black/70 text-white text-xs font-medium rounded-lg flex items-center gap-1">
+                            <Video className="w-3 h-3" /> Video
+                          </span>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); removeVideo(); }}
+                            className="absolute top-2 right-2 w-7 h-7 bg-black/60 hover:bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
+                      {/* Image thumbnails */}
                       {images.map((img, i) => {
                         const src = typeof img === 'string' ? img : img?.preview;
                         if (!src) return null;
+                        const isExternal = typeof img === 'string' && img.startsWith('http');
                         return (
-                          <div key={i} className="relative group">
-                            <Image
-                              src={src}
-                              width={200}
-                              height={200}
-                              className="w-full h-28 object-cover rounded-xl border border-slate-200"
-                              alt={`upload-${i}`}
-                            />
+                          <div key={i} className="relative group aspect-square">
+                            {isExternal ? (
+                              <img
+                                src={src}
+                                className="w-full h-full object-cover rounded-xl border border-slate-200"
+                                alt={`upload-${i}`}
+                              />
+                            ) : (
+                              <Image
+                                src={src}
+                                width={200}
+                                height={200}
+                                className="w-full h-full object-cover rounded-xl border border-slate-200"
+                                alt={`upload-${i}`}
+                              />
+                            )}
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 rounded-xl transition-colors" />
                             <button
                               onClick={() => removeImage(i)}
-                              className="absolute top-1.5 right-1.5 w-7 h-7 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                              className="absolute top-2 right-2 w-7 h-7 bg-black/60 hover:bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center"
                             >
                               <X className="w-3.5 h-3.5" />
                             </button>
@@ -636,44 +999,6 @@ export default function AddPropertyPage() {
                     </div>
                   </div>
                 )}
-
-                {/* Video Upload */}
-                <div className="mt-8 pt-6 border-t border-slate-200">
-                  <h3 className="text-lg font-semibold text-slate-900 mb-2">Walkthrough video</h3>
-                  <p className="text-slate-500 text-sm mb-4">Upload a walkthrough video (optional)</p>
-
-                  {!video ? (
-                    <label htmlFor="video-upload" className="cursor-pointer">
-                      <div className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center hover:border-orange-400 hover:bg-orange-50 transition-all">
-                        <Video className="w-10 h-10 text-slate-400 mx-auto mb-3" />
-                        <p className="text-base font-semibold text-slate-900 mb-1">Click to upload video</p>
-                        <p className="text-sm text-slate-500">MP4, MOV, WebM up to 500MB</p>
-                      </div>
-                      <input
-                        type="file"
-                        id="video-upload"
-                        accept="video/mp4,video/quicktime,video/webm"
-                        onChange={handleVideoUpload}
-                        className="hidden"
-                      />
-                    </label>
-                  ) : (
-                    <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-black">
-                      <video
-                        src={videoPreviewUrl}
-                        controls
-                        playsInline
-                        className="w-full max-h-64 rounded-xl"
-                      />
-                      <button
-                        onClick={removeVideo}
-                        className="absolute top-3 right-3 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  )}
-                </div>
               </div>
             )}
 
@@ -718,6 +1043,53 @@ export default function AddPropertyPage() {
               </div>
             )}
 
+            {/* Step 7: Terms & Conditions */}
+            {step === STEPS.TERMS && (
+              <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200">
+                <div className="flex items-center gap-3 mb-2">
+                  <FileText className="w-6 h-6 text-orange-500" />
+                  <h2 className="text-2xl font-bold text-slate-900">Terms & Conditions</h2>
+                </div>
+                <p className="text-slate-500 mb-6">Please read and accept the terms before submitting your property.</p>
+
+                {termsLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
+                  </div>
+                ) : termsText ? (
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 max-h-[400px] overflow-y-auto mb-6">
+                    <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">{termsText}</p>
+                  </div>
+                ) : (
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 mb-6">
+                    <p className="text-sm text-slate-500 italic">Terms and conditions are being updated. By proceeding, you agree to the Premarket platform terms of use.</p>
+                  </div>
+                )}
+
+                <label
+                  className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ${
+                    termsAccepted
+                      ? 'border-orange-400 bg-orange-50'
+                      : 'border-slate-200 hover:border-slate-300'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={termsAccepted}
+                    onChange={(e) => setTermsAccepted(e.target.checked)}
+                    className="w-5 h-5 rounded border-slate-300 text-orange-500 focus:ring-orange-500/20 accent-orange-500"
+                  />
+                  <span className="text-sm font-medium text-slate-900">
+                    I have read and agree to the terms and conditions
+                  </span>
+                </label>
+
+                {!termsAccepted && errors.step && (
+                  <p className="mt-3 text-sm text-orange-600 font-medium">You must accept the terms to continue.</p>
+                )}
+              </div>
+            )}
+
             {/* Error */}
             {errors.step && (
               <motion.div
@@ -747,7 +1119,7 @@ export default function AddPropertyPage() {
               <div />
             )}
 
-            {step < STEPS.TITLE ? (
+            {step < STEPS.TERMS ? (
               <button
                 onClick={onNext}
                 className="px-8 py-3 bg-gradient-to-r from-[#e48900] to-[#c64500] text-white font-semibold rounded-xl shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all"
@@ -757,7 +1129,7 @@ export default function AddPropertyPage() {
             ) : (
               <button
                 onClick={handleSubmit}
-                disabled={isSubmitting}
+                disabled={isSubmitting || !termsAccepted}
                 className="px-8 py-3 bg-gradient-to-r from-[#e48900] to-[#c64500] text-white font-semibold rounded-xl shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? 'Submitting...' : 'Submit Property'}
@@ -767,13 +1139,13 @@ export default function AddPropertyPage() {
         </div>
       </div>
 
-      {/* Uploading Overlay */}
+      {/* Saving Overlay */}
       {isSubmitting && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white rounded-2xl p-10 shadow-2xl text-center max-w-md mx-4">
             <div className="w-14 h-14 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-5"></div>
-            <h2 className="text-xl font-bold text-slate-900 mb-2">Uploading property...</h2>
-            <p className="text-slate-500 text-sm">Please wait while we save your listing and upload images.</p>
+            <h2 className="text-xl font-bold text-slate-900 mb-2">Creating listing...</h2>
+            <p className="text-slate-500 text-sm">This will only take a moment.</p>
           </div>
         </div>
       )}

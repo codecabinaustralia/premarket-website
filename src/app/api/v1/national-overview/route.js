@@ -25,10 +25,15 @@ export async function GET(request) {
 
     const docs = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
 
+    // Count actual unique active properties instead of summing suburb counts
+    const propertiesSnap = await adminDb.collection('properties')
+      .where('active', '==', true)
+      .get();
+    const totalProperties = propertiesSnap.docs.filter(d => d.data().archived !== true).length;
+
     let totalBuyerWeighted = 0;
     let totalSellerWeighted = 0;
     let totalWeight = 0;
-    let totalProperties = 0;
 
     const buyerBuckets = { '0-20': 0, '21-40': 0, '41-60': 0, '61-80': 0, '81-100': 0 };
     const sellerBuckets = { '0-20': 0, '21-40': 0, '41-60': 0, '61-80': 0, '81-100': 0 };
@@ -38,7 +43,6 @@ export async function GET(request) {
       totalBuyerWeighted += (doc.buyerScore || 0) * weight;
       totalSellerWeighted += (doc.sellerScore || 0) * weight;
       totalWeight += weight;
-      totalProperties += doc.propertyCount || 0;
 
       // Distribution
       const bScore = doc.buyerScore || 0;

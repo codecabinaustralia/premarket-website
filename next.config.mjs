@@ -3,6 +3,9 @@ const nextConfig = {
   // Enable compression
   compress: true,
 
+  // Exclude pdfkit from webpack bundling (it uses fs.readFileSync for fonts)
+  serverExternalPackages: ['pdfkit'],
+
   // Optimize images
   images: {
     formats: ['image/avif', 'image/webp'],

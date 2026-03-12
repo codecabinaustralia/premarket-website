@@ -51,7 +51,7 @@ export async function generateMetadata({ searchParams }) {
     : property.address;
 
   const title = property.title || 'Pre-Market Property';
-  const description = property.description?.slice(0, 160) || `Exclusive pre-market property in ${displayAddress}. View before it hits Domain or REA.`;
+  const description = property.description?.slice(0, 160) || `Exclusive pre-market property in ${displayAddress}. View before it goes public.`;
   const heroImage = property.imageUrls?.[0] || 'https://premarketvideos.b-cdn.net/assets/logo.png';
 
   return {

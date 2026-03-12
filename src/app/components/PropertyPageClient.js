@@ -4,7 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { db } from '../firebase/clientApp';
-import { doc, getDoc, addDoc, setDoc, collection, serverTimestamp, updateDoc, query, where, orderBy, limit, getDocs, increment } from 'firebase/firestore';
+import { doc, getDoc, addDoc, setDoc, collection, serverTimestamp, updateDoc, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import AgentFooter from '../components/AgentFooter';
@@ -25,7 +25,11 @@ const getSessionId = () => {
 export default function PropertyPageClient() {
   const searchParams = useSearchParams();
   const propertyId = searchParams.get('propertyId');
+  const initialMode = searchParams.get('mode');
   const auth = getAuth();
+
+  const [isIpadMode, setIsIpadMode] = useState(initialMode === 'ipad');
+  const [ipadThankYou, setIpadThankYou] = useState(false);
 
   const [showQualificationModal, setShowQualificationModal] = useState(false);
   const [qualificationData, setQualificationData] = useState({
@@ -102,7 +106,11 @@ export default function PropertyPageClient() {
   // Save price opinion when slider is released
   useEffect(() => {
     if (!isSliding && priceOpinion > 0 && propertyId) {
-      savePriceOpinion();
+      if (isIpadMode) {
+        saveIpadPriceOpinion();
+      } else {
+        savePriceOpinion();
+      }
     }
   }, [isSliding]);
   
@@ -124,8 +132,11 @@ export default function PropertyPageClient() {
           // Fetch previous offer to set initial slider value
           await fetchPreviousOffer(propertyId, min, max);
 
-          // Increment the view count
-          await incrementPropertyViews(propertyId);
+          // Increment the view count (skip if owner/admin is viewing)
+          const currentUser = auth.currentUser;
+          if (!currentUser || currentUser.uid !== data.userId) {
+            await incrementPropertyViews(propertyId);
+          }
         }
       } catch (err) {
         console.error('Error fetching property:', err);
@@ -211,8 +222,6 @@ export default function PropertyPageClient() {
 
   const incrementPropertyViews = async (propId) => {
     try {
-      const docRef = doc(db, 'properties', propId);
-
       // Generate or retrieve persistent visitor ID
       let visitorId = localStorage.getItem('pm_visitor_id');
       if (!visitorId) {
@@ -226,19 +235,11 @@ export default function PropertyPageClient() {
       const isReturn = !!lastViewStr;
       localStorage.setItem(viewKey, Date.now().toString());
 
-      // Increment total views
-      await updateDoc(docRef, {
-        'stats.views': increment(1),
-        'stats.lastViewed': serverTimestamp(),
-        ...(isReturn ? { 'stats.returnViews': increment(1) } : { 'stats.uniqueViews': increment(1) }),
-      });
-
-      // Write detailed view event for analytics
-      await addDoc(collection(db, 'propertyViews'), {
-        propertyId: propId,
-        visitorId,
-        isReturn,
-        timestamp: serverTimestamp(),
+      // Use server-side API to track view (bypasses security rules)
+      await fetch('/api/track-view', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ propertyId: propId, visitorId, isReturn }),
       });
     } catch (error) {
       console.error('Error incrementing property views:', error);
@@ -324,6 +325,66 @@ export default function PropertyPageClient() {
     }
   };
 
+  // iPad mode: always create new opinion, increment view, show register interest
+  const saveIpadPriceOpinion = async () => {
+    try {
+      const ipadSessionId = `ipad_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
+      const offerData = {
+        type: 'opinion',
+        propertyId: propertyId,
+        sessionId: ipadSessionId,
+        offerAmount: Math.round(priceOpinion),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        fromWeb: true,
+        fromIpadMode: true,
+      };
+
+      const docRef = await addDoc(collection(db, 'offers'), offerData);
+      setSavedOfferId(docRef.id);
+
+      // Each iPad opinion also counts as a view
+      await incrementPropertyViews(propertyId);
+
+      trackEvent('ipad_price_opinion_created', {
+        property_id: propertyId,
+        opinion_amount: Math.round(priceOpinion),
+      });
+
+      // Go directly to register interest flow
+      setRegisterInterest(true);
+      setShowQualificationModal(true);
+    } catch (error) {
+      console.error('Error saving iPad price opinion:', error);
+    }
+  };
+
+  // Reset iPad mode to fresh state for next person
+  const resetIpadMode = () => {
+    setSavedOfferId(null);
+    setShowQualificationModal(false);
+    setShowSignupModal(false);
+    setShowPriceOpinionModal(false);
+    setShowThankYou(false);
+    setIpadThankYou(false);
+    setRegisterInterest(false);
+    setQualificationData({
+      isFirstHomeBuyer: false,
+      isInvestor: false,
+      buyerType: '',
+      seriousnessLevel: '',
+    });
+    setEmail('');
+    setFirstName('');
+    setLastName('');
+    setPassword('');
+    setSignupError('');
+    // Reset slider to midpoint
+    const mid = Math.round(((minPrice + maxPrice) / 2) / 1000) * 1000;
+    setPriceOpinion(mid);
+  };
+
   const computeInitialRange = (data) => {
     const toDouble = (v) => {
       if (!v) return 0;
@@ -406,7 +467,7 @@ export default function PropertyPageClient() {
     setCurrentImageIndex((prev) => (prev - 1 + imageUrls.length) % imageUrls.length);
   };
 
-  const handleQualificationSubmit = () => {
+  const handleQualificationSubmit = async () => {
     if (!qualificationData.buyerType || !qualificationData.seriousnessLevel) {
       alert('Please complete all required fields');
       return;
@@ -420,6 +481,28 @@ export default function PropertyPageClient() {
       buyer_type: qualificationData.buyerType,
       seriousness_level: qualificationData.seriousnessLevel
     });
+
+    if (isIpadMode) {
+      // In iPad mode: save qualification to the offer, show thank you, then reset
+      if (savedOfferId) {
+        try {
+          await updateDoc(doc(db, 'offers', savedOfferId), {
+            serious: true,
+            isFirstHomeBuyer: qualificationData.isFirstHomeBuyer,
+            isInvestor: qualificationData.isInvestor,
+            buyerType: qualificationData.buyerType,
+            seriousnessLevel: qualificationData.seriousnessLevel,
+            updatedAt: serverTimestamp(),
+          });
+        } catch (err) {
+          console.error('Error updating iPad offer:', err);
+        }
+      }
+      setShowQualificationModal(false);
+      setIpadThankYou(true);
+      setTimeout(() => resetIpadMode(), 3000);
+      return;
+    }
 
     setShowQualificationModal(false);
     setShowSignupModal(true);
@@ -562,9 +645,321 @@ export default function PropertyPageClient() {
   const areaStats = getNestedValue(propertyJob, 'area_statistics');
 
   const displayVideoUrl = aiVideo?.url || videoUrl;
-  const displayPropertyType = propertyType === 0 ? 'House' : 
-                              propertyType === 1 ? 'Apartment' : 
+  const displayPropertyType = propertyType === 0 ? 'House' :
+                              propertyType === 1 ? 'Apartment' :
                               propertyData?.property_type || 'Property';
+
+  // ═══════════════════════════════════════════════════════════════
+  // iPad Open Home Mode - Fullscreen price opinion kiosk
+  // ═══════════════════════════════════════════════════════════════
+  if (isIpadMode) {
+    return (
+      <div className="fixed inset-0 bg-gradient-to-b from-slate-50 to-white flex flex-col items-center justify-between overflow-hidden z-50">
+        {/* Background decoration */}
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-orange-100 rounded-full blur-3xl opacity-60" />
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-amber-50 rounded-full blur-3xl opacity-60" />
+        </div>
+
+        {/* Desktop mode button */}
+        <button
+          onClick={() => setIsIpadMode(false)}
+          className="absolute top-6 right-6 z-20 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-500 text-sm font-medium rounded-lg transition-colors"
+        >
+          Desktop View
+        </button>
+
+        {/* Thank you overlay */}
+        {ipadThankYou && (
+          <div className="absolute inset-0 bg-white/90 backdrop-blur-sm flex items-center justify-center z-30">
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="text-center"
+            >
+              <div className="w-24 h-24 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h2 className="text-3xl font-bold text-slate-900 mb-2">Thank You!</h2>
+              <p className="text-slate-500 text-lg">Your interest has been registered</p>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Top: Agent info */}
+        <div className="relative z-10 w-full pt-8 pb-4 px-8 text-center pointer-events-auto">
+          {agentData ? (
+            <div className="flex flex-col items-center gap-3">
+              <div className="relative">
+                {agentData.avatar ? (
+                  <Image
+                    src={agentData.avatar}
+                    alt={`${agentData.firstName || 'Agent'} ${agentData.lastName || ''}`}
+                    width={100}
+                    height={100}
+                    className="rounded-2xl object-cover border-3 border-white shadow-lg w-[100px] h-[100px]"
+                    unoptimized
+                  />
+                ) : (
+                  <div className="w-[100px] h-[100px] bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl flex items-center justify-center border-3 border-white shadow-lg">
+                    <svg className="w-12 h-12 text-slate-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                )}
+                {agentData.logoUrl && (
+                  <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-white rounded-full shadow-md overflow-hidden border border-slate-200 flex items-center justify-center">
+                    <Image
+                      src={agentData.logoUrl}
+                      alt="Agency logo"
+                      width={24}
+                      height={24}
+                      className="object-contain"
+                      unoptimized
+                    />
+                  </div>
+                )}
+              </div>
+              <div>
+                <p className="font-bold text-slate-900 text-lg">
+                  {agentData.firstName} {agentData.lastName}
+                </p>
+                {agentData.companyName && (
+                  <p className="text-sm text-slate-500">{agentData.companyName}</p>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="h-[72px]" />
+          )}
+        </div>
+
+        {/* Middle: Property info + slider */}
+        <div className="relative z-10 w-full max-w-xl mx-auto px-8 text-center flex-1 flex flex-col justify-center">
+          {/* Property info */}
+          <div className="mb-8">
+            <span className="px-3 py-1 bg-gradient-to-r from-[#e48900] to-[#c64500] text-white text-xs font-bold rounded-full mb-4 inline-block">
+              OPEN HOME
+            </span>
+            <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">{title}</h1>
+            <p className="text-slate-500 text-sm">
+              {property?.showSuburbOnly
+                ? (address?.split(',')[1]?.trim() || property?.location?.suburb || '')
+                : address}
+            </p>
+          </div>
+
+          {/* Price display */}
+          <div className="mb-8">
+            <p className="text-slate-400 text-sm font-medium mb-3 uppercase tracking-wider">
+              What&apos;s your price opinion?
+            </p>
+            <motion.div
+              className="text-6xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#e48900] to-[#c64500]"
+              key={priceOpinion}
+              initial={{ scale: 1.05 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.15 }}
+            >
+              {formatMoney(priceOpinion)}
+            </motion.div>
+          </div>
+
+          {/* Slider */}
+          <div className="mb-6 px-2">
+            <input
+              type="range"
+              min={minPrice}
+              max={maxPrice}
+              step={1000}
+              value={priceOpinion}
+              onChange={(e) => setPriceOpinion(Number(e.target.value))}
+              onMouseDown={() => setIsSliding(true)}
+              onMouseUp={() => setIsSliding(false)}
+              onTouchStart={() => setIsSliding(true)}
+              onTouchEnd={() => setIsSliding(false)}
+              className="w-full h-4 bg-gradient-to-r from-orange-400 via-yellow-400 to-green-500 rounded-lg appearance-none cursor-pointer ipad-slider"
+            />
+            <div className="flex justify-between mt-3 text-sm text-slate-400 font-medium">
+              <span>{formatCompact(minPrice)}</span>
+              <span>{formatCompact(maxPrice)}</span>
+            </div>
+          </div>
+
+          {/* Instruction */}
+          <p className="text-slate-400 text-sm">
+            Drag the slider and release to submit your opinion
+          </p>
+        </div>
+
+        {/* Bottom: Powered by Premarket */}
+        <div className="relative z-20 w-full pb-8 pt-4 flex flex-col items-center gap-2">
+          <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Powered by</p>
+          <Image
+            src="https://premarketvideos.b-cdn.net/assets/logo.png"
+            alt="Premarket"
+            width={130}
+            height={32}
+            className="mx-auto opacity-60"
+            unoptimized
+          />
+        </div>
+
+        {/* Qualification Modal for iPad mode */}
+        {showQualificationModal && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-40 p-4">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative max-h-[90vh] overflow-y-auto"
+            >
+              <button
+                onClick={() => {
+                  setShowQualificationModal(false);
+                  setRegisterInterest(false);
+                  resetIpadMode();
+                }}
+                className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-slate-800 mb-1">
+                  Opinion: {formatMoney(priceOpinion)}
+                </h3>
+                <p className="text-slate-600">
+                  Tell us a bit about yourself (optional)
+                </p>
+              </div>
+
+              <div className="space-y-5">
+                {/* First Home Buyer Toggle */}
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                  <label className="flex items-center justify-between cursor-pointer">
+                    <span className="text-sm font-semibold text-slate-800">First home buyer?</span>
+                    <input
+                      type="checkbox"
+                      checked={qualificationData.isFirstHomeBuyer}
+                      onChange={(e) => setQualificationData({ ...qualificationData, isFirstHomeBuyer: e.target.checked })}
+                      className="w-5 h-5 text-orange-600 rounded focus:ring-2 focus:ring-orange-500"
+                    />
+                  </label>
+                </div>
+
+                {/* Investor Toggle */}
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                  <label className="flex items-center justify-between cursor-pointer">
+                    <span className="text-sm font-semibold text-slate-800">Are you an investor?</span>
+                    <input
+                      type="checkbox"
+                      checked={qualificationData.isInvestor}
+                      onChange={(e) => setQualificationData({ ...qualificationData, isInvestor: e.target.checked })}
+                      className="w-5 h-5 text-orange-600 rounded focus:ring-2 focus:ring-orange-500"
+                    />
+                  </label>
+                </div>
+
+                {/* Buyer Type */}
+                <div>
+                  <label className="block text-sm font-semibold text-slate-800 mb-3">Finance status *</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { value: 'cash', label: 'Cash Buyer' },
+                      { value: 'approved_finance', label: 'Approved Finance' },
+                      { value: 'pre_approval', label: 'Pre-Approval' },
+                      { value: 'not_yet', label: 'Not Yet' },
+                    ].map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setQualificationData({ ...qualificationData, buyerType: option.value })}
+                        className={`px-4 py-3 rounded-lg border-2 text-sm font-semibold transition-all ${
+                          qualificationData.buyerType === option.value
+                            ? 'border-orange-600 bg-orange-50 text-orange-600'
+                            : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Seriousness */}
+                <div>
+                  <label className="block text-sm font-semibold text-slate-800 mb-3">Interest level *</label>
+                  <select
+                    value={qualificationData.seriousnessLevel}
+                    onChange={(e) => setQualificationData({ ...qualificationData, seriousnessLevel: e.target.value })}
+                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all text-slate-800"
+                  >
+                    <option value="">Select your interest level</option>
+                    <option value="just_browsing">Just Browsing</option>
+                    <option value="interested">Interested</option>
+                    <option value="very_interested">Very Interested</option>
+                    <option value="ready_to_buy">Ready to Buy</option>
+                  </select>
+                </div>
+
+                {/* Submit */}
+                <button
+                  onClick={handleQualificationSubmit}
+                  disabled={!qualificationData.buyerType || !qualificationData.seriousnessLevel}
+                  className="w-full bg-gradient-to-r from-[#e48900] to-[#c64500] text-white font-bold py-4 rounded-xl transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Submit
+                </button>
+
+                {/* Skip */}
+                <button
+                  onClick={() => {
+                    setShowQualificationModal(false);
+                    setIpadThankYou(true);
+                    setTimeout(() => resetIpadMode(), 2500);
+                  }}
+                  className="w-full py-3 text-slate-500 hover:text-slate-700 font-medium transition-colors text-sm"
+                >
+                  Skip — just submit my price opinion
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        <style jsx>{`
+          .ipad-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+            border: 4px solid #ea580c;
+          }
+          .ipad-slider::-moz-range-thumb {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+            border: 4px solid #ea580c;
+          }
+        `}</style>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
@@ -589,7 +984,17 @@ export default function PropertyPageClient() {
                   : address}
               </span>
             </div>
-            <div className="flex items-center gap-2 text-white/80 text-sm">
+            <div className="flex items-center gap-3 text-white/80 text-sm">
+              <button
+                onClick={() => setIsIpadMode(true)}
+                className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white/80 text-xs font-medium rounded-lg transition-colors backdrop-blur-sm flex items-center gap-1.5"
+                title="Open Home iPad Mode"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+                iPad
+              </button>
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
               </svg>
@@ -751,7 +1156,7 @@ export default function PropertyPageClient() {
                   <div>
                     <h3 className="font-bold text-slate-900 text-lg mb-2">What is a Pre-Market Property?</h3>
                     <p className="text-slate-700 leading-relaxed">
-                      This property is <strong>fully prepared and ready to sell</strong>. The owner is testing market interest before publicly listing. You have exclusive early access to view, share your price opinion, and register interest before it hits Domain or REA.
+                      This property is <strong>fully prepared and ready to sell</strong>. The owner is testing market interest before publicly listing. You have exclusive early access to view, share your price opinion, and register interest before it goes public.
                     </p>
                   </div>
                 </div>
@@ -1050,7 +1455,7 @@ export default function PropertyPageClient() {
               </div>
               <h3 className="text-lg font-bold text-slate-900 mb-2">You Get First Access</h3>
               <p className="text-slate-600 text-sm leading-relaxed">
-                View, share your opinion, and register interest—all before it hits Domain, REA, or open homes.
+                View, share your opinion, and register interest—all before it goes to market or open homes.
               </p>
             </motion.div>
           </div>

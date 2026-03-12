@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase/clientApp';
 import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
@@ -32,6 +32,13 @@ import {
   Plug,
   Pencil,
   Archive,
+  CheckCircle,
+  Upload,
+  Settings,
+  User,
+  Trash2,
+  ExternalLink,
+  FileText,
 } from 'lucide-react';
 
 function formatPrice(price) {
@@ -55,12 +62,16 @@ function Sidebar({ active, onNavigate, onSignOut, sidebarOpen, setSidebarOpen, u
     { id: 'add', label: 'Add Property', icon: Plus, href: '/dashboard/add' },
     { id: 'integrations', label: 'Integrations', icon: Plug, href: '/dashboard/integrations' },
     { id: 'developers', label: 'Developers', icon: Code, href: '/dashboard/developers' },
-    { id: 'docs', label: 'Docs', icon: BookOpen, href: '/docs' },
+    { id: 'user-manual', label: 'User Manual', icon: BookOpen, href: '/dashboard/user-manual' },
+    { id: 'settings', label: 'Settings', icon: Settings, href: '/dashboard/settings' },
     ...(userData?.apiAccess?.status === 'approved'
       ? [{ id: 'playground', label: 'Playground', icon: Sparkles, href: '/dashboard/playground' }]
       : []),
     ...(userData?.superAdmin === true
-      ? [{ id: 'admin', label: 'Admin', icon: Shield, href: '/dashboard/admin' }]
+      ? [
+          { id: 'docs', label: 'Docs', icon: FileText, href: '/docs' },
+          { id: 'admin', label: 'Admin', icon: Shield, href: '/dashboard/admin' },
+        ]
       : []),
   ];
 
@@ -82,8 +93,23 @@ function Sidebar({ active, onNavigate, onSignOut, sidebarOpen, setSidebarOpen, u
 
       {/* User Info */}
       <div className="px-6 py-4 border-b border-slate-200">
-        <p className="text-xs text-slate-500">Welcome back,</p>
-        <p className="text-slate-900 font-semibold truncate">{userName}</p>
+        <div className="flex items-center gap-3">
+          {userData?.avatar ? (
+            <img
+              src={userData.avatar}
+              alt=""
+              className="w-10 h-10 rounded-full object-cover shrink-0"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
+              <User className="w-5 h-5 text-orange-600" />
+            </div>
+          )}
+          <div className="min-w-0">
+            <p className="text-xs text-slate-500">Welcome back,</p>
+            <p className="text-slate-900 font-semibold truncate">{userName}</p>
+          </div>
+        </div>
       </div>
 
       {/* Nav Items */}
@@ -209,7 +235,7 @@ function StatCard({ label, value, icon: Icon }) {
 }
 
 // --- Property Card ---
-function PropertyCard({ property, onToggleVisibility, toggling, onArchive, archiving, isArchived }) {
+function PropertyCard({ property, onToggleVisibility, toggling, onArchive, archiving, isArchived, onHide }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -226,6 +252,11 @@ function PropertyCard({ property, onToggleVisibility, toggling, onArchive, archi
             className="object-cover"
             unoptimized
           />
+        ) : property.imageUploadProgress?.inProgress ? (
+          <div className="w-full h-full flex flex-col items-center justify-center gap-3 bg-slate-50">
+            <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
+            <p className="text-xs font-medium text-slate-500">Uploading media...</p>
+          </div>
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <Home className="w-12 h-12 text-slate-300" />
@@ -243,12 +274,33 @@ function PropertyCard({ property, onToggleVisibility, toggling, onArchive, archi
             {property.archived === true ? 'Archived' : property.visibility === true ? 'Public' : 'Private'}
           </span>
         </div>
-        {/* Video Badge */}
-        {(property.videoUrl || property.aiVideo?.url) && (
-          <div className="absolute top-3 right-3">
+        {/* Top-right badges */}
+        <div className="absolute top-3 right-3 flex items-center gap-1.5">
+          {(property.videoUrl || property.aiVideo?.url) && (
             <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full bg-black/60 text-white">
               <Video className="w-3 h-3" />
             </span>
+          )}
+          <a
+            href={`/find-property?propertyId=${property.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-black/60 hover:bg-black/80 text-white transition-colors"
+            title="Preview listing"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+          </a>
+        </div>
+        {/* Upload Progress Bar */}
+        {property.imageUploadProgress?.inProgress && (
+          <div className="absolute bottom-0 left-0 right-0">
+            <div className="h-1 bg-slate-200">
+              <div
+                className="h-full bg-orange-500 transition-all duration-500"
+                style={{ width: `${property.imageUploadProgress.total > 0 ? (property.imageUploadProgress.uploaded / property.imageUploadProgress.total) * 100 : 0}%` }}
+              />
+            </div>
           </div>
         )}
       </div>
@@ -290,23 +342,15 @@ function PropertyCard({ property, onToggleVisibility, toggling, onArchive, archi
             <Pencil className="w-3 h-3" />
             Edit
           </Link>
-          {!isArchived && (
+          {isArchived && onHide && (
             <button
-              onClick={() => onToggleVisibility(property)}
-              disabled={toggling}
-              className="px-3 py-2 text-xs font-semibold text-slate-600 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50"
+              onClick={() => onHide(property)}
+              className="px-3 py-2 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors flex items-center gap-1"
+              title="Hide from archive"
             >
-              {property.visibility ? 'Set Private' : 'Set Public'}
+              <Trash2 className="w-3 h-3" />
             </button>
           )}
-          <button
-            onClick={() => onArchive(property)}
-            disabled={archiving}
-            className="px-3 py-2 text-xs font-semibold text-amber-600 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1"
-          >
-            <Archive className="w-3 h-3" />
-            {isArchived ? 'Unarchive' : 'Archive'}
-          </button>
         </div>
       </div>
     </motion.div>
@@ -411,9 +455,22 @@ function EmptyState() {
 }
 
 // --- Main Dashboard ---
-export default function DashboardPage() {
+export default function DashboardPageWrapper() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-4 border-orange-500" />
+      </div>
+    }>
+      <DashboardPage />
+    </Suspense>
+  );
+}
+
+function DashboardPage() {
   const { user, userData, loading, signOut } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [properties, setProperties] = useState([]);
   const [propertiesLoading, setPropertiesLoading] = useState(true);
   const [opinionsCount, setOpinionsCount] = useState(0);
@@ -421,6 +478,19 @@ export default function DashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [toggling, setToggling] = useState(false);
   const [archiving, setArchiving] = useState(false);
+  const [successModal, setSuccessModal] = useState(null); // 'created' | 'updated' | null
+
+  // Show success modal from URL params
+  useEffect(() => {
+    const created = searchParams.get('created');
+    const updated = searchParams.get('updated');
+    if (created) setSuccessModal('created');
+    else if (updated) setSuccessModal('updated');
+    // Clean up URL params
+    if (created || updated) {
+      window.history.replaceState({}, '', '/dashboard');
+    }
+  }, [searchParams]);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -511,6 +581,15 @@ export default function DashboardPage() {
     }
   };
 
+  const handleHideProperty = async (property) => {
+    try {
+      await updateDoc(doc(db, 'properties', property.id), { hidden: true });
+      setProperties(prev => prev.filter(p => p.id !== property.id));
+    } catch (err) {
+      console.error('Error hiding property:', err);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -522,8 +601,8 @@ export default function DashboardPage() {
   if (!user) return null;
 
   const userName = [userData?.firstName, userData?.lastName].filter(Boolean).join(' ') || 'Agent';
-  const activeProperties = properties.filter(p => p.archived !== true);
-  const archivedProperties = properties.filter(p => p.archived === true);
+  const activeProperties = properties.filter(p => p.archived !== true && p.hidden !== true);
+  const archivedProperties = properties.filter(p => p.archived === true && p.hidden !== true);
   const liveProperties = activeProperties.filter(p => p.visibility === true);
   const totalViews = activeProperties.reduce((sum, p) => sum + (p.stats?.views || 0), 0);
   const displayProperties = activeTab === 'archived' ? archivedProperties : activeProperties;
@@ -629,12 +708,84 @@ export default function DashboardPage() {
                   onArchive={activeTab === 'archived' ? unarchiveProperty : archiveProperty}
                   archiving={archiving}
                   isArchived={property.archived === true}
+                  onHide={handleHideProperty}
                 />
               ))}
             </div>
           )}
         </div>
       </div>
+
+      {/* Success Modal */}
+      <AnimatePresence>
+        {successModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+            onClick={() => setSuccessModal(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden"
+            >
+              {/* Green header */}
+              <div className="bg-gradient-to-r from-emerald-500 to-green-500 px-8 pt-8 pb-6 text-center">
+                <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle className="w-9 h-9 text-white" />
+                </div>
+                <h2 className="text-2xl font-bold text-white">
+                  {successModal === 'created' ? 'Property Created!' : 'Changes Saved!'}
+                </h2>
+              </div>
+
+              {/* Body */}
+              <div className="px-8 py-6 space-y-5">
+                {/* Upload status */}
+                <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
+                  <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Upload className="w-4 h-4 text-amber-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-amber-900">Media uploading in the background</p>
+                    <p className="text-xs text-amber-700 mt-1">Your photos and video are being uploaded. This may take a minute depending on file sizes. You can keep using the dashboard while this happens.</p>
+                  </div>
+                </div>
+
+                {/* Visibility info */}
+                <div className="flex items-start gap-3 bg-slate-50 border border-slate-200 rounded-xl p-4">
+                  <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Eye className="w-4 h-4 text-slate-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">Your listing is set to Private</p>
+                    <p className="text-xs text-slate-600 mt-1">
+                      {successModal === 'created'
+                        ? 'New listings start as private so you can review everything first. When you\'re ready for buyers to see it, tap the'
+                        : 'Your listing is currently private. To make it visible to buyers, tap the'
+                      }
+                      {' '}<span className="font-semibold text-emerald-600">Set Public</span> button on your property card.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Action button */}
+                <button
+                  onClick={() => setSuccessModal(null)}
+                  className="w-full py-3 bg-gradient-to-r from-[#e48900] to-[#c64500] text-white font-semibold rounded-xl shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 transition-all text-sm"
+                >
+                  Got it
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

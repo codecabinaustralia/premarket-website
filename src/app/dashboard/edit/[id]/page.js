@@ -79,6 +79,7 @@ export default function EditPropertyPage() {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [mediaError, setMediaError] = useState(null);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -191,14 +192,56 @@ export default function EditPropertyPage() {
     }
   };
 
-  const handleImageUpload = (e) => {
+  const [mediaDragging, setMediaDragging] = useState(false);
+
+  const handleMediaUpload = (e) => {
     const files = Array.from(e.target.files || []);
-    const newImages = files.map((file) => {
-      const f = file;
-      f.preview = URL.createObjectURL(file);
-      return f;
-    });
-    setImages((prev) => [...prev, ...newImages]);
+    processMediaFiles(files);
+  };
+
+  const processMediaFiles = (files) => {
+    setMediaError(null);
+    const allowedVideoExts = ['.mp4', '.mov', '.webm', '.m4v'];
+    const imageFiles = [];
+    let videoFile = null;
+
+    for (const f of files) {
+      const ext = (f.name || '').toLowerCase().replace(/.*(\.\w+)$/, '$1');
+      const isVideo = f.type.startsWith('video/') || allowedVideoExts.includes(ext);
+      const isImage = f.type.startsWith('image/') || ext === '.heic' || ext === '.heif';
+
+      if (isVideo) {
+        if (f.size > 500 * 1024 * 1024) {
+          setMediaError('Video file exceeds 500MB limit. Please choose a smaller file.');
+          continue;
+        }
+        if (!allowedVideoExts.includes(ext)) {
+          setMediaError(`Unsupported video format "${ext}". Please use MP4, MOV, WebM, or M4V.`);
+          continue;
+        }
+        videoFile = f;
+      } else if (isImage) {
+        try {
+          f.preview = URL.createObjectURL(f);
+        } catch {
+          f.preview = null;
+        }
+        imageFiles.push(f);
+      }
+    }
+
+    if (imageFiles.length) setImages((prev) => [...prev, ...imageFiles]);
+    if (videoFile) {
+      setVideo(videoFile);
+      setExistingVideoUrl(null);
+    }
+  };
+
+  const handleMediaDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setMediaDragging(false);
+    processMediaFiles(Array.from(e.dataTransfer.files));
   };
 
   const removeImage = (index) => {
@@ -208,14 +251,6 @@ export default function EditPropertyPage() {
       if (typeof removed !== 'string' && removed?.preview) URL.revokeObjectURL(removed.preview);
       return newImages;
     });
-  };
-
-  const handleVideoUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setVideo(file);
-      setExistingVideoUrl(null);
-    }
   };
 
   const removeVideo = () => {
@@ -300,22 +335,13 @@ export default function EditPropertyPage() {
   };
 
   // Submit — update existing property
-  const handleSubmit = async () => {
-    setErrors({});
-    if (!validateStep()) return;
-    if (!user) return;
+  // Background upload helper
+  const uploadMediaInBackground = async (propId, userId, newFiles, existingUrls, videoFile, existingVidUrl) => {
+    const uploadedUrls = [...existingUrls];
 
     try {
-      setIsSubmitting(true);
-
-      // Separate existing URLs from new File uploads
-      const existingUrls = images.filter(img => typeof img === 'string');
-      const newFiles = images.filter(img => typeof img !== 'string');
-
-      // Upload new images to Firebase Storage
-      const newImageUrls = [];
       for (const file of newFiles) {
-        const storageRef = ref(storage, `propertyImages/${user.uid}/${Date.now()}-${file.name}`);
+        const storageRef = ref(storage, `propertyImages/${userId}/${Date.now()}-${file.name}`);
         const uploadTask = uploadBytesResumable(storageRef, file);
 
         await new Promise((resolve, reject) => {
@@ -325,31 +351,59 @@ export default function EditPropertyPage() {
             reject,
             async () => {
               const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-              newImageUrls.push(downloadURL);
+              uploadedUrls.push(downloadURL);
+              await updateDoc(doc(db, 'properties', propId), {
+                imageUrls: [...uploadedUrls],
+                imageUploadProgress: {
+                  uploaded: uploadedUrls.length - existingUrls.length,
+                  total: newFiles.length,
+                  inProgress: (uploadedUrls.length - existingUrls.length) < newFiles.length,
+                },
+              });
               resolve();
             }
           );
         });
       }
 
-      const allImageUrls = [...existingUrls, ...newImageUrls];
-
-      // Upload new video to Bunny CDN if provided
-      let videoUrl = existingVideoUrl;
-      if (video) {
+      // Upload new video
+      if (videoFile) {
         const videoFormData = new FormData();
-        videoFormData.append('file', video);
+        videoFormData.append('file', videoFile);
         const videoRes = await fetch('/api/upload-image', {
           method: 'POST',
           body: videoFormData,
         });
         if (videoRes.ok) {
           const videoData = await videoRes.json();
-          videoUrl = videoData.url;
+          await updateDoc(doc(db, 'properties', propId), { videoUrl: videoData.url });
         }
       }
 
-      // Build update payload
+      // Mark complete
+      if (newFiles.length > 0) {
+        await updateDoc(doc(db, 'properties', propId), {
+          imageUploadProgress: { uploaded: newFiles.length, total: newFiles.length, inProgress: false },
+        });
+      }
+    } catch (err) {
+      console.error('Background upload failed:', err);
+    }
+  };
+
+  const handleSubmit = async () => {
+    setErrors({});
+    if (!validateStep()) return;
+    if (!user) return;
+
+    try {
+      setIsSubmitting(true);
+
+      const existingUrls = images.filter(img => typeof img === 'string');
+      const newFiles = images.filter(img => typeof img !== 'string');
+      const hasNewMedia = newFiles.length > 0 || (video && !existingVideoUrl);
+
+      // Save metadata immediately (with existing images, new ones added in background)
       const updateData = {
         address,
         formattedAddress,
@@ -357,7 +411,7 @@ export default function EditPropertyPage() {
         bedrooms,
         carSpaces,
         description,
-        imageUrls: allImageUrls,
+        imageUrls: existingUrls,
         features: Object.keys(features).filter((f) => features[f]),
         location,
         price: priceRaw,
@@ -365,17 +419,27 @@ export default function EditPropertyPage() {
         title,
         propertyType: type,
         updatedAt: serverTimestamp(),
-        ...(videoUrl ? { videoUrl } : { videoUrl: null }),
+        ...(existingVideoUrl ? { videoUrl: existingVideoUrl } : !video ? { videoUrl: null } : {}),
+        ...(newFiles.length > 0 && {
+          imageUploadProgress: { uploaded: 0, total: newFiles.length, inProgress: true },
+        }),
       };
 
       await updateDoc(doc(db, 'properties', propertyId), updateData);
       await setDoc(doc(db, 'draftProperties', propertyId), { ...updateData, override: true }, { merge: true });
 
-      router.push(`/dashboard/property/${propertyId}`);
+      // Kick off background upload if there are new files
+      if (hasNewMedia) {
+        const filesCopy = [...newFiles];
+        const videoCopy = video;
+        uploadMediaInBackground(propertyId, user.uid, filesCopy, existingUrls, videoCopy, existingVideoUrl);
+      }
+
+      // Redirect immediately
+      router.push(`/dashboard?updated=1`);
     } catch (err) {
       console.error('Update failed:', err);
       setErrors({ step: 'Something went wrong. Please try again.' });
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -594,48 +658,106 @@ export default function EditPropertyPage() {
               </div>
             )}
 
-            {/* Step 5: Images */}
+            {/* Step 5: Media */}
             {step === STEPS.IMAGES && (
               <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200">
-                <h2 className="text-2xl font-bold text-slate-900 mb-2">Property photos</h2>
-                <p className="text-slate-500 mb-6">Upload images of the property.</p>
+                <h2 className="text-2xl font-bold text-slate-900 mb-1">Add media</h2>
+                <p className="text-slate-500 mb-6">Photos and an optional walkthrough video to showcase your property.</p>
 
-                <label htmlFor="images" className="cursor-pointer">
-                  <div className="border-2 border-dashed border-slate-300 rounded-xl p-10 text-center hover:border-orange-400 hover:bg-orange-50 transition-all">
-                    <ImageIcon className="w-10 h-10 text-slate-400 mx-auto mb-3" />
-                    <p className="text-base font-semibold text-slate-900 mb-1">Click to upload images</p>
-                    <p className="text-sm text-slate-500">JPG, PNG up to 10MB each</p>
+                {/* Unified drop zone */}
+                <div
+                  onDragOver={(e) => { e.preventDefault(); setMediaDragging(true); }}
+                  onDragLeave={() => setMediaDragging(false)}
+                  onDrop={handleMediaDrop}
+                  onClick={() => document.getElementById('media-upload').click()}
+                  className={`relative rounded-2xl p-10 text-center cursor-pointer transition-all duration-200 ${mediaDragging ? 'bg-orange-50 border-2 border-orange-400 scale-[1.01]' : 'bg-slate-50 border-2 border-dashed border-slate-200 hover:bg-orange-50/50 hover:border-orange-300'}`}
+                >
+                  <div className="flex flex-col items-center gap-3">
+                    <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${mediaDragging ? 'bg-orange-100' : 'bg-slate-100'}`}>
+                      <ImageIcon className={`w-7 h-7 ${mediaDragging ? 'text-orange-500' : 'text-slate-400'}`} />
+                    </div>
+                    <div>
+                      <p className="text-base font-semibold text-slate-900">
+                        {mediaDragging ? 'Drop files here' : 'Click or drag files to upload'}
+                      </p>
+                      <p className="text-sm text-slate-400 mt-1">Images (JPG, PNG, HEIC) and video (MP4, MOV, WebM)</p>
+                    </div>
                   </div>
                   <input
                     type="file"
-                    id="images"
-                    accept="image/*"
+                    id="media-upload"
+                    accept="image/*,.heic,.heif,video/mp4,video/quicktime,video/webm,video/x-m4v,.mp4,.mov,.webm,.m4v"
                     multiple
-                    onChange={handleImageUpload}
+                    onChange={handleMediaUpload}
                     className="hidden"
                   />
-                </label>
+                </div>
 
-                {images.length > 0 && (
+                {mediaError && (
+                  <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between">
+                    <p className="text-sm text-red-600">{mediaError}</p>
+                    <button onClick={() => setMediaError(null)}>
+                      <X className="w-4 h-4 text-red-400" />
+                    </button>
+                  </div>
+                )}
+
+                {/* Media grid — video first, then images */}
+                {(hasVideo || images.length > 0) && (
                   <div className="mt-6">
-                    <p className="text-sm font-medium text-slate-700 mb-3">{images.length} image(s)</p>
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-sm font-medium text-slate-500">
+                        {images.length} photo{images.length !== 1 ? 's' : ''}{hasVideo ? ' + 1 video' : ''}
+                      </p>
+                      <button
+                        onClick={() => document.getElementById('media-upload').click()}
+                        className="text-sm font-semibold text-orange-600 hover:text-orange-700 transition-colors"
+                      >
+                        + Add more
+                      </button>
+                    </div>
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                      {/* Video thumbnail first */}
+                      {hasVideo && (
+                        <div className="relative group col-span-2 row-span-2">
+                          <video
+                            src={video ? videoPreviewUrl : existingVideoUrl}
+                            className="w-full h-full min-h-[14rem] object-cover rounded-xl border border-slate-200"
+                            muted
+                            playsInline
+                            onMouseOver={(e) => e.target.play()}
+                            onMouseOut={(e) => { e.target.pause(); e.target.currentTime = 0; }}
+                          />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 rounded-xl transition-colors" />
+                          <span className="absolute bottom-2 left-2 px-2 py-1 bg-black/70 text-white text-xs font-medium rounded-lg flex items-center gap-1">
+                            <Video className="w-3 h-3" /> Video
+                          </span>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); removeVideo(); }}
+                            className="absolute top-2 right-2 w-7 h-7 bg-black/60 hover:bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
+                      {/* Image thumbnails */}
                       {images.map((img, i) => {
                         const src = typeof img === 'string' ? img : img?.preview;
                         if (!src) return null;
                         return (
-                          <div key={i} className="relative group">
+                          <div key={i} className="relative group aspect-square">
                             <Image
                               src={src}
                               width={200}
                               height={200}
-                              className="w-full h-28 object-cover rounded-xl border border-slate-200"
+                              className="w-full h-full object-cover rounded-xl border border-slate-200"
                               alt={`upload-${i}`}
                               unoptimized
                             />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 rounded-xl transition-colors" />
                             <button
                               onClick={() => removeImage(i)}
-                              className="absolute top-1.5 right-1.5 w-7 h-7 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                              className="absolute top-2 right-2 w-7 h-7 bg-black/60 hover:bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center"
                             >
                               <X className="w-3.5 h-3.5" />
                             </button>
@@ -645,44 +767,6 @@ export default function EditPropertyPage() {
                     </div>
                   </div>
                 )}
-
-                {/* Video Upload */}
-                <div className="mt-8 pt-6 border-t border-slate-200">
-                  <h3 className="text-lg font-semibold text-slate-900 mb-2">Walkthrough video</h3>
-                  <p className="text-slate-500 text-sm mb-4">Upload a walkthrough video (optional)</p>
-
-                  {!hasVideo ? (
-                    <label htmlFor="video-upload" className="cursor-pointer">
-                      <div className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center hover:border-orange-400 hover:bg-orange-50 transition-all">
-                        <Video className="w-10 h-10 text-slate-400 mx-auto mb-3" />
-                        <p className="text-base font-semibold text-slate-900 mb-1">Click to upload video</p>
-                        <p className="text-sm text-slate-500">MP4, MOV, WebM up to 500MB</p>
-                      </div>
-                      <input
-                        type="file"
-                        id="video-upload"
-                        accept="video/mp4,video/quicktime,video/webm"
-                        onChange={handleVideoUpload}
-                        className="hidden"
-                      />
-                    </label>
-                  ) : (
-                    <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-black">
-                      <video
-                        src={video ? videoPreviewUrl : existingVideoUrl}
-                        controls
-                        playsInline
-                        className="w-full max-h-64 rounded-xl"
-                      />
-                      <button
-                        onClick={removeVideo}
-                        className="absolute top-3 right-3 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  )}
-                </div>
               </div>
             )}
 
@@ -776,13 +860,13 @@ export default function EditPropertyPage() {
         </div>
       </div>
 
-      {/* Uploading Overlay */}
+      {/* Saving Overlay */}
       {isSubmitting && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white rounded-2xl p-10 shadow-2xl text-center max-w-md mx-4">
             <div className="w-14 h-14 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-5"></div>
             <h2 className="text-xl font-bold text-slate-900 mb-2">Saving changes...</h2>
-            <p className="text-slate-500 text-sm">Please wait while we update your listing.</p>
+            <p className="text-slate-500 text-sm">This will only take a moment.</p>
           </div>
         </div>
       )}

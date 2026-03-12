@@ -34,50 +34,73 @@ export function suburbKey(suburb, state) {
 const AU_STATES = ['NSW', 'VIC', 'QLD', 'SA', 'WA', 'TAS', 'NT', 'ACT'];
 
 /**
- * Try to extract suburb and state from property data using multiple strategies:
- * 1. Top-level suburb/state fields (AgentBox imports)
- * 2. Nested location.suburb / location.state (Flutter app)
- * 3. Parse from address string: "Suburb STATE Country"
- * 4. Parse from formattedAddress: "123 Street, Suburb STATE 2000, Country"
+ * Common street suffixes — if an address contains these, it's a street address not a suburb.
  */
-function extractSuburbState(data) {
-  // Strategy 1 & 2: direct fields
-  let suburb = data.suburb || data.location?.suburb || data.address?.suburb || '';
-  let state = data.state || data.location?.state || data.address?.state || '';
+const STREET_SUFFIXES = new Set([
+  'street', 'st', 'road', 'rd', 'drive', 'dr', 'avenue', 'ave', 'way',
+  'lane', 'ln', 'place', 'pl', 'court', 'ct', 'crescent', 'cres', 'cr',
+  'circuit', 'cct', 'parade', 'pde', 'terrace', 'tce', 'boulevard', 'blvd',
+  'highway', 'hwy', 'close', 'cl', 'grove', 'gr', 'view', 'rise', 'trail',
+  'esplanade', 'esp', 'promenade', 'walk', 'mews', 'gardens', 'meadows',
+]);
 
-  if (suburb && state) return { suburb, state };
-
-  // Strategy 3: parse the address string "Bondi NSW Australia"
-  const addr = typeof data.address === 'string' ? data.address : '';
-  if (addr) {
-    const parts = addr.split(/\s+/);
-    for (let i = 0; i < parts.length; i++) {
-      if (AU_STATES.includes(parts[i].toUpperCase())) {
-        state = parts[i].toUpperCase();
-        suburb = parts.slice(0, i).join(' ');
-        if (suburb && state) return { suburb, state };
+/**
+ * Extract suburb + state from a text segment like "Bondi NSW 2026".
+ * Words before the state abbreviation (excluding numbers) become the suburb.
+ */
+function parseSuburbFromSegment(text) {
+  const words = text.split(/\s+/);
+  for (let i = 0; i < words.length; i++) {
+    if (AU_STATES.includes(words[i].toUpperCase())) {
+      const state = words[i].toUpperCase();
+      const suburbWords = words.slice(0, i).filter((w) => !/^\d+$/.test(w));
+      if (suburbWords.length > 0) {
+        return { suburb: suburbWords.join(' '), state };
       }
     }
   }
+  return null;
+}
 
-  // Strategy 4: parse formattedAddress "123 Bondi Rd, Bondi NSW 2026, Australia"
+/**
+ * Extract suburb and state from property data.
+ * Priority: direct fields > formattedAddress parsing > address string (suburb-only format).
+ */
+function extractSuburbState(data) {
+  // Strategy 1: direct suburb/state fields (AgentBox imports, Flutter app)
+  const suburb = data.suburb || data.location?.suburb || data.address?.suburb || '';
+  const state = data.state || data.location?.state || data.address?.state || '';
+  if (suburb && state) return { suburb, state };
+
+  // Strategy 2: parse formattedAddress (most reliable — comma-separated)
+  // e.g. "8/19 Tanglewood Dr, Tanglewood NSW 2478, Australia"
+  // We look for the segment with a state abbreviation (skipping the street segment)
   const formatted = data.formattedAddress || '';
   if (formatted) {
     const segments = formatted.split(',').map((s) => s.trim());
-    // The suburb+state segment is typically the second-to-last (before country)
     for (const seg of segments) {
-      const words = seg.split(/\s+/);
-      for (let i = 0; i < words.length; i++) {
-        if (AU_STATES.includes(words[i].toUpperCase())) {
-          state = words[i].toUpperCase();
-          // Suburb is the word(s) before the state, excluding numbers (postcodes, street numbers)
-          const suburbWords = words.slice(0, i).filter((w) => !/^\d+$/.test(w));
-          if (suburbWords.length > 0) {
-            suburb = suburbWords.join(' ');
-            return { suburb, state };
-          }
-        }
-      }
+      // Skip segments that look like a street address
+      const segWords = seg.split(/\s+/);
+      const hasStreet = segWords.some((w) => STREET_SUFFIXES.has(w.toLowerCase()));
+      if (hasStreet) continue;
+      const result = parseSuburbFromSegment(seg);
+      if (result) return result;
+    }
+    // If no non-street segment matched, try all segments (fallback)
+    for (const seg of segments) {
+      const result = parseSuburbFromSegment(seg);
+      if (result) return result;
+    }
+  }
+
+  // Strategy 3: raw address string — only if it's a simple suburb format (no street suffixes)
+  const addr = typeof data.address === 'string' ? data.address : '';
+  if (addr) {
+    const addrWords = addr.split(/\s+/);
+    const hasStreet = addrWords.some((w) => STREET_SUFFIXES.has(w.toLowerCase()));
+    if (!hasStreet) {
+      const result = parseSuburbFromSegment(addr);
+      if (result) return result;
     }
   }
 
@@ -85,15 +108,24 @@ function extractSuburbState(data) {
 }
 
 /**
- * Get all unique suburbs from the properties collection.
+ * Get all unique suburbs from active properties.
  * Returns array of { key, suburb, state, postcode, lat, lng }.
  */
-export async function getUniqueSuburbs() {
+export async function getUniqueSuburbs(maxAgeDays) {
   const snapshot = await adminDb.collection('properties').get();
   const suburbMap = {};
+  const cutoff = maxAgeDays ? Date.now() - maxAgeDays * 86400000 : null;
 
   for (const doc of snapshot.docs) {
     const data = doc.data();
+    // Skip inactive/archived
+    if (data.active === false || data.archived === true) continue;
+    // Skip old properties if time filter set
+    if (cutoff) {
+      const created = toTimestamp(data.createdAt);
+      if (created && created < cutoff) continue;
+    }
+
     const { suburb, state } = extractSuburbState(data);
     if (!suburb || !state) continue;
 
@@ -116,7 +148,7 @@ export async function getUniqueSuburbs() {
  * Compute buyer and seller scores for a single suburb.
  * Uses a 10km radius from the suburb center point.
  */
-export async function computeSuburbScores(suburb, state, lat, lng) {
+export async function computeSuburbScores(suburb, state, lat, lng, { maxAgeDays } = {}) {
   // Geocode if coordinates missing
   if (!lat || !lng) {
     try {
@@ -131,7 +163,7 @@ export async function computeSuburbScores(suburb, state, lat, lng) {
     if (!lat || !lng) return null;
   }
 
-  const properties = await getPropertiesInRadius(lat, lng, 10);
+  const properties = await getPropertiesInRadius(lat, lng, 10, { maxAgeDays });
   if (!properties.length) return null;
 
   const propertyIds = properties.map((p) => p.id);
@@ -253,6 +285,26 @@ export async function getCachedScoreByKey(key) {
 export async function getAllCachedScores() {
   const snapshot = await adminDb.collection('marketScores').get();
   return snapshot.docs.map((doc) => ({ key: doc.id, ...doc.data() }));
+}
+
+/**
+ * Delete all documents in the marketScores collection.
+ * Call before recomputing to remove stale entries with bad suburb names.
+ */
+export async function clearAllMarketScores() {
+  const snapshot = await adminDb.collection('marketScores').get();
+  if (snapshot.empty) return 0;
+  const docs = snapshot.docs;
+  // Delete in batches of 500 (Firestore limit)
+  for (let i = 0; i < docs.length; i += 500) {
+    const batch = adminDb.batch();
+    const chunk = docs.slice(i, i + 500);
+    for (const d of chunk) {
+      batch.delete(d.ref);
+    }
+    await batch.commit();
+  }
+  return docs.length;
 }
 
 /**

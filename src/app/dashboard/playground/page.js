@@ -559,9 +559,14 @@ function ScoreDistribution({ distribution, label }) {
   const entries = Object.entries(distribution);
   const max = Math.max(...entries.map(([, v]) => v), 1);
 
+  const description = label === 'Buyer'
+    ? 'How many suburbs fall into each buyer demand range. Higher scores mean more buyer activity (opinions, serious offers, likes) relative to available properties.'
+    : 'How many suburbs fall into each seller readiness range. Higher scores mean more sellers are actively preparing to go to market (eager sellers, go-to-market dates set, public listings).';
+
   return (
     <div className="bg-white rounded-xl border border-slate-200 p-5">
-      <h3 className="text-sm font-semibold text-slate-900 mb-3">{label} Score Distribution</h3>
+      <h3 className="text-sm font-semibold text-slate-900 mb-1">{label} Score Distribution</h3>
+      <p className="text-xs text-slate-500 mb-3">{description}</p>
       <div className="space-y-2">
         {entries.map(([range, count]) => (
           <div key={range} className="flex items-center gap-3">
@@ -745,6 +750,7 @@ export default function PlaygroundPage() {
   const [upcomingLoading, setUpcomingLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState(null);
+  const [dataRange, setDataRange] = useState('90');
 
   useEffect(() => {
     if (!loading && !user) router.push('/join');
@@ -860,25 +866,52 @@ export default function PlaygroundPage() {
     if (!apiKey || syncing) return;
     setSyncing(true);
     setSyncResult(null);
+
+    // Clear all stat data so UI shows loading states
+    setNationalData(null);
+    setNationalLoading(true);
+    setTrendingAreas(null);
+    setTrendingLoading(true);
+    setUpcomingData(null);
+    setUpcomingLoading(true);
+    setAreaData(null);
+    setAreaTrends(null);
+    setResolvedPlace(null);
+
+    const maxAgeDays = dataRange === 'all' ? undefined : parseInt(dataRange);
+
     try {
       const res = await fetch('/api/admin/compute-scores', {
         method: 'POST',
-        headers: { 'x-api-key': apiKey },
+        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
+        body: JSON.stringify({ maxAgeDays }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Sync failed');
       setSyncResult(data);
 
       // Refresh dashboard data
-      apiFetch('national-overview', {}, apiKey).then(setNationalData).catch(() => {});
-      apiFetch('trending-areas', { limit: 10 }, apiKey).then((d) => setTrendingAreas(d.trendingAreas || [])).catch(() => {});
-      apiFetch('upcoming-to-market', {}, apiKey).then(setUpcomingData).catch(() => {});
+      apiFetch('national-overview', {}, apiKey)
+        .then(setNationalData)
+        .catch(() => {})
+        .finally(() => setNationalLoading(false));
+      apiFetch('trending-areas', { limit: 10 }, apiKey)
+        .then((d) => setTrendingAreas(d.trendingAreas || []))
+        .catch(() => {})
+        .finally(() => setTrendingLoading(false));
+      apiFetch('upcoming-to-market', {}, apiKey)
+        .then(setUpcomingData)
+        .catch(() => {})
+        .finally(() => setUpcomingLoading(false));
     } catch (err) {
       setSyncResult({ error: err.message });
+      setNationalLoading(false);
+      setTrendingLoading(false);
+      setUpcomingLoading(false);
     } finally {
       setSyncing(false);
     }
-  }, [apiKey, syncing]);
+  }, [apiKey, syncing, dataRange]);
 
   if (loading || !user) {
     return (
@@ -938,6 +971,18 @@ export default function PlaygroundPage() {
             {syncResult?.error && (
               <span className="text-xs text-red-500 font-medium hidden sm:inline">{syncResult.error}</span>
             )}
+            <select
+              value={dataRange}
+              onChange={(e) => setDataRange(e.target.value)}
+              className="text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 px-2 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400"
+            >
+              <option value="30">Last 30 days</option>
+              <option value="60">Last 60 days</option>
+              <option value="90">Last 90 days</option>
+              <option value="180">Last 6 months</option>
+              <option value="365">Last 12 months</option>
+              <option value="all">All time</option>
+            </select>
             <button
               onClick={handleSync}
               disabled={syncing}

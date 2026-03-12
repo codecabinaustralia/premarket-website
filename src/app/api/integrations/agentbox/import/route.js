@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getCredentials, fetchListingById, mapListingToProperty } from '../../../../api/services/agentboxService';
+import { DEMO_LISTINGS } from '../../../../api/services/agentboxDemoData';
 import { adminDb } from '../../../../firebase/adminApp';
 import { FieldValue } from 'firebase-admin/firestore';
 
@@ -19,6 +20,16 @@ export async function POST(request) {
     const creds = await getCredentials(uid);
     if (!creds || creds.status !== 'connected') {
       return NextResponse.json({ error: 'Not connected to Agentbox' }, { status: 400 });
+    }
+
+    const isDemo = creds.mode === 'demo';
+
+    // Index demo listings by id for quick lookup
+    const demoListingsMap = {};
+    if (isDemo) {
+      for (const dl of DEMO_LISTINGS) {
+        demoListingsMap[String(dl.id)] = dl;
+      }
     }
 
     // Check which listings are already imported
@@ -44,9 +55,16 @@ export async function POST(request) {
           continue;
         }
 
-        // Fetch full listing detail
-        const listingData = await fetchListingById(creds.clientId, creds.apiKey, listingId);
-        const listing = listingData?.response?.listing || listingData?.response || listingData;
+        let listing;
+
+        if (isDemo) {
+          // Use demo data directly
+          listing = demoListingsMap[String(listingId)];
+        } else {
+          // Fetch full listing detail from AgentBox API
+          const listingData = await fetchListingById(creds.clientId, creds.apiKey, listingId);
+          listing = listingData?.response?.listing || listingData?.response || listingData;
+        }
 
         if (!listing) {
           errors.push({ listingId, error: 'Listing not found' });

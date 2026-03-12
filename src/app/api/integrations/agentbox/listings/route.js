@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { fetchListings, getCredentials } from '../../../../api/services/agentboxService';
+import { DEMO_LISTINGS } from '../../../../api/services/agentboxDemoData';
 import { adminDb } from '../../../../firebase/adminApp';
 
 export async function GET(request) {
@@ -18,12 +19,6 @@ export async function GET(request) {
     if (!creds || creds.status !== 'connected') {
       return NextResponse.json({ error: 'Not connected to Agentbox' }, { status: 400 });
     }
-
-    // Fetch listings from Agentbox
-    const data = await fetchListings(creds.clientId, creds.apiKey, {
-      page: parseInt(page),
-      limit: parseInt(limit),
-    });
 
     // Check which listings are already imported
     const propsSnapshot = await adminDb.collection('properties')
@@ -46,11 +41,23 @@ export async function GET(request) {
       }
     });
 
-    // Get the listings array from the response
-    const listings = data?.response?.listings || data?.listings || data?.response || [];
+    let listings;
+
+    if (creds.mode === 'demo') {
+      // Demo mode — return test data
+      listings = DEMO_LISTINGS;
+    } else {
+      // Real mode — fetch from Agentbox API
+      const data = await fetchListings(creds.clientId, creds.apiKey, {
+        page: parseInt(page),
+        limit: parseInt(limit),
+      });
+      const raw = data?.response?.listings || data?.listings || data?.response || [];
+      listings = Array.isArray(raw) ? raw : [];
+    }
 
     // Annotate listings with import status
-    const annotatedListings = (Array.isArray(listings) ? listings : []).map((listing) => ({
+    const annotatedListings = listings.map((listing) => ({
       ...listing,
       _imported: importedListingIds.has(String(listing.id)),
       _premarket: importedProperties[String(listing.id)] || null,
@@ -58,7 +65,7 @@ export async function GET(request) {
 
     return NextResponse.json({
       listings: annotatedListings,
-      pagination: data?.response?.pagination || data?.pagination || { page: parseInt(page), total: annotatedListings.length },
+      pagination: { page: parseInt(page), total: annotatedListings.length },
     });
   } catch (err) {
     console.error('Agentbox listings error:', err);

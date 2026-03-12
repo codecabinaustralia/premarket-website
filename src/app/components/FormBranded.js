@@ -193,12 +193,27 @@ export default function PropertyFormModal() {
     }
   };
 
+  const [imageDragging, setImageDragging] = useState(false);
+
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files || []);
     const newImages = files.map((file) => {
       const f = file;
       f.preview = URL.createObjectURL(file);
       return f;
+    });
+    setImages((prev) => [...prev, ...newImages]);
+  };
+
+  const handleImageDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setImageDragging(false);
+    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+    if (!files.length) return;
+    const newImages = files.map((file) => {
+      file.preview = URL.createObjectURL(file);
+      return file;
     });
     setImages((prev) => [...prev, ...newImages]);
   };
@@ -777,12 +792,16 @@ export default function PropertyFormModal() {
                       <p className="text-gray-600 text-lg">Show off your property with great images.</p>
                     </div>
 
-                    <label htmlFor="images">
-                      <div className="border-2 border-dashed border-gray-300 rounded-2xl p-12 text-center cursor-pointer hover:border-orange-400 hover:bg-orange-50 transition-all duration-200">
-                        <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                        <p className="text-lg font-semibold text-gray-900 mb-2">Click to upload images</p>
-                        <p className="text-sm text-gray-500">or drag and drop</p>
-                      </div>
+                    <div
+                      onDragOver={(e) => { e.preventDefault(); setImageDragging(true); }}
+                      onDragLeave={() => setImageDragging(false)}
+                      onDrop={handleImageDrop}
+                      onClick={() => document.getElementById('images').click()}
+                      className={`border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all duration-200 ${imageDragging ? 'border-orange-400 bg-orange-50 scale-[1.02]' : 'border-gray-300 hover:border-orange-400 hover:bg-orange-50'}`}
+                    >
+                      <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-lg font-semibold text-gray-900 mb-2">Click or drag and drop images</p>
+                      <p className="text-sm text-gray-500">JPG, PNG up to 10MB each</p>
                       <input
                         type="file"
                         name="images"
@@ -792,7 +811,7 @@ export default function PropertyFormModal() {
                         onChange={handleImageUpload}
                         className="hidden"
                       />
-                    </label>
+                    </div>
 
                     {images.length > 0 && (
                       <div className="mt-6">

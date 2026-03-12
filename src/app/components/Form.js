@@ -88,8 +88,23 @@ export default function PropertyFormModal() {
         }
     };
 
+    const [imageDragging, setImageDragging] = useState(false);
+
     const handleImageUpload = (e) => {
         const files = Array.from(e.target.files);
+        const newImages = files.map(file => {
+            file.preview = URL.createObjectURL(file);
+            return file;
+        });
+        setImages((prev) => [...prev, ...newImages]);
+    };
+
+    const handleImageDrop = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setImageDragging(false);
+        const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+        if (!files.length) return;
         const newImages = files.map(file => {
             file.preview = URL.createObjectURL(file);
             return file;
@@ -379,8 +394,14 @@ export default function PropertyFormModal() {
                     {step === 5 && (
                         <div>
                             <h2 className="text-2xl font-semibold mb-4">Upload Images</h2>
-                            <label name="images">
-                                <div className='flex items-center hover:bg-blue-800 justify-center h-14 text-center bg-gray-900 text-white rounded-lg bg-gray-800 cursor-pointer'>Upload Images</div>
+                            <div
+                                onDragOver={(e) => { e.preventDefault(); setImageDragging(true); }}
+                                onDragLeave={() => setImageDragging(false)}
+                                onDrop={handleImageDrop}
+                                onClick={() => document.getElementById('images').click()}
+                                className={`flex items-center justify-center h-14 text-center text-white rounded-lg cursor-pointer transition-all ${imageDragging ? 'bg-blue-700 scale-[1.02]' : 'bg-gray-900 hover:bg-blue-800'}`}
+                            >
+                                Click or drag and drop images
                                 <input
                                     type="file"
                                     name="images"
@@ -390,7 +411,7 @@ export default function PropertyFormModal() {
                                     onChange={handleImageUpload}
                                     className="mb-4 text-sm text-gray-400 hidden"
                                 />
-                            </label>
+                            </div>
                             <div className="flex gap-2 flex-wrap mt-10">
                                 {images.map((img, i) => {
                                     const src = typeof img === 'string' ? img : img?.preview;

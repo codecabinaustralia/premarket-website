@@ -1,13 +1,16 @@
 import { NextResponse } from 'next/server';
 import { validateCredentials, storeCredentials, syncContacts } from '../../../../api/services/agentboxService';
+import { DEMO_OFFICES } from '../../../../api/services/agentboxDemoData';
 import { adminDb } from '../../../../firebase/adminApp';
+import { FieldValue } from 'firebase-admin/firestore';
 
 export async function POST(request) {
   try {
-    const { uid, clientId, apiKey } = await request.json();
+    const body = await request.json();
+    const { uid, clientId, apiKey, demo } = body;
 
-    if (!uid || !clientId || !apiKey) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    if (!uid) {
+      return NextResponse.json({ error: 'Missing uid' }, { status: 400 });
     }
 
     // Verify user exists
@@ -22,7 +25,34 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Already connected. Disconnect first.' }, { status: 400 });
     }
 
-    // Validate credentials against Agentbox API
+    // Demo mode — skip real API validation, store demo flag
+    if (demo) {
+      await adminDb.collection('users').doc(uid).update({
+        'integrations.agentbox': {
+          clientId: 'demo',
+          apiKey: 'demo',
+          status: 'connected',
+          mode: 'demo',
+          connectedAt: FieldValue.serverTimestamp(),
+          lastSync: null,
+          lastSyncStatus: null,
+          autoSync: false,
+          offices: DEMO_OFFICES,
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        demo: true,
+        offices: DEMO_OFFICES,
+      });
+    }
+
+    // Real mode — validate credentials
+    if (!clientId || !apiKey) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
     const result = await validateCredentials(clientId, apiKey);
 
     if (!result.valid) {

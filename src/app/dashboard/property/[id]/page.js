@@ -46,6 +46,13 @@ import {
   Upload,
   Pencil,
   Archive,
+  Send,
+  FileText,
+  Mail,
+  X,
+  MoreVertical,
+  Tablet,
+  Copy,
 } from 'lucide-react';
 
 function formatPrice(price) {
@@ -93,44 +100,123 @@ function MedianCard({ label, value }) {
   );
 }
 
-// --- Image Gallery ---
-function ImageGallery({ images }) {
+// --- Media Gallery (Video + Images combined) ---
+function MediaGallery({ images, videoUrl, onVideoUpload, onVideoDrop, onVideoRemove, uploadingVideo, videoDragging, setVideoDragging, mediaError, setMediaError }) {
   const [current, setCurrent] = useState(0);
-
-  if (!images || images.length === 0) {
-    return (
-      <div className="w-full h-64 sm:h-80 bg-slate-100 rounded-xl flex items-center justify-center">
-        <Home className="w-16 h-16 text-slate-300" />
-      </div>
-    );
-  }
+  const hasVideo = !!videoUrl;
+  const imageList = images || [];
+  // Video is slide 0 (or upload prompt if no video), images follow
+  const totalSlides = imageList.length + 1; // +1 for video/upload slot
+  const isVideoSlide = current === 0;
 
   return (
-    <div className="relative w-full h-64 sm:h-80 rounded-xl overflow-hidden bg-slate-100">
-      <Image
-        src={images[current]}
-        alt={`Property image ${current + 1}`}
-        fill
-        className="object-cover"
-        unoptimized
-      />
+    <div className="relative w-full rounded-xl overflow-hidden bg-slate-100">
+      {/* Video slide */}
+      {isVideoSlide && (
+        <div className="w-full">
+          {hasVideo ? (
+            <div className="relative bg-black group">
+              <video
+                src={videoUrl}
+                controls
+                playsInline
+                preload="metadata"
+                poster={imageList[0]}
+                className="w-full rounded-xl"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.parentElement.innerHTML = '<div class="flex items-center justify-center py-12 text-white/60 text-sm">Video unavailable</div>';
+                }}
+              />
+              <div className="absolute top-3 right-12 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <label className="cursor-pointer px-3 py-1.5 bg-white/90 backdrop-blur-sm text-slate-700 rounded-lg text-xs font-semibold hover:bg-white transition-colors">
+                  Replace
+                  <input
+                    type="file"
+                    accept="video/mp4,video/quicktime,video/webm,video/x-m4v,.mp4,.mov,.webm,.m4v"
+                    onChange={onVideoUpload}
+                    className="hidden"
+                    disabled={uploadingVideo}
+                  />
+                </label>
+                <button
+                  onClick={onVideoRemove}
+                  className="px-3 py-1.5 bg-red-500/90 backdrop-blur-sm text-white rounded-lg text-xs font-semibold hover:bg-red-600 transition-colors"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div
+              onDragOver={(e) => { if (!uploadingVideo) { e.preventDefault(); setVideoDragging(true); } }}
+              onDragLeave={() => setVideoDragging(false)}
+              onDrop={onVideoDrop}
+              onClick={() => { if (!uploadingVideo) document.getElementById('property-video-upload').click(); }}
+              className={`cursor-pointer h-64 sm:h-80 flex flex-col items-center justify-center transition-all ${uploadingVideo ? 'opacity-50 pointer-events-none' : videoDragging ? 'bg-orange-50' : 'hover:bg-orange-50'}`}
+            >
+              {uploadingVideo ? (
+                <>
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-4 border-orange-500 mx-auto mb-3" />
+                  <p className="text-sm font-semibold text-slate-900">Uploading video...</p>
+                </>
+              ) : (
+                <>
+                  <Video className="w-10 h-10 text-slate-400 mx-auto mb-3" />
+                  <p className="text-sm font-semibold text-slate-900 mb-1">Click or drag to add video</p>
+                  <p className="text-xs text-slate-500">MP4, MOV, WebM, M4V up to 500MB</p>
+                </>
+              )}
+              <input
+                type="file"
+                id="property-video-upload"
+                accept="video/mp4,video/quicktime,video/webm,video/x-m4v,.mp4,.mov,.webm,.m4v"
+                onChange={onVideoUpload}
+                className="hidden"
+                disabled={uploadingVideo}
+              />
+            </div>
+          )}
+        </div>
+      )}
 
-      {images.length > 1 && (
+      {/* Image slides */}
+      {!isVideoSlide && imageList.length > 0 && (
+        <div className="relative w-full h-64 sm:h-80">
+          <Image
+            src={imageList[current - 1]}
+            alt={`Property image ${current}`}
+            fill
+            className="object-cover"
+            unoptimized
+          />
+        </div>
+      )}
+
+      {/* Empty state when no images and on an image slide */}
+      {!isVideoSlide && imageList.length === 0 && (
+        <div className="w-full h-64 sm:h-80 flex items-center justify-center">
+          <Home className="w-16 h-16 text-slate-300" />
+        </div>
+      )}
+
+      {/* Navigation arrows */}
+      {totalSlides > 1 && (
         <>
           <button
-            onClick={() => setCurrent((c) => (c - 1 + images.length) % images.length)}
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/40 hover:bg-black/60 rounded-full flex items-center justify-center text-white transition-colors"
+            onClick={() => setCurrent((c) => (c - 1 + totalSlides) % totalSlides)}
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/40 hover:bg-black/60 rounded-full flex items-center justify-center text-white transition-colors z-10"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
           <button
-            onClick={() => setCurrent((c) => (c + 1) % images.length)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/40 hover:bg-black/60 rounded-full flex items-center justify-center text-white transition-colors"
+            onClick={() => setCurrent((c) => (c + 1) % totalSlides)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/40 hover:bg-black/60 rounded-full flex items-center justify-center text-white transition-colors z-10"
           >
             <ChevronRight className="w-5 h-5" />
           </button>
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
-            {images.map((_, i) => (
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-10">
+            {Array.from({ length: totalSlides }).map((_, i) => (
               <button
                 key={i}
                 onClick={() => setCurrent(i)}
@@ -143,9 +229,20 @@ function ImageGallery({ images }) {
         </>
       )}
 
-      <div className="absolute top-3 right-3 px-2.5 py-1 bg-black/50 rounded-lg text-white text-xs font-medium">
-        {current + 1} / {images.length}
+      {/* Slide counter + label */}
+      <div className="absolute top-3 right-3 px-2.5 py-1 bg-black/50 rounded-lg text-white text-xs font-medium z-10">
+        {isVideoSlide ? (hasVideo ? 'Video' : 'Add Video') : `${current} / ${imageList.length}`}
       </div>
+
+      {/* Media error banner */}
+      {mediaError && (
+        <div className="absolute bottom-12 left-3 right-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between z-10">
+          <p className="text-sm text-red-600">{mediaError}</p>
+          <button onClick={() => setMediaError(null)}>
+            <X className="w-4 h-4 text-red-400" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -417,7 +514,15 @@ export default function PropertyReportPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [copied, setCopied] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [videoDragging, setVideoDragging] = useState(false);
+  const [mediaError, setMediaError] = useState(null);
   const [archiving, setArchiving] = useState(false);
+  const [showSendReport, setShowSendReport] = useState(false);
+  const [sendingReport, setSendingReport] = useState(false);
+  const [reportSent, setReportSent] = useState(false);
+  const [reportEmail, setReportEmail] = useState('');
+  const [reportName, setReportName] = useState('');
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -489,9 +594,55 @@ export default function PropertyReportPage() {
     }
   };
 
+  const validateVideoFile = (file) => {
+    const allowedVideoExts = ['.mp4', '.mov', '.webm', '.m4v'];
+    const ext = (file.name || '').toLowerCase().replace(/.*(\.\w+)$/, '$1');
+    if (file.size > 500 * 1024 * 1024) {
+      setMediaError('Video file exceeds 500MB limit. Please choose a smaller file.');
+      return false;
+    }
+    if (!allowedVideoExts.includes(ext)) {
+      setMediaError(`Unsupported video format "${ext}". Please use MP4, MOV, WebM, or M4V.`);
+      return false;
+    }
+    setMediaError(null);
+    return true;
+  };
+
   const handleVideoUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file || !property) return;
+    if (!validateVideoFile(file)) return;
+    setUploadingVideo(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/upload-image', {
+        method: 'POST',
+        body: formData,
+      });
+      if (!res.ok) throw new Error('Upload failed');
+      const data = await res.json();
+      await updateDoc(doc(db, 'properties', property.id), { videoUrl: data.url });
+      setProperty(prev => ({ ...prev, videoUrl: data.url }));
+    } catch (err) {
+      console.error('Video upload error:', err);
+    } finally {
+      setUploadingVideo(false);
+    }
+  };
+
+  const handleVideoDrop = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setVideoDragging(false);
+    const allowedVideoExts = ['.mp4', '.mov', '.webm', '.m4v'];
+    const file = Array.from(e.dataTransfer.files).find(f => {
+      const ext = (f.name || '').toLowerCase().replace(/.*(\.\w+)$/, '$1');
+      return f.type.startsWith('video/') || allowedVideoExts.includes(ext);
+    });
+    if (!file || !property) return;
+    if (!validateVideoFile(file)) return;
     setUploadingVideo(true);
     try {
       const formData = new FormData();
@@ -588,172 +739,162 @@ export default function PropertyReportPage() {
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
       <div className="bg-white border-b border-slate-200 sticky top-0 z-20">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3 min-w-0">
-            <Link href="/dashboard" className="p-2 hover:bg-slate-100 rounded-lg transition-colors shrink-0">
-              <ArrowLeft className="w-5 h-5 text-slate-600" />
-            </Link>
-            <div className="min-w-0">
-              <h1 className="text-base font-bold text-slate-900 truncate">Property Report</h1>
-              <p className="text-xs text-slate-500 truncate">{property.formattedAddress || property.address || 'Property'}</p>
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3">
+          <div className="flex items-center justify-between gap-3">
+            {/* Left: Back + Title */}
+            <div className="flex items-center gap-3 min-w-0">
+              <Link href="/dashboard" className="p-2 hover:bg-slate-100 rounded-lg transition-colors shrink-0">
+                <ArrowLeft className="w-5 h-5 text-slate-600" />
+              </Link>
+              <div className="min-w-0">
+                <h1 className="text-base font-bold text-slate-900 truncate">{property.title || 'Property Report'}</h1>
+                <p className="text-xs text-slate-500 truncate">{property.formattedAddress || property.address}</p>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {/* Edit button */}
-            <Link
-              href={`/dashboard/edit/${property.id}`}
-              className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
-            >
-              <Pencil className="w-3.5 h-3.5" />
-              Edit
-            </Link>
-            {/* Archive / Unarchive */}
-            <button
-              onClick={handleArchive}
-              disabled={archiving}
-              className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors disabled:opacity-50"
-            >
-              <Archive className="w-3.5 h-3.5" />
-              {property.archived ? 'Unarchive' : 'Archive'}
-            </button>
-            {/* Live / Draft indicator */}
-            <button
-              onClick={toggleVisibility}
-              disabled={toggling}
-              className={`hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
-                property.visibility
-                  ? 'bg-slate-900 text-white hover:bg-slate-800'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
-            >
-              {property.visibility ? (
-                <>
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                  </span>
-                  Public
-                </>
-              ) : (
-                <>
-                  <ToggleLeft className="w-4 h-4" />
-                  Private
-                </>
-              )}
-            </button>
-            <button
-              onClick={() => setShowDeleteConfirm(true)}
-              className="p-2 hover:bg-red-50 rounded-lg transition-colors text-slate-400 hover:text-red-500"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
+
+            {/* Right: Key actions */}
+            <div className="flex items-center gap-2 shrink-0">
+              {/* Visibility toggle */}
+              <button
+                onClick={toggleVisibility}
+                disabled={toggling}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
+                  property.visibility
+                    ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                {property.visibility ? (
+                  <>
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    Public
+                  </>
+                ) : (
+                  <>
+                    <span className="w-2 h-2 rounded-full bg-slate-400"></span>
+                    Private
+                  </>
+                )}
+              </button>
+
+              {/* Send Report - primary action */}
+              <button
+                onClick={() => { setShowSendReport(true); setReportSent(false); setReportEmail(''); setReportName(''); }}
+                className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-orange-500 text-white hover:bg-orange-600 transition-colors"
+              >
+                <Send className="w-3.5 h-3.5" />
+                Send Report
+              </button>
+
+              {/* More menu */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowMoreMenu(!showMoreMenu)}
+                  className="flex items-center gap-1.5 px-3 py-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-500"
+                >
+                  <MoreVertical className="w-4 h-4" />
+                  <span className="text-xs font-medium hidden sm:inline">Settings</span>
+                </button>
+
+                {showMoreMenu && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setShowMoreMenu(false)} />
+                    <div className="absolute right-0 top-full mt-1 w-52 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-20">
+                      {/* Copy Link */}
+                      <button
+                        onClick={() => { copyLink(); setShowMoreMenu(false); }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                      >
+                        {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-slate-400" />}
+                        {copied ? 'Copied!' : 'Copy Link'}
+                      </button>
+                      {/* Preview */}
+                      <a
+                        href={propertyUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => setShowMoreMenu(false)}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                      >
+                        <ExternalLink className="w-4 h-4 text-slate-400" />
+                        Preview Listing
+                      </a>
+                      {/* iPad mode */}
+                      <a
+                        href={`/find-property?propertyId=${property.id}&mode=ipad`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => setShowMoreMenu(false)}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                      >
+                        <Tablet className="w-4 h-4 text-slate-400" />
+                        Open Home (iPad)
+                      </a>
+                      <div className="border-t border-slate-100 my-1.5" />
+                      {/* Edit */}
+                      <Link
+                        href={`/dashboard/edit/${property.id}`}
+                        onClick={() => setShowMoreMenu(false)}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                      >
+                        <Pencil className="w-4 h-4 text-slate-400" />
+                        Edit Property
+                      </Link>
+                      {/* Send Report - mobile */}
+                      <button
+                        onClick={() => { setShowSendReport(true); setReportSent(false); setReportEmail(''); setReportName(''); setShowMoreMenu(false); }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors sm:hidden"
+                      >
+                        <Send className="w-4 h-4 text-slate-400" />
+                        Send Report
+                      </button>
+                      {/* Archive */}
+                      <button
+                        onClick={() => { handleArchive(); setShowMoreMenu(false); }}
+                        disabled={archiving}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50"
+                      >
+                        <Archive className="w-4 h-4 text-slate-400" />
+                        {property.archived ? 'Unarchive' : 'Archive'}
+                      </button>
+                      <div className="border-t border-slate-100 my-1.5" />
+                      {/* Delete */}
+                      <button
+                        onClick={() => { setShowDeleteConfirm(true); setShowMoreMenu(false); }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Delete Property
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
         </div>
-
-        {/* Property Link Bar */}
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-3">
-            <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-xl p-4 shadow-sm">
-              <div className="flex items-center justify-between mb-2.5">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-md bg-white/10 flex items-center justify-center">
-                    <Link2 className="w-3.5 h-3.5 text-white" />
-                  </div>
-                  <span className="text-xs font-semibold text-white tracking-wide uppercase">Property Link</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <a
-                    href={propertyUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-white/70 hover:text-white hover:bg-white/10 transition-all"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Preview</span>
-                  </a>
-                  <button
-                    onClick={copyLink}
-                    className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all ${
-                      copied
-                        ? 'bg-green-500 text-white'
-                        : 'bg-white text-slate-900 hover:bg-slate-100'
-                    }`}
-                  >
-                    {copied ? <Check className="w-3.5 h-3.5" /> : <Link2 className="w-3.5 h-3.5" />}
-                    {copied ? 'Copied!' : 'Copy Link'}
-                  </button>
-                </div>
-              </div>
-              <div className="bg-white/5 border border-white/10 rounded-lg px-3 py-2">
-                <span className="text-sm text-white/80 truncate block font-mono select-all">{propertyUrl}</span>
-              </div>
-              <p className="text-xs text-white/40 mt-2">Send this link to your buyers and social media</p>
-            </div>
-          </div>
       </div>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
         {/* Property Header */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          {/* Video + Image Gallery */}
-          <div className="lg:col-span-3 space-y-4">
-            {(property.aiVideo?.url || property.videoUrl) ? (
-              <div className="relative rounded-xl overflow-hidden bg-black group">
-                <video
-                  src={property.aiVideo?.url || property.videoUrl}
-                  controls
-                  playsInline
-                  preload="metadata"
-                  poster={property.imageUrls?.[0]}
-                  className="w-full rounded-xl"
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                    e.target.parentElement.innerHTML = '<div class="flex items-center justify-center py-12 text-white/60 text-sm">Video unavailable</div>';
-                  }}
-                />
-                {/* Replace / Remove video controls */}
-                <div className="absolute top-3 right-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <label className="cursor-pointer px-3 py-1.5 bg-white/90 backdrop-blur-sm text-slate-700 rounded-lg text-xs font-semibold hover:bg-white transition-colors">
-                    Replace
-                    <input
-                      type="file"
-                      accept="video/mp4,video/quicktime,video/webm"
-                      onChange={handleVideoUpload}
-                      className="hidden"
-                      disabled={uploadingVideo}
-                    />
-                  </label>
-                  <button
-                    onClick={handleRemoveVideo}
-                    className="px-3 py-1.5 bg-red-500/90 backdrop-blur-sm text-white rounded-lg text-xs font-semibold hover:bg-red-600 transition-colors"
-                  >
-                    Remove
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <label className={`cursor-pointer block border-2 border-dashed border-slate-300 rounded-xl p-8 text-center hover:border-orange-400 hover:bg-orange-50 transition-all ${uploadingVideo ? 'opacity-50 pointer-events-none' : ''}`}>
-                {uploadingVideo ? (
-                  <>
-                    <div className="animate-spin rounded-full h-10 w-10 border-b-4 border-orange-500 mx-auto mb-3" />
-                    <p className="text-sm font-semibold text-slate-900">Uploading video...</p>
-                  </>
-                ) : (
-                  <>
-                    <Video className="w-10 h-10 text-slate-400 mx-auto mb-3" />
-                    <p className="text-sm font-semibold text-slate-900 mb-1">Add walkthrough video</p>
-                    <p className="text-xs text-slate-500">MP4, MOV, WebM up to 500MB</p>
-                  </>
-                )}
-                <input
-                  type="file"
-                  accept="video/mp4,video/quicktime,video/webm"
-                  onChange={handleVideoUpload}
-                  className="hidden"
-                  disabled={uploadingVideo}
-                />
-              </label>
-            )}
-            <ImageGallery images={property.imageUrls} />
+          {/* Media Gallery (Video + Images) */}
+          <div className="lg:col-span-3">
+            <MediaGallery
+              images={property.imageUrls}
+              videoUrl={property.aiVideo?.url || property.videoUrl}
+              onVideoUpload={handleVideoUpload}
+              onVideoDrop={handleVideoDrop}
+              onVideoRemove={handleRemoveVideo}
+              uploadingVideo={uploadingVideo}
+              videoDragging={videoDragging}
+              setVideoDragging={setVideoDragging}
+              mediaError={mediaError}
+              setMediaError={setMediaError}
+            />
           </div>
 
           {/* Property Info */}
@@ -789,15 +930,6 @@ export default function PropertyReportPage() {
               )}
             </div>
 
-            <div className="pt-2 flex items-center gap-2">
-              <button
-                onClick={toggleVisibility}
-                disabled={toggling}
-                className="flex-1 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all bg-slate-100 text-slate-700 hover:bg-slate-200"
-              >
-                {property.visibility ? 'Set Private' : 'Set Public'}
-              </button>
-            </div>
           </div>
         </div>
 
@@ -917,6 +1049,127 @@ export default function PropertyReportPage() {
                   {deleting ? 'Deleting...' : 'Delete'}
                 </button>
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Send Report Modal */}
+      <AnimatePresence>
+        {showSendReport && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+            onClick={() => !sendingReport && setShowSendReport(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full"
+            >
+              {reportSent ? (
+                <div className="text-center py-4">
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                    className="w-14 h-14 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4"
+                  >
+                    <Check className="w-7 h-7 text-green-500" />
+                  </motion.div>
+                  <h3 className="text-lg font-bold text-slate-900 mb-1">Report Sent!</h3>
+                  <p className="text-sm text-slate-500 mb-5">The report has been emailed to {reportEmail}</p>
+                  <button
+                    onClick={() => setShowSendReport(false)}
+                    className="px-6 py-2.5 rounded-xl bg-slate-100 text-slate-700 font-semibold hover:bg-slate-200 transition-colors"
+                  >
+                    Done
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <button
+                    onClick={() => setShowSendReport(false)}
+                    className="absolute top-4 right-4 p-1 hover:bg-slate-100 rounded-lg transition-colors text-slate-400 hover:text-slate-600"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                  <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <FileText className="w-6 h-6 text-orange-500" />
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900 text-center mb-1">Send Report</h3>
+                  <p className="text-sm text-slate-500 text-center mb-5">Email a PDF report with property insights and buyer data.</p>
+                  <div className="space-y-3 mb-5">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-600 mb-1.5">Recipient Name</label>
+                      <input
+                        type="text"
+                        value={reportName}
+                        onChange={(e) => setReportName(e.target.value)}
+                        placeholder="e.g. John Smith"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400 transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-600 mb-1.5">Email Address</label>
+                      <input
+                        type="email"
+                        value={reportEmail}
+                        onChange={(e) => setReportEmail(e.target.value)}
+                        placeholder="e.g. john@example.com"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400 transition-all"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setShowSendReport(false)}
+                      disabled={sendingReport}
+                      className="flex-1 px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 font-semibold hover:bg-slate-200 transition-colors disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (!reportEmail) return;
+                        setSendingReport(true);
+                        try {
+                          const res = await fetch('/api/send-report', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email: reportEmail, name: reportName, propertyId: property.id }),
+                          });
+                          if (!res.ok) throw new Error('Failed to send');
+                          setReportSent(true);
+                        } catch (err) {
+                          console.error('Error sending report:', err);
+                          alert('Failed to send report. Please try again.');
+                        } finally {
+                          setSendingReport(false);
+                        }
+                      }}
+                      disabled={sendingReport || !reportEmail}
+                      className="flex-1 px-4 py-2.5 rounded-xl bg-orange-500 text-white font-semibold hover:bg-orange-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {sendingReport ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <Mail className="w-4 h-4" />
+                          Send
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </>
+              )}
             </motion.div>
           </motion.div>
         )}

@@ -35,7 +35,7 @@ import {
 } from 'lucide-react';
 
 // --- Connect Modal ---
-function ConnectModal({ onClose, onConnect, connecting }) {
+function ConnectModal({ onClose, onConnect, onConnectDemo, connecting }) {
   const [clientId, setClientId] = useState('');
   const [apiKey, setApiKey] = useState('');
 
@@ -136,6 +136,19 @@ function ConnectModal({ onClose, onConnect, connecting }) {
             </button>
           </div>
         </form>
+
+        <div className="mt-4 pt-4 border-t border-slate-200">
+          <button
+            type="button"
+            onClick={onConnectDemo}
+            disabled={connecting}
+            className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-slate-600 bg-white border border-dashed border-slate-300 hover:bg-slate-50 hover:border-slate-400 rounded-xl transition-all disabled:opacity-50"
+          >
+            <Building2 className="w-4 h-4" />
+            Use Demo Data (12 test properties)
+          </button>
+          <p className="text-[11px] text-slate-400 text-center mt-2">Try out the integration with sample Australian properties — no credentials needed.</p>
+        </div>
       </motion.div>
     </motion.div>
   );
@@ -399,6 +412,33 @@ export default function IntegrationsPage() {
     }
   };
 
+  const handleConnectDemo = async () => {
+    setConnecting(true);
+    setConnectError('');
+    try {
+      const res = await fetch('/api/integrations/agentbox/connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid: user.uid, demo: true }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setConnectError(data.error || 'Failed to connect demo');
+        return;
+      }
+
+      setShowConnectModal(false);
+      setView('agentbox');
+      showToast('Connected with demo data');
+    } catch (err) {
+      console.error(err);
+      setConnectError('Demo connection failed.');
+    } finally {
+      setConnecting(false);
+    }
+  };
+
   const handleDisconnect = async () => {
     if (!confirm('Disconnect from Agentbox? Your imported properties will remain but syncing will stop.')) return;
     try {
@@ -618,7 +658,12 @@ export default function IntegrationsPage() {
                   <CheckCircle2 className="w-5 h-5 text-emerald-600" />
                 </div>
                 <div>
-                  <p className="font-semibold text-slate-900 text-sm">Connected to Agentbox</p>
+                  <p className="font-semibold text-slate-900 text-sm flex items-center gap-2">
+                    Connected to Agentbox
+                    {integration?.mode === 'demo' && (
+                      <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-100 text-amber-700 rounded-full uppercase">Demo</span>
+                    )}
+                  </p>
                   {integration?.lastSync && (
                     <p className="text-xs text-slate-500">
                       Last synced: {new Date(integration.lastSync?.seconds ? integration.lastSync.seconds * 1000 : integration.lastSync).toLocaleString('en-AU')}
@@ -734,6 +779,7 @@ export default function IntegrationsPage() {
           <ConnectModal
             onClose={() => { setShowConnectModal(false); setConnectError(''); }}
             onConnect={handleConnect}
+            onConnectDemo={handleConnectDemo}
             connecting={connecting}
           />
         )}

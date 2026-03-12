@@ -134,13 +134,47 @@ export async function GET(request) {
   }
 }
 
+const AU_STATES_LIST = ['NSW', 'VIC', 'QLD', 'SA', 'WA', 'TAS', 'NT', 'ACT'];
+const STREET_SUFFIXES = new Set([
+  'street', 'st', 'road', 'rd', 'drive', 'dr', 'avenue', 'ave', 'way',
+  'lane', 'ln', 'place', 'pl', 'court', 'ct', 'crescent', 'cres', 'cr',
+  'circuit', 'cct', 'parade', 'pde', 'terrace', 'tce', 'boulevard', 'blvd',
+  'highway', 'hwy', 'close', 'cl', 'grove', 'gr', 'view', 'rise', 'trail',
+  'esplanade', 'esp', 'promenade', 'walk', 'mews', 'gardens', 'meadows',
+]);
+
 function extractSuburb(property) {
-  if (property.formattedAddress) {
-    const parts = property.formattedAddress.split(',').map((s) => s.trim());
-    if (parts.length >= 2) return parts[parts.length - 2];
+  // Direct suburb field
+  if (property.suburb || property.location?.suburb) {
+    const sub = property.suburb || property.location.suburb;
+    const st = property.state || property.location?.state || '';
+    return st ? `${sub}, ${st}` : sub;
   }
-  if (property.suburb) return property.suburb;
-  if (property.postcode) return property.postcode;
+  // Parse formattedAddress: "123 Street, Suburb STATE 2000, Australia"
+  if (property.formattedAddress) {
+    const segments = property.formattedAddress.split(',').map((s) => s.trim());
+    // First pass: skip segments with street suffixes
+    for (const seg of segments) {
+      const words = seg.split(/\s+/);
+      if (words.some((w) => STREET_SUFFIXES.has(w.toLowerCase()))) continue;
+      for (let i = 0; i < words.length; i++) {
+        if (AU_STATES_LIST.includes(words[i].toUpperCase())) {
+          const suburbWords = words.slice(0, i).filter((w) => !/^\d+$/.test(w));
+          if (suburbWords.length > 0) return `${suburbWords.join(' ')}, ${words[i].toUpperCase()}`;
+        }
+      }
+    }
+    // Fallback: try all segments
+    for (const seg of segments) {
+      const words = seg.split(/\s+/);
+      for (let i = 0; i < words.length; i++) {
+        if (AU_STATES_LIST.includes(words[i].toUpperCase())) {
+          const suburbWords = words.slice(0, i).filter((w) => !/^\d+$/.test(w));
+          if (suburbWords.length > 0) return `${suburbWords.join(' ')}, ${words[i].toUpperCase()}`;
+        }
+      }
+    }
+  }
   return null;
 }
 
