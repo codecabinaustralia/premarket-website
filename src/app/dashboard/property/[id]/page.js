@@ -684,12 +684,17 @@ function ImageEditModal({ imageUrl, imageIndex, propertyId, userId, allImages, o
   const pollingRef = useRef({});
   const historyEndRef = useRef(null);
 
-  // The image we'll send with the next prompt — latest completed edit or original
+  // Track whether user has explicitly picked a thumbnail (null = original selected)
+  const [hasExplicitSelection, setHasExplicitSelection] = useState(false);
+
+  // The image shown in preview and sent to the AI
   const activeImageUrl = useMemo(() => {
     if (selectedEdit?.editedImageUrl) return selectedEdit.editedImageUrl;
+    // If user explicitly clicked "Original", use original even if completed edits exist
+    if (hasExplicitSelection && !selectedEdit) return imageUrl;
     const completed = [...editHistory].reverse().find(e => e.status === 'completed' && e.editedImageUrl);
     return completed?.editedImageUrl || imageUrl;
-  }, [selectedEdit, editHistory, imageUrl]);
+  }, [selectedEdit, hasExplicitSelection, editHistory, imageUrl]);
 
   // Load edit history from Firestore (realtime)
   useEffect(() => {
@@ -759,9 +764,8 @@ function ImageEditModal({ imageUrl, imageIndex, propertyId, userId, allImages, o
     setSubmitting(true);
     setError(null);
     try {
-      const lastCompleted = [...editHistory].reverse().find(e => e.status === 'completed' && e.editedImageUrl);
-      const sourceUrl = selectedEdit?.editedImageUrl || lastCompleted?.editedImageUrl || imageUrl;
-      const parentEditId = selectedEdit?.id || lastCompleted?.id || null;
+      const sourceUrl = activeImageUrl;
+      const parentEditId = selectedEdit?.id || null;
 
       const res = await fetch('/api/ai/image-edit', {
         method: 'POST',
@@ -811,7 +815,7 @@ function ImageEditModal({ imageUrl, imageIndex, propertyId, userId, allImages, o
     }
   };
 
-  const previewUrl = selectedEdit?.editedImageUrl || activeImageUrl;
+  const previewUrl = activeImageUrl;
 
   return (
     <motion.div
@@ -873,9 +877,9 @@ function ImageEditModal({ imageUrl, imageIndex, propertyId, userId, allImages, o
             <div className="flex gap-2 overflow-x-auto pb-1">
               {/* Original image thumbnail */}
               <button
-                onClick={() => setSelectedEdit(null)}
+                onClick={() => { setSelectedEdit(null); setHasExplicitSelection(true); }}
                 className={`flex-shrink-0 relative w-16 h-16 rounded-lg overflow-hidden border-2 transition-colors ${
-                  !selectedEdit ? 'border-purple-500' : 'border-slate-200 hover:border-slate-300'
+                  hasExplicitSelection && !selectedEdit ? 'border-purple-500' : 'border-slate-200 hover:border-slate-300'
                 }`}
               >
                 <Image src={imageUrl} alt="Original" fill className="object-cover" unoptimized />
@@ -885,37 +889,49 @@ function ImageEditModal({ imageUrl, imageIndex, propertyId, userId, allImages, o
               </button>
 
               {editHistory.map((edit) => (
-                <button
-                  key={edit.id}
-                  onClick={() => edit.status === 'completed' && setSelectedEdit(edit)}
-                  className={`flex-shrink-0 relative w-16 h-16 rounded-lg overflow-hidden border-2 transition-colors ${
-                    selectedEdit?.id === edit.id ? 'border-purple-500' : 'border-slate-200 hover:border-slate-300'
-                  } ${edit.status !== 'completed' ? 'opacity-70' : ''}`}
-                >
-                  {edit.status === 'completed' && edit.editedImageUrl ? (
-                    <Image src={edit.editedImageUrl} alt={edit.prompt} fill className="object-cover" unoptimized />
-                  ) : (
-                    <div className="w-full h-full bg-slate-100 flex items-center justify-center">
-                      {(edit.status === 'processing' || edit.status === 'pending') && (
-                        <Loader2 className="w-5 h-5 text-purple-500 animate-spin" />
-                      )}
-                      {edit.status === 'failed' && (
-                        <AlertCircle className="w-5 h-5 text-red-400" />
-                      )}
+                <div key={edit.id} className="flex-shrink-0 relative group">
+                  <button
+                    onClick={() => { if (edit.status === 'completed') { setSelectedEdit(edit); setHasExplicitSelection(true); } }}
+                    className={`relative w-16 h-16 rounded-lg overflow-hidden border-2 transition-colors ${
+                      selectedEdit?.id === edit.id ? 'border-purple-500' : 'border-slate-200 hover:border-slate-300'
+                    } ${edit.status !== 'completed' ? 'opacity-70' : ''}`}
+                  >
+                    {edit.status === 'completed' && edit.editedImageUrl ? (
+                      <Image src={edit.editedImageUrl} alt={edit.prompt} fill className="object-cover" unoptimized />
+                    ) : (
+                      <div className="w-full h-full bg-slate-100 flex items-center justify-center">
+                        {(edit.status === 'processing' || edit.status === 'pending') && (
+                          <Loader2 className="w-5 h-5 text-purple-500 animate-spin" />
+                        )}
+                        {edit.status === 'failed' && (
+                          <AlertCircle className="w-5 h-5 text-red-400" />
+                        )}
+                      </div>
+                    )}
+                    <div className={`absolute bottom-0 inset-x-0 text-white text-[9px] font-medium text-center py-0.5 ${
+                      edit.status === 'completed' ? 'bg-green-600/80' :
+                      edit.status === 'failed' ? 'bg-red-500/80' : 'bg-purple-600/80'
+                    }`}>
+                      {edit.status === 'completed' ? 'Done' : edit.status === 'failed' ? 'Failed' : 'Processing'}
                     </div>
-                  )}
-                  <div className={`absolute bottom-0 inset-x-0 text-white text-[9px] font-medium text-center py-0.5 ${
-                    edit.status === 'completed' ? 'bg-green-600/80' :
-                    edit.status === 'failed' ? 'bg-red-500/80' : 'bg-purple-600/80'
-                  }`}>
-                    {edit.status === 'completed' ? 'Done' : edit.status === 'failed' ? 'Failed' : 'Processing'}
-                  </div>
-                  {edit.appliedToListing && (
-                    <div className="absolute top-0.5 right-0.5 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                      <Check className="w-2.5 h-2.5 text-white" />
-                    </div>
-                  )}
-                </button>
+                    {edit.appliedToListing && (
+                      <div className="absolute top-0.5 right-0.5 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                        <Check className="w-2.5 h-2.5 text-white" />
+                      </div>
+                    )}
+                  </button>
+                  {/* Delete button */}
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      if (selectedEdit?.id === edit.id) setSelectedEdit(null);
+                      await deleteDoc(doc(db, 'image_edits', edit.id));
+                    }}
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 hover:bg-red-600 rounded-full items-center justify-center text-white shadow-md transition-colors hidden group-hover:flex z-10"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
               ))}
               <div ref={historyEndRef} />
             </div>
@@ -956,7 +972,7 @@ function ImageEditModal({ imageUrl, imageIndex, propertyId, userId, allImages, o
             </button>
           </div>
           <p className="text-xs text-slate-400 mt-2">
-            Using {selectedEdit ? 'selected edit' : 'original image'} as source. Click a history thumbnail to change.
+            Editing the {selectedEdit ? 'selected edit' : 'original image'}. Click a thumbnail above to change source.
           </p>
         </div>
       </motion.div>
