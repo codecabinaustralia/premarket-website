@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import { db, storage } from '../../firebase/clientApp';
-import { LoadScript, Autocomplete } from '@react-google-maps/api';
+import { useJsApiLoader, Autocomplete } from '@react-google-maps/api';
 import {
   collection,
   addDoc,
@@ -55,10 +55,18 @@ const homeFeatures = [
   'Study', 'Ensuite', 'Smart Home Features', 'Built-in Wardrobes',
 ];
 
+const GMAPS_LIBRARIES = ['places'];
+
 export default function AddPropertyPage() {
   const { user, userData, loading: authLoading } = useAuth();
   const router = useRouter();
   const autocompleteRef = useRef(null);
+
+  const { isLoaded: mapsLoaded } = useJsApiLoader({
+    id: 'gmaps-script',
+    googleMapsApiKey: 'AIzaSyBbLrFWUU62O_by81ihAVKvye4bHA0sah8',
+    libraries: GMAPS_LIBRARIES,
+  });
 
   const [step, setStep] = useState(STEPS.ADDRESS);
 
