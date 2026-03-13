@@ -614,11 +614,7 @@ export default function AddPropertyPage() {
                 <h2 className="text-2xl font-bold text-slate-900 mb-2">Where is the property?</h2>
                 <p className="text-slate-500 mb-6">Start typing and select from the suggestions.</p>
 
-                <LoadScript
-                  id="gmaps-script"
-                  googleMapsApiKey="AIzaSyBbLrFWUU62O_by81ihAVKvye4bHA0sah8"
-                  libraries={['places']}
-                >
+                {mapsLoaded ? (
                   <Autocomplete onLoad={(ref) => (autocompleteRef.current = ref)} onPlaceChanged={handlePlaceChanged}>
                     <div className="relative">
                       <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -629,7 +625,17 @@ export default function AddPropertyPage() {
                       />
                     </div>
                   </Autocomplete>
-                </LoadScript>
+                ) : (
+                  <div className="relative">
+                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300" />
+                    <input
+                      type="text"
+                      placeholder="Loading address search..."
+                      disabled
+                      className="w-full pl-12 pr-4 py-4 rounded-xl border border-slate-200 bg-slate-50 text-slate-400 text-lg"
+                    />
+                  </div>
+                )}
 
                 {address && (
                   <div className="mt-4 p-4 bg-orange-50 rounded-xl border border-orange-200">
