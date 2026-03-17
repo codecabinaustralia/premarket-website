@@ -707,11 +707,19 @@ function ImageEditModal({ imageUrl, imageIndex, propertyId, userId, allImages, o
     );
     const unsub = onSnapshot(q, (snap) => {
       const edits = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      // Filter to edits related to this image (original or chained)
-      const relevant = edits.filter(e =>
-        e.originalImageUrl === imageUrl ||
-        allImages?.includes(e.originalImageUrl) && e.originalImageUrl === imageUrl
-      );
+      // Build the chain: start with edits of the original image, then include any chained edits
+      const editedUrls = new Set([imageUrl]);
+      let found = true;
+      while (found) {
+        found = false;
+        for (const e of edits) {
+          if (editedUrls.has(e.originalImageUrl) && e.editedImageUrl && !editedUrls.has(e.editedImageUrl)) {
+            editedUrls.add(e.editedImageUrl);
+            found = true;
+          }
+        }
+      }
+      const relevant = edits.filter(e => editedUrls.has(e.originalImageUrl));
       setEditHistory(relevant);
     });
     return () => unsub();
@@ -852,6 +860,13 @@ function ImageEditModal({ imageUrl, imageIndex, propertyId, userId, allImages, o
             className="object-contain"
             unoptimized
           />
+          {/* Processing overlay */}
+          {editHistory.some(e => e.status === 'processing' || e.status === 'pending') && (
+            <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center z-10">
+              <Loader2 className="w-8 h-8 text-white animate-spin mb-2" />
+              <p className="text-white text-sm font-medium">Generating edit...</p>
+            </div>
+          )}
           {selectedEdit && selectedEdit.status === 'completed' && (
             <div className="absolute bottom-3 right-3 flex gap-2">
               <button

@@ -326,38 +326,37 @@ export default function PropertyPageClient() {
   };
 
   // iPad mode: always create new opinion, increment view, show register interest
-  const saveIpadPriceOpinion = async () => {
-    try {
-      const ipadSessionId = `ipad_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+  const saveIpadPriceOpinion = () => {
+    // Show modal immediately — don't wait for Firestore
+    setRegisterInterest(true);
+    setShowQualificationModal(true);
 
-      const offerData = {
-        type: 'opinion',
-        propertyId: propertyId,
-        sessionId: ipadSessionId,
-        offerAmount: Math.round(priceOpinion),
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        fromWeb: true,
-        fromIpadMode: true,
-      };
+    // Save in the background
+    const ipadSessionId = `ipad_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
-      const docRef = await addDoc(collection(db, 'offers'), offerData);
-      setSavedOfferId(docRef.id);
+    const offerData = {
+      type: 'opinion',
+      propertyId: propertyId,
+      sessionId: ipadSessionId,
+      offerAmount: Math.round(priceOpinion),
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      fromWeb: true,
+      fromIpadMode: true,
+    };
 
-      // Each iPad opinion also counts as a view
-      await incrementPropertyViews(propertyId);
-
-      trackEvent('ipad_price_opinion_created', {
-        property_id: propertyId,
-        opinion_amount: Math.round(priceOpinion),
+    addDoc(collection(db, 'offers'), offerData)
+      .then((docRef) => {
+        setSavedOfferId(docRef.id);
+        incrementPropertyViews(propertyId);
+        trackEvent('ipad_price_opinion_created', {
+          property_id: propertyId,
+          opinion_amount: Math.round(priceOpinion),
+        });
+      })
+      .catch((error) => {
+        console.error('Error saving iPad price opinion:', error);
       });
-
-      // Go directly to register interest flow
-      setRegisterInterest(true);
-      setShowQualificationModal(true);
-    } catch (error) {
-      console.error('Error saving iPad price opinion:', error);
-    }
   };
 
   // Reset iPad mode to fresh state for next person
@@ -483,24 +482,20 @@ export default function PropertyPageClient() {
     });
 
     if (isIpadMode) {
-      // In iPad mode: save qualification to the offer, show thank you, then reset
-      if (savedOfferId) {
-        try {
-          await updateDoc(doc(db, 'offers', savedOfferId), {
-            serious: true,
-            isFirstHomeBuyer: qualificationData.isFirstHomeBuyer,
-            isInvestor: qualificationData.isInvestor,
-            buyerType: qualificationData.buyerType,
-            seriousnessLevel: qualificationData.seriousnessLevel,
-            updatedAt: serverTimestamp(),
-          });
-        } catch (err) {
-          console.error('Error updating iPad offer:', err);
-        }
-      }
+      // In iPad mode: show thank you immediately, save qualification in background
       setShowQualificationModal(false);
       setIpadThankYou(true);
       setTimeout(() => resetIpadMode(), 3000);
+      if (savedOfferId) {
+        updateDoc(doc(db, 'offers', savedOfferId), {
+          serious: true,
+          isFirstHomeBuyer: qualificationData.isFirstHomeBuyer,
+          isInvestor: qualificationData.isInvestor,
+          buyerType: qualificationData.buyerType,
+          seriousnessLevel: qualificationData.seriousnessLevel,
+          updatedAt: serverTimestamp(),
+        }).catch((err) => console.error('Error updating iPad offer:', err));
+      }
       return;
     }
 
@@ -1154,9 +1149,9 @@ export default function PropertyPageClient() {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="font-bold text-slate-900 text-lg mb-2">What is a Pre-Market Property?</h3>
+                    <h3 className="font-bold text-slate-900 text-lg mb-2">What is Premarket?</h3>
                     <p className="text-slate-700 leading-relaxed">
-                      This property is <strong>fully prepared and ready to sell</strong>. The owner is testing market interest before publicly listing. You have exclusive early access to view, share your price opinion, and register interest before it goes public.
+                      Premarket helps agents collect <strong>real buyer price opinions</strong> on properties. Share what you think this property is worth, register your interest, and help the owner understand true market value.
                     </p>
                   </div>
                 </div>
@@ -1400,10 +1395,10 @@ export default function PropertyPageClient() {
             className="text-center mb-12"
           >
             <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-4">
-              Why You&apos;re Seeing This Property
+              How It Works
             </h2>
             <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-              Your agent sent you this exclusive pre-market listing
+              Your agent wants to know what you think this property is worth
             </p>
           </motion.div>
 
@@ -1419,9 +1414,9 @@ export default function PropertyPageClient() {
               <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl flex items-center justify-center mb-4">
                 <span className="text-white font-bold text-lg">1</span>
               </div>
-              <h3 className="text-lg font-bold text-slate-900 mb-2">Agent Lists Property</h3>
+              <h3 className="text-lg font-bold text-slate-900 mb-2">Agent Adds Property</h3>
               <p className="text-slate-600 text-sm leading-relaxed">
-                A real estate agent adds this property to Premarket to test market interest before going public.
+                A real estate agent adds this property to Premarket to collect buyer price opinions and gauge interest.
               </p>
             </motion.div>
 
@@ -1436,9 +1431,9 @@ export default function PropertyPageClient() {
               <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl flex items-center justify-center mb-4">
                 <span className="text-white font-bold text-lg">2</span>
               </div>
-              <h3 className="text-lg font-bold text-slate-900 mb-2">Agent Sends You the Link</h3>
+              <h3 className="text-lg font-bold text-slate-900 mb-2">You Receive the Link</h3>
               <p className="text-slate-600 text-sm leading-relaxed">
-                Because you&apos;re in their buyer database, they&apos;ve sent you early access to this exclusive property.
+                The agent shares this property with you — whether at an open home, via their database, or through a campaign.
               </p>
             </motion.div>
 
@@ -1453,9 +1448,9 @@ export default function PropertyPageClient() {
               <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl flex items-center justify-center mb-4">
                 <span className="text-white font-bold text-lg">3</span>
               </div>
-              <h3 className="text-lg font-bold text-slate-900 mb-2">You Get First Access</h3>
+              <h3 className="text-lg font-bold text-slate-900 mb-2">Share Your Price Opinion</h3>
               <p className="text-slate-600 text-sm leading-relaxed">
-                View, share your opinion, and register interest—all before it goes to market or open homes.
+                Tell the agent what you think it&apos;s worth, register your interest, and stay updated on the property.
               </p>
             </motion.div>
           </div>

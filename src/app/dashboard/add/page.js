@@ -35,6 +35,7 @@ import {
   Search,
   Loader2,
   FileText,
+  GripVertical,
 } from 'lucide-react';
 import { onSnapshot } from 'firebase/firestore';
 
@@ -96,6 +97,8 @@ export default function AddPropertyPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [mediaError, setMediaError] = useState(null);
+  const [dragIndex, setDragIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
 
   // AgentBox state
   const [agentboxConnected, setAgentboxConnected] = useState(false);
@@ -323,6 +326,16 @@ export default function AddPropertyPage() {
 
   const removeVideo = () => {
     setVideo(null);
+  };
+
+  const reorderImages = (fromIndex, toIndex) => {
+    if (fromIndex === toIndex) return;
+    setImages(prev => {
+      const updated = [...prev];
+      const [moved] = updated.splice(fromIndex, 1);
+      updated.splice(toIndex, 0, moved);
+      return updated;
+    });
   };
 
   const handleGenerateAI = async () => {
@@ -944,9 +957,14 @@ export default function AddPropertyPage() {
                 {(video || images.length > 0) && (
                   <div className="mt-6">
                     <div className="flex items-center justify-between mb-3">
-                      <p className="text-sm font-medium text-slate-500">
-                        {images.length} photo{images.length !== 1 ? 's' : ''}{video ? ' + 1 video' : ''}
-                      </p>
+                      <div>
+                        <p className="text-sm font-medium text-slate-500">
+                          {images.length} photo{images.length !== 1 ? 's' : ''}{video ? ' + 1 video' : ''}
+                        </p>
+                        {images.length > 1 && (
+                          <p className="text-xs text-slate-400 mt-0.5">Drag to reorder. First image is the cover photo.</p>
+                        )}
+                      </div>
                       <button
                         onClick={() => document.getElementById('media-upload').click()}
                         className="text-sm font-semibold text-orange-600 hover:text-orange-700 transition-colors"
@@ -984,12 +1002,24 @@ export default function AddPropertyPage() {
                         if (!src) return null;
                         const isExternal = typeof img === 'string' && img.startsWith('http');
                         return (
-                          <div key={i} className="relative group aspect-square">
+                          <div
+                            key={i}
+                            className={`relative group aspect-square ${dragIndex === i ? 'opacity-40' : ''} ${dragOverIndex === i && dragIndex !== i ? 'ring-2 ring-orange-400 rounded-xl' : ''}`}
+                            draggable
+                            onDragStart={() => setDragIndex(i)}
+                            onDragOver={(e) => { e.preventDefault(); setDragOverIndex(i); }}
+                            onDragEnd={() => {
+                              if (dragIndex !== null && dragOverIndex !== null) reorderImages(dragIndex, dragOverIndex);
+                              setDragIndex(null);
+                              setDragOverIndex(null);
+                            }}
+                          >
                             {isExternal ? (
                               <img
                                 src={src}
                                 className="w-full h-full object-cover rounded-xl border border-slate-200"
                                 alt={`upload-${i}`}
+                                draggable={false}
                               />
                             ) : (
                               <Image
@@ -998,9 +1028,18 @@ export default function AddPropertyPage() {
                                 height={200}
                                 className="w-full h-full object-cover rounded-xl border border-slate-200"
                                 alt={`upload-${i}`}
+                                draggable={false}
                               />
                             )}
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 rounded-xl transition-colors" />
+                            <div className="absolute top-2 left-2 flex items-center gap-1">
+                              <span className="w-7 h-7 bg-black/60 text-white rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing">
+                                <GripVertical className="w-3.5 h-3.5" />
+                              </span>
+                              {i === 0 && (
+                                <span className="px-1.5 py-0.5 bg-orange-500 text-white text-[10px] font-bold rounded-md">Cover</span>
+                              )}
+                            </div>
                             <button
                               onClick={() => removeImage(i)}
                               className="absolute top-2 right-2 w-7 h-7 bg-black/60 hover:bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center"

@@ -53,8 +53,8 @@ const BUYER_EDUCATION = [
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
       </svg>
     ),
-    title: "Exclusive Access",
-    description: "These properties aren't publicly listed yet. You're seeing them before anyone else.",
+    title: "Price Opinions Wanted",
+    description: "Agents are looking for real buyer feedback. Share what you think these properties are worth.",
     color: "from-orange-500 to-amber-500"
   },
   {
@@ -63,8 +63,8 @@ const BUYER_EDUCATION = [
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     ),
-    title: "Ready to Sell",
-    description: "Every property is fully prepared. The owner is serious and testing market interest first.",
+    title: "Real Properties",
+    description: "Every property is listed by a verified agent looking for genuine buyer price opinions.",
     color: "from-emerald-500 to-teal-500"
   },
   {
@@ -73,8 +73,8 @@ const BUYER_EDUCATION = [
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
       </svg>
     ),
-    title: "First in Line",
-    description: "Register interest now and be first to inspect when the property goes to market.",
+    title: "Register Interest",
+    description: "Share your price opinion and register interest to stay updated on properties you like.",
     color: "from-violet-500 to-purple-500"
   },
   {
@@ -480,10 +480,10 @@ function ListingsContent() {
             className="text-center mb-6"
           >
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-3">
-              Exclusive <span className="bg-gradient-to-r from-orange-400 to-orange-300 bg-clip-text text-transparent">Pre-Market</span> Properties
+              Browse <span className="bg-gradient-to-r from-orange-400 to-orange-300 bg-clip-text text-transparent">Premarket</span> Properties
             </h1>
             <p className="text-lg text-slate-300 max-w-2xl mx-auto">
-              Browse properties before they go public. Get early access and be first in line.
+              Share your price opinion on properties and register your interest.
             </p>
           </motion.div>
 
@@ -986,7 +986,7 @@ function ListingsContent() {
                     <svg className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
-                    <span>Test market interest before publicly listing</span>
+                    <span>Collect real buyer price opinions</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <svg className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
