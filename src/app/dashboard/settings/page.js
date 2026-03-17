@@ -40,6 +40,7 @@ export default function SettingsPage() {
   const [avatarFile, setAvatarFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState(userData?.logoUrl || '');
   const [logoFile, setLogoFile] = useState(null);
+  const [companyName, setCompanyName] = useState(userData?.companyName || '');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -55,6 +56,7 @@ export default function SettingsPage() {
       setRoles(userData.roles || []);
       setAvatarPreview(userData.avatar || '');
       setLogoPreview(userData.logoUrl || '');
+      setCompanyName(userData.companyName || '');
     }
   }, [userData]);
 
@@ -140,6 +142,7 @@ export default function SettingsPage() {
         roles,
         avatar: avatarUrl,
         ...(logoUrl && { logoUrl }),
+        companyName: companyName.trim(),
       };
 
       await updateDoc(doc(db, 'users', user.uid), updates);
@@ -192,16 +195,16 @@ export default function SettingsPage() {
                 <img
                   src={avatarPreview}
                   alt=""
-                  className="w-20 h-20 rounded-full object-cover"
+                  className="w-20 h-20 rounded-xl object-cover"
                 />
               ) : (
-                <div className="w-20 h-20 rounded-full bg-orange-100 flex items-center justify-center">
+                <div className="w-20 h-20 rounded-xl bg-orange-100 flex items-center justify-center">
                   <User className="w-8 h-8 text-orange-600" />
                 </div>
               )}
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/40 flex items-center justify-center transition-all cursor-pointer"
+                className="absolute inset-0 rounded-xl bg-black/0 group-hover:bg-black/40 flex items-center justify-center transition-all cursor-pointer"
               >
                 <Camera className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
               </button>
@@ -226,7 +229,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Agency Logo (agents only) */}
-        {userData?.isAgent && (
+        {(userData?.isAgent || userData?.agent) && (
           <div className="bg-white rounded-xl border border-slate-200 p-6">
             <h2 className="text-sm font-semibold text-slate-900 mb-4">Agency Logo</h2>
             <div className="flex items-center gap-5">
@@ -265,6 +268,16 @@ export default function SettingsPage() {
                 </button>
                 <p className="text-xs text-slate-500 mt-1">Displayed on property listings, TV displays, and your agent profile.</p>
               </div>
+            </div>
+            <div className="mt-4">
+              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Agency Title</label>
+              <input
+                type="text"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400 transition-all"
+                placeholder="e.g. Ray White, LJ Hooker"
+              />
             </div>
           </div>
         )}

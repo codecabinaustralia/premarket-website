@@ -463,35 +463,35 @@ export default function TvDisplayPage() {
                 >
                   {agent ? (
                     <>
-                      <div className="relative flex-shrink-0">
+                      <div className="flex-shrink-0">
                         {agent.avatar ? (
                           <img
                             src={agent.avatar}
                             alt={agent.firstName || 'Agent'}
-                            className="rounded-xl object-cover w-11 h-11"
+                            className="rounded-lg object-cover w-9 h-9"
                           />
                         ) : (
-                          <div className="w-11 h-11 bg-gradient-to-br from-orange-400 to-amber-500 rounded-xl flex items-center justify-center text-white font-bold text-lg">
+                          <div className="w-9 h-9 bg-gradient-to-br from-orange-400 to-amber-500 rounded-lg flex items-center justify-center text-white font-bold text-sm">
                             {(agent.firstName?.[0] || '?').toUpperCase()}
                           </div>
                         )}
-                        {agent.logoUrl && (
-                          <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-white rounded-full shadow overflow-hidden border border-slate-200 flex items-center justify-center">
-                            <img src={agent.logoUrl} alt="" className="w-3.5 h-3.5 object-contain" />
-                          </div>
-                        )}
                       </div>
-                      <div className="min-w-0">
-                        <p className="font-bold text-slate-900 text-sm truncate leading-tight">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-slate-900 text-xs truncate leading-tight">
                           {agent.firstName} {agent.lastName}
                         </p>
                         {agent.companyName && (
-                          <p className="text-[11px] text-slate-500 truncate leading-tight">{agent.companyName}</p>
+                          <p className="text-[10px] text-slate-500 truncate leading-tight">{agent.companyName}</p>
                         )}
                       </div>
+                      {agent.logoUrl && (
+                        <div className="flex-shrink-0 ml-auto">
+                          <img src={agent.logoUrl} alt="" className="h-8 w-auto max-w-[80px] object-contain" />
+                        </div>
+                      )}
                     </>
                   ) : (
-                    <div className="h-11" />
+                    <div className="h-9" />
                   )}
                 </motion.div>
               </AnimatePresence>

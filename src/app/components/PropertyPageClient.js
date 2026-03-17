@@ -687,34 +687,32 @@ export default function PropertyPageClient() {
         <div className="relative z-10 w-full pt-8 pb-4 px-8 text-center pointer-events-auto">
           {agentData ? (
             <div className="flex flex-col items-center gap-3">
-              <div className="relative">
+              <div className="flex items-center gap-3">
                 {agentData.avatar ? (
                   <Image
                     src={agentData.avatar}
                     alt={`${agentData.firstName || 'Agent'} ${agentData.lastName || ''}`}
-                    width={100}
-                    height={100}
-                    className="rounded-2xl object-cover border-3 border-white shadow-lg w-[100px] h-[100px]"
+                    width={80}
+                    height={80}
+                    className="rounded-xl object-cover border-2 border-white shadow-lg w-[80px] h-[80px]"
                     unoptimized
                   />
                 ) : (
-                  <div className="w-[100px] h-[100px] bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl flex items-center justify-center border-3 border-white shadow-lg">
-                    <svg className="w-12 h-12 text-slate-400" fill="currentColor" viewBox="0 0 20 20">
+                  <div className="w-[80px] h-[80px] bg-gradient-to-br from-slate-100 to-slate-200 rounded-xl flex items-center justify-center border-2 border-white shadow-lg">
+                    <svg className="w-10 h-10 text-slate-400" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                     </svg>
                   </div>
                 )}
                 {agentData.logoUrl && (
-                  <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-white rounded-full shadow-md overflow-hidden border border-slate-200 flex items-center justify-center">
-                    <Image
-                      src={agentData.logoUrl}
-                      alt="Agency logo"
-                      width={24}
-                      height={24}
-                      className="object-contain"
-                      unoptimized
-                    />
-                  </div>
+                  <Image
+                    src={agentData.logoUrl}
+                    alt="Agency logo"
+                    width={56}
+                    height={56}
+                    className="w-14 h-14 rounded-xl object-contain bg-white shadow-md border border-slate-200"
+                    unoptimized
+                  />
                 )}
               </div>
               <div>
@@ -722,7 +720,7 @@ export default function PropertyPageClient() {
                   {agentData.firstName} {agentData.lastName}
                 </p>
                 {agentData.companyName && (
-                  <p className="text-sm text-slate-500">{agentData.companyName}</p>
+                  <p className="text-sm text-slate-500 font-medium">{agentData.companyName}</p>
                 )}
               </div>
             </div>
@@ -1162,34 +1160,22 @@ export default function PropertyPageClient() {
                 <div className="bg-white rounded-2xl shadow-md border border-slate-200 p-5 mb-8">
                   <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-4">Listing Agent</h3>
                   <div className="flex items-center gap-4">
-                    {/* Agent Avatar with Agency Logo */}
-                    <div className="relative flex-shrink-0">
+                    {/* Agent Avatar */}
+                    <div className="flex-shrink-0">
                       {agentData.avatar ? (
                         <Image
                           src={agentData.avatar}
                           alt={`${agentData.firstName || 'Agent'} ${agentData.lastName || ''}`}
                           width={56}
                           height={56}
-                          className="rounded-full object-cover border-2 border-slate-100"
+                          className="rounded-xl object-cover border-2 border-slate-100"
                           unoptimized
                         />
                       ) : (
-                        <div className="w-14 h-14 bg-gradient-to-br from-slate-100 to-slate-200 rounded-full flex items-center justify-center border-2 border-slate-100">
+                        <div className="w-14 h-14 bg-gradient-to-br from-slate-100 to-slate-200 rounded-xl flex items-center justify-center border-2 border-slate-100">
                           <svg className="w-7 h-7 text-slate-400" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                           </svg>
-                        </div>
-                      )}
-                      {agentData.logoUrl && (
-                        <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full shadow-md overflow-hidden border border-slate-200 flex items-center justify-center">
-                          <Image
-                            src={agentData.logoUrl}
-                            alt="Agency logo"
-                            width={20}
-                            height={20}
-                            className="object-contain"
-                            unoptimized
-                          />
                         </div>
                       )}
                     </div>
@@ -1200,7 +1186,7 @@ export default function PropertyPageClient() {
                         {agentData.firstName} {agentData.lastName}
                       </p>
                       {agentData.companyName && (
-                        <p className="text-sm text-slate-600 flex items-center gap-1">
+                        <p className="text-sm text-slate-600 font-medium flex items-center gap-1.5">
                           <svg className="w-4 h-4 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                           </svg>
@@ -1208,6 +1194,20 @@ export default function PropertyPageClient() {
                         </p>
                       )}
                     </div>
+
+                    {/* Agency Logo */}
+                    {agentData.logoUrl && (
+                      <div className="flex-shrink-0">
+                        <Image
+                          src={agentData.logoUrl}
+                          alt="Agency logo"
+                          width={48}
+                          height={48}
+                          className="w-12 h-12 rounded-xl object-contain bg-white shadow-sm border border-slate-200"
+                          unoptimized
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

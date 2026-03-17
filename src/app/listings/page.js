@@ -875,47 +875,47 @@ function ListingsContent() {
                       {/* Agent Details */}
                       {property.userId && agents[property.userId] && (
                         <div className="pt-3 border-t border-slate-100">
-                          <div className="flex items-center gap-2">
-                            <div className="relative flex-shrink-0">
+                          <div className="flex items-center gap-2.5">
+                            <div className="flex-shrink-0">
                               {agents[property.userId].avatar ? (
                                 <Image
                                   src={agents[property.userId].avatar}
                                   alt={`${agents[property.userId].firstName || 'Agent'}`}
-                                  width={32}
-                                  height={32}
-                                  className="rounded-full object-cover"
+                                  width={36}
+                                  height={36}
+                                  className="rounded-lg object-cover w-9 h-9"
                                   unoptimized
                                 />
                               ) : (
-                                <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center">
+                                <div className="w-9 h-9 bg-slate-200 rounded-lg flex items-center justify-center">
                                   <svg className="w-4 h-4 text-slate-400" fill="currentColor" viewBox="0 0 20 20">
                                     <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                                   </svg>
                                 </div>
                               )}
-                              {agents[property.userId].logoUrl && (
-                                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-white rounded-full shadow-sm overflow-hidden border border-slate-200">
-                                  <Image
-                                    src={agents[property.userId].logoUrl}
-                                    alt="Agency"
-                                    width={16}
-                                    height={16}
-                                    className="object-contain"
-                                    unoptimized
-                                  />
-                                </div>
-                              )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-xs font-medium text-slate-800 truncate">
+                              <p className="text-xs font-semibold text-slate-800 truncate">
                                 {agents[property.userId].firstName} {agents[property.userId].lastName}
                               </p>
                               {agents[property.userId].companyName && (
-                                <p className="text-xs text-slate-500 truncate">
+                                <p className="text-[11px] text-slate-500 truncate font-medium">
                                   {agents[property.userId].companyName}
                                 </p>
                               )}
                             </div>
+                            {agents[property.userId].logoUrl && (
+                              <div className="flex-shrink-0">
+                                <Image
+                                  src={agents[property.userId].logoUrl}
+                                  alt="Agency"
+                                  width={32}
+                                  height={32}
+                                  className="w-8 h-8 rounded-lg object-contain bg-white border border-slate-100"
+                                  unoptimized
+                                />
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}

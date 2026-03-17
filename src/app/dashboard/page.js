@@ -462,6 +462,7 @@ function LogoUploadModal({ show, onClose, user, userData, setUserData }) {
   const fileInputRef = useRef(null);
   const [preview, setPreview] = useState(userData?.logoUrl || '');
   const [file, setFile] = useState(null);
+  const [agencyTitle, setAgencyTitle] = useState(userData?.companyName || '');
   const [uploading, setUploading] = useState(false);
 
   if (!show) return null;
@@ -474,18 +475,25 @@ function LogoUploadModal({ show, onClose, user, userData, setUserData }) {
   };
 
   const handleUpload = async () => {
-    if (!file) return;
+    if (!file && !agencyTitle.trim()) return;
     setUploading(true);
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const res = await fetch('/api/upload-image', { method: 'POST', body: formData });
-      if (res.ok) {
-        const { url } = await res.json();
-        await updateDoc(doc(db, 'users', user.uid), { logoUrl: url });
-        setUserData((prev) => ({ ...prev, logoUrl: url }));
-        onClose();
+      const updates = {};
+      if (agencyTitle.trim()) updates.companyName = agencyTitle.trim();
+      if (file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch('/api/upload-image', { method: 'POST', body: formData });
+        if (res.ok) {
+          const { url } = await res.json();
+          updates.logoUrl = url;
+        }
       }
+      if (Object.keys(updates).length > 0) {
+        await updateDoc(doc(db, 'users', user.uid), updates);
+        setUserData((prev) => ({ ...prev, ...updates }));
+      }
+      onClose();
     } catch (err) {
       console.error('Logo upload failed:', err);
     } finally {
@@ -546,6 +554,17 @@ function LogoUploadModal({ show, onClose, user, userData, setUserData }) {
             </button>
             <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
           </div>
+
+          <div className="px-0">
+            <label className="block text-xs font-semibold text-slate-600 mb-1.5">Agency Title</label>
+            <input
+              type="text"
+              value={agencyTitle}
+              onChange={(e) => setAgencyTitle(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400 transition-all"
+              placeholder="e.g. Ray White, LJ Hooker"
+            />
+          </div>
         </div>
 
         <div className="px-6 pb-6 flex gap-3">
@@ -557,10 +576,10 @@ function LogoUploadModal({ show, onClose, user, userData, setUserData }) {
           </button>
           <button
             onClick={handleUpload}
-            disabled={!file || uploading}
+            disabled={(!file && !agencyTitle.trim()) || uploading}
             className="flex-1 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-[#e48900] to-[#c64500] rounded-xl shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            {uploading ? <><Loader2 className="w-4 h-4 animate-spin" />Uploading...</> : 'Upload Logo'}
+            {uploading ? <><Loader2 className="w-4 h-4 animate-spin" />Saving...</> : 'Save'}
           </button>
         </div>
       </motion.div>
@@ -623,7 +642,7 @@ function DashboardPage() {
   // Logo onboarding for agents without a logo
   useEffect(() => {
     if (!userData) return;
-    if (userData.isAgent && !userData.logoUrl && !localStorage.getItem('logo_onboarding_dismissed')) {
+    if ((userData.isAgent || userData.agent) && !userData.logoUrl && !localStorage.getItem('logo_onboarding_dismissed')) {
       setShowLogoModal(true);
     }
   }, [userData]);
@@ -879,7 +898,7 @@ function DashboardPage() {
 
       {/* Logo Nudge */}
       <AnimatePresence>
-        {userData?.isAgent && !userData?.logoUrl && !showLogoModal && (
+        {(userData?.isAgent || userData?.agent) && !userData?.logoUrl && !showLogoModal && (
           <LogoNudge onClick={() => setShowLogoModal(true)} />
         )}
       </AnimatePresence>
