@@ -818,13 +818,6 @@ function ListingsContent() {
                           </span>
                         )}
                       </div>
-                      {property.price && (
-                        <div className="absolute bottom-3 right-3">
-                          <span className="px-3 py-1.5 bg-white/95 backdrop-blur-sm text-slate-900 rounded-lg text-sm font-bold shadow-lg">
-                            {formatPrice(property.price)}
-                          </span>
-                        </div>
-                      )}
                       <button
                         onClick={(e) => {
                           e.preventDefault();

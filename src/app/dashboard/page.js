@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -39,6 +39,9 @@ import {
   Trash2,
   ExternalLink,
   FileText,
+  Camera,
+  Building2,
+  Loader2,
 } from 'lucide-react';
 
 function formatPrice(price) {
@@ -60,8 +63,6 @@ function Sidebar({ active, onNavigate, onSignOut, sidebarOpen, setSidebarOpen, u
     { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'archived', label: 'Archive', icon: Archive },
     { id: 'add', label: 'Add Property', icon: Plus, href: '/dashboard/add' },
-    { id: 'integrations', label: 'Integrations', icon: Plug, href: '/dashboard/integrations' },
-    { id: 'developers', label: 'Developers', icon: Code, href: '/dashboard/developers' },
     { id: 'user-manual', label: 'User Manual', icon: BookOpen, href: '/dashboard/user-manual' },
     { id: 'settings', label: 'Settings', icon: Settings, href: '/dashboard/settings' },
     ...(userData?.apiAccess?.status === 'approved'
@@ -69,6 +70,8 @@ function Sidebar({ active, onNavigate, onSignOut, sidebarOpen, setSidebarOpen, u
       : []),
     ...(userData?.superAdmin === true
       ? [
+          { id: 'integrations', label: 'Integrations', icon: Plug, href: '/dashboard/integrations' },
+          { id: 'developers', label: 'Developers', icon: Code, href: '/dashboard/developers' },
           { id: 'docs', label: 'Docs', icon: FileText, href: '/docs' },
           { id: 'admin', label: 'Admin', icon: Shield, href: '/dashboard/admin' },
         ]
@@ -454,6 +457,142 @@ function EmptyState() {
   );
 }
 
+// --- Logo Upload Modal ---
+function LogoUploadModal({ show, onClose, user, userData, setUserData }) {
+  const fileInputRef = useRef(null);
+  const [preview, setPreview] = useState(userData?.logoUrl || '');
+  const [file, setFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+
+  if (!show) return null;
+
+  const handleFileChange = (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setPreview(URL.createObjectURL(f));
+    setFile(f);
+  };
+
+  const handleUpload = async () => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/upload-image', { method: 'POST', body: formData });
+      if (res.ok) {
+        const { url } = await res.json();
+        await updateDoc(doc(db, 'users', user.uid), { logoUrl: url });
+        setUserData((prev) => ({ ...prev, logoUrl: url }));
+        onClose();
+      }
+    } catch (err) {
+      console.error('Logo upload failed:', err);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSkip = () => {
+    localStorage.setItem('logo_onboarding_dismissed', 'true');
+    onClose();
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+      onClick={handleSkip}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden"
+      >
+        <div className="px-6 pt-6 pb-4">
+          <h2 className="text-lg font-bold text-slate-900 mb-1">Add your agency logo</h2>
+          <p className="text-sm text-slate-500 mb-5">
+            Your logo will appear across the platform:
+          </p>
+          <ul className="text-xs text-slate-500 space-y-1 mb-5">
+            <li className="flex items-center gap-2"><span className="w-1 h-1 rounded-full bg-orange-400" />Property listing cards</li>
+            <li className="flex items-center gap-2"><span className="w-1 h-1 rounded-full bg-orange-400" />TV display mode</li>
+            <li className="flex items-center gap-2"><span className="w-1 h-1 rounded-full bg-orange-400" />Property detail pages</li>
+          </ul>
+
+          <div className="flex flex-col items-center gap-4 mb-5">
+            <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+              {preview ? (
+                <img src={preview} alt="Logo preview" className="w-24 h-24 rounded-xl object-cover" />
+              ) : (
+                <div className="w-24 h-24 rounded-xl bg-slate-100 flex items-center justify-center">
+                  <Building2 className="w-10 h-10 text-slate-300" />
+                </div>
+              )}
+              <div className="absolute inset-0 rounded-xl bg-black/0 group-hover:bg-black/40 flex items-center justify-center transition-all">
+                <Camera className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+            </div>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="text-sm font-semibold text-orange-600 hover:text-orange-700"
+            >
+              {preview ? 'Choose different image' : 'Select logo image'}
+            </button>
+            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+          </div>
+        </div>
+
+        <div className="px-6 pb-6 flex gap-3">
+          <button
+            onClick={handleSkip}
+            className="flex-1 py-2.5 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
+          >
+            Skip for now
+          </button>
+          <button
+            onClick={handleUpload}
+            disabled={!file || uploading}
+            className="flex-1 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-[#e48900] to-[#c64500] rounded-xl shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {uploading ? <><Loader2 className="w-4 h-4 animate-spin" />Uploading...</> : 'Upload Logo'}
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// --- Logo Nudge Pill ---
+function LogoNudge({ onClick }) {
+  return (
+    <>
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes logo-nudge-glow {
+          0%, 100% { box-shadow: 0 4px 14px rgba(234, 137, 0, 0.2); }
+          50% { box-shadow: 0 4px 20px rgba(234, 137, 0, 0.45); }
+        }
+      `}} />
+      <motion.button
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 20 }}
+        onClick={onClick}
+        className="fixed bottom-6 right-6 z-40 flex items-center gap-2 px-4 py-2.5 bg-white border border-orange-200 rounded-full shadow-lg hover:shadow-orange-500/40 transition-all cursor-pointer"
+        style={{ animation: 'logo-nudge-glow 2s ease-in-out infinite' }}
+      >
+        <Building2 className="w-4 h-4 text-orange-500" />
+        <span className="text-sm font-semibold text-slate-700">Add logo</span>
+      </motion.button>
+    </>
+  );
+}
+
 // --- Main Dashboard ---
 export default function DashboardPageWrapper() {
   return (
@@ -468,7 +607,7 @@ export default function DashboardPageWrapper() {
 }
 
 function DashboardPage() {
-  const { user, userData, loading, signOut } = useAuth();
+  const { user, userData, setUserData, loading, signOut } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [properties, setProperties] = useState([]);
@@ -479,6 +618,15 @@ function DashboardPage() {
   const [toggling, setToggling] = useState(false);
   const [archiving, setArchiving] = useState(false);
   const [successModal, setSuccessModal] = useState(null); // 'created' | 'updated' | null
+  const [showLogoModal, setShowLogoModal] = useState(false);
+
+  // Logo onboarding for agents without a logo
+  useEffect(() => {
+    if (!userData) return;
+    if (userData.isAgent && !userData.logoUrl && !localStorage.getItem('logo_onboarding_dismissed')) {
+      setShowLogoModal(true);
+    }
+  }, [userData]);
 
   // Show success modal from URL params
   useEffect(() => {
@@ -715,6 +863,26 @@ function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Logo Upload Modal */}
+      <AnimatePresence>
+        {showLogoModal && (
+          <LogoUploadModal
+            show={showLogoModal}
+            onClose={() => setShowLogoModal(false)}
+            user={user}
+            userData={userData}
+            setUserData={setUserData}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Logo Nudge */}
+      <AnimatePresence>
+        {userData?.isAgent && !userData?.logoUrl && !showLogoModal && (
+          <LogoNudge onClick={() => setShowLogoModal(true)} />
+        )}
+      </AnimatePresence>
 
       {/* Success Modal */}
       <AnimatePresence>

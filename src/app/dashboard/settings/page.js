@@ -16,6 +16,7 @@ import {
   KeyRound,
   Check,
   Loader2,
+  Building2,
 } from 'lucide-react';
 
 const ROLES = [
@@ -29,6 +30,7 @@ export default function SettingsPage() {
   const { user, userData, setUserData, loading } = useAuth();
   const router = useRouter();
   const fileInputRef = useRef(null);
+  const logoInputRef = useRef(null);
 
   const [firstName, setFirstName] = useState(userData?.firstName || '');
   const [lastName, setLastName] = useState(userData?.lastName || '');
@@ -36,6 +38,8 @@ export default function SettingsPage() {
   const [roles, setRoles] = useState(userData?.roles || []);
   const [avatarPreview, setAvatarPreview] = useState(userData?.avatar || '');
   const [avatarFile, setAvatarFile] = useState(null);
+  const [logoPreview, setLogoPreview] = useState(userData?.logoUrl || '');
+  const [logoFile, setLogoFile] = useState(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -50,6 +54,7 @@ export default function SettingsPage() {
       setEmail(userData.email || user?.email || '');
       setRoles(userData.roles || []);
       setAvatarPreview(userData.avatar || '');
+      setLogoPreview(userData.logoUrl || '');
     }
   }, [userData]);
 
@@ -74,6 +79,13 @@ export default function SettingsPage() {
     const previewUrl = URL.createObjectURL(file);
     setAvatarPreview(previewUrl);
     setAvatarFile(file);
+  };
+
+  const handleLogoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoPreview(URL.createObjectURL(file));
+    setLogoFile(file);
   };
 
   const toggleRole = (roleId) => {
@@ -106,16 +118,34 @@ export default function SettingsPage() {
         setUploadingAvatar(false);
       }
 
+      let logoUrl = userData?.logoUrl || '';
+
+      // Upload logo if changed
+      if (logoFile) {
+        const logoFormData = new FormData();
+        logoFormData.append('file', logoFile);
+        const logoRes = await fetch('/api/upload-image', {
+          method: 'POST',
+          body: logoFormData,
+        });
+        if (logoRes.ok) {
+          const logoData = await logoRes.json();
+          logoUrl = logoData.url;
+        }
+      }
+
       const updates = {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         roles,
         avatar: avatarUrl,
+        ...(logoUrl && { logoUrl }),
       };
 
       await updateDoc(doc(db, 'users', user.uid), updates);
       setUserData((prev) => ({ ...prev, ...updates }));
       setAvatarFile(null);
+      setLogoFile(null);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {
@@ -194,6 +224,50 @@ export default function SettingsPage() {
             </div>
           </div>
         </div>
+
+        {/* Agency Logo (agents only) */}
+        {userData?.isAgent && (
+          <div className="bg-white rounded-xl border border-slate-200 p-6">
+            <h2 className="text-sm font-semibold text-slate-900 mb-4">Agency Logo</h2>
+            <div className="flex items-center gap-5">
+              <div className="relative group">
+                {logoPreview ? (
+                  <img
+                    src={logoPreview}
+                    alt="Agency logo"
+                    className="w-20 h-20 rounded-xl object-cover"
+                  />
+                ) : (
+                  <div className="w-20 h-20 rounded-xl bg-slate-100 flex items-center justify-center">
+                    <Building2 className="w-8 h-8 text-slate-400" />
+                  </div>
+                )}
+                <button
+                  onClick={() => logoInputRef.current?.click()}
+                  className="absolute inset-0 rounded-xl bg-black/0 group-hover:bg-black/40 flex items-center justify-center transition-all cursor-pointer"
+                >
+                  <Camera className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                </button>
+                <input
+                  ref={logoInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoChange}
+                  className="hidden"
+                />
+              </div>
+              <div>
+                <button
+                  onClick={() => logoInputRef.current?.click()}
+                  className="text-sm font-semibold text-orange-600 hover:text-orange-700 transition-colors"
+                >
+                  Change logo
+                </button>
+                <p className="text-xs text-slate-500 mt-1">Displayed on property listings, TV displays, and your agent profile.</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Personal Info */}
         <div className="bg-white rounded-xl border border-slate-200 p-6">
