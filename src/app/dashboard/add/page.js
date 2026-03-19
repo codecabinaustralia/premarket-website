@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Image from 'next/image';
+
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import { db, storage } from '../../firebase/clientApp';
@@ -214,14 +214,16 @@ export default function AddPropertyPage() {
     setAbSearch('');
   };
 
-  // Revoke object URLs on unmount
+  // Revoke object URLs on unmount only (not on every reorder)
+  const imagesRef = useRef(images);
+  imagesRef.current = images;
   useEffect(() => {
     return () => {
-      images.forEach((f) => {
+      imagesRef.current.forEach((f) => {
         if (typeof f !== 'string' && f?.preview) URL.revokeObjectURL(f.preview);
       });
     };
-  }, [images]);
+  }, []);
 
   const videoPreviewUrl = useMemo(() => {
     if (!video) return null;
@@ -465,10 +467,18 @@ export default function AddPropertyPage() {
         }
       }
 
-      // Mark upload complete
+      // Mark upload complete, flag for compression
       await updateDoc(doc(db, 'properties', propertyId), {
         imageUploadProgress: { uploaded: total, total, inProgress: false },
+        imagesCompressed: false,
       });
+
+      // Trigger server-side compression (fire-and-forget)
+      fetch('/api/images/compress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ propertyId }),
+      }).catch(err => console.error('Compress trigger failed:', err));
     } catch (err) {
       console.error('Background upload failed:', err);
     }
@@ -1014,23 +1024,12 @@ export default function AddPropertyPage() {
                               setDragOverIndex(null);
                             }}
                           >
-                            {isExternal ? (
-                              <img
-                                src={src}
-                                className="w-full h-full object-cover rounded-xl border border-slate-200"
-                                alt={`upload-${i}`}
-                                draggable={false}
-                              />
-                            ) : (
-                              <Image
-                                src={src}
-                                width={200}
-                                height={200}
-                                className="w-full h-full object-cover rounded-xl border border-slate-200"
-                                alt={`upload-${i}`}
-                                draggable={false}
-                              />
-                            )}
+                            <img
+                              src={src}
+                              className="w-full h-full object-cover rounded-xl border border-slate-200"
+                              alt={`upload-${i}`}
+                              draggable={false}
+                            />
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 rounded-xl transition-colors" />
                             <div className="absolute top-2 left-2 flex items-center gap-1">
                               <span className="w-7 h-7 bg-black/60 text-white rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing">

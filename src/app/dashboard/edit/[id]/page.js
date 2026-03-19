@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Image from 'next/image';
+
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../../../context/AuthContext';
 import { db, storage } from '../../../firebase/clientApp';
@@ -114,7 +114,21 @@ export default function EditPropertyPage() {
         setFormattedAddress(p.formattedAddress || '');
         setAddress(p.address || '');
         setLocation(p.location || null);
-        setType(p.propertyType || null);
+        // Normalize propertyType: could be a number (1-5), a string number ("1"-"5"), or a string name ("House", "Apartment", etc.)
+        const rawType = p.propertyType;
+        if (rawType != null) {
+          const num = Number(rawType);
+          if (!isNaN(num) && num >= 1 && num <= homeTypes.length) {
+            setType(num);
+          } else if (typeof rawType === 'string') {
+            const idx = homeTypes.findIndex(t => t.toLowerCase() === rawType.toLowerCase());
+            setType(idx !== -1 ? idx + 1 : null);
+          } else {
+            setType(null);
+          }
+        } else {
+          setType(null);
+        }
         setPriceRaw(String(p.price || '').replace(/[^0-9]/g, ''));
         setBedrooms(p.bedrooms != null ? String(p.bedrooms) : '');
         setBathrooms(p.bathrooms != null ? String(p.bathrooms) : '');
@@ -143,14 +157,16 @@ export default function EditPropertyPage() {
     loadProperty();
   }, [user, propertyId, router]);
 
-  // Revoke object URLs on unmount
+  // Revoke object URLs on unmount only (not on every reorder)
+  const imagesRef = useRef(images);
+  imagesRef.current = images;
   useEffect(() => {
     return () => {
-      images.forEach((f) => {
+      imagesRef.current.forEach((f) => {
         if (typeof f !== 'string' && f?.preview) URL.revokeObjectURL(f.preview);
       });
     };
-  }, [images]);
+  }, []);
 
   const videoPreviewUrl = useMemo(() => {
     if (!video) return null;
@@ -393,11 +409,19 @@ export default function EditPropertyPage() {
         }
       }
 
-      // Mark complete
+      // Mark complete, flag for compression
       if (newFiles.length > 0) {
         await updateDoc(doc(db, 'properties', propId), {
           imageUploadProgress: { uploaded: newFiles.length, total: newFiles.length, inProgress: false },
+          imagesCompressed: false,
         });
+
+        // Trigger server-side compression (fire-and-forget)
+        fetch('/api/images/compress', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ propertyId: propId }),
+        }).catch(err => console.error('Compress trigger failed:', err));
       }
     } catch (err) {
       console.error('Background upload failed:', err);
@@ -775,13 +799,10 @@ export default function EditPropertyPage() {
                               setDragOverIndex(null);
                             }}
                           >
-                            <Image
+                            <img
                               src={src}
-                              width={200}
-                              height={200}
                               className="w-full h-full object-cover rounded-xl border border-slate-200"
                               alt={`upload-${i}`}
-                              unoptimized
                               draggable={false}
                             />
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 rounded-xl transition-colors" />

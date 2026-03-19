@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase/clientApp';
-import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, updateDoc, onSnapshot } from 'firebase/firestore';
 import {
   LayoutDashboard,
   Home,
@@ -666,22 +666,22 @@ function DashboardPage() {
     }
   }, [user, loading, router]);
 
-  // Fetch properties
+  // Real-time properties listener
   useEffect(() => {
     if (!user) return;
-    const fetchProperties = async () => {
-      setPropertiesLoading(true);
-      try {
-        const q = query(collection(db, 'properties'), where('userId', '==', user.uid));
-        const snapshot = await getDocs(q);
-        const props = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-        setProperties(props);
-
-        // Fetch buyer opinions count
+    setPropertiesLoading(true);
+    const q = query(collection(db, 'properties'), where('userId', '==', user.uid));
+    let isFirst = true;
+    const unsub = onSnapshot(q, async (snapshot) => {
+      const props = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      setProperties(props);
+      if (isFirst) {
+        setPropertiesLoading(false);
+        isFirst = false;
+        // Fetch buyer opinions count once
         const propertyIds = props.map(p => p.id);
         if (propertyIds.length > 0) {
           let totalOpinions = 0;
-          // Firestore 'in' queries limited to 30 items per batch
           for (let i = 0; i < propertyIds.length; i += 30) {
             const batch = propertyIds.slice(i, i + 30);
             const offersSnap = await getDocs(
@@ -691,13 +691,12 @@ function DashboardPage() {
           }
           setOpinionsCount(totalOpinions);
         }
-      } catch (err) {
-        console.error('Error fetching properties:', err);
-      } finally {
-        setPropertiesLoading(false);
       }
-    };
-    fetchProperties();
+    }, (err) => {
+      console.error('Error fetching properties:', err);
+      setPropertiesLoading(false);
+    });
+    return () => unsub();
   }, [user]);
 
   const handleSignOut = async () => {
