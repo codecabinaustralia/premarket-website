@@ -39,6 +39,7 @@ import {
   MousePointer,
   Type,
   Globe,
+  Maximize,
 } from 'lucide-react';
 
 function formatDate(ts) {
@@ -966,10 +967,19 @@ function DisplaysTab({ user }) {
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <button
                     onClick={() => window.open(`/tv/${display.id}`, '_blank')}
-                    className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                    title="Preview"
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                    title="Live view — fullscreen for TV/iPad"
                   >
-                    <ExternalLink className="w-4 h-4" />
+                    <Maximize className="w-3.5 h-3.5" />
+                    Live
+                  </button>
+                  <button
+                    onClick={() => window.open(`/tv/${display.id}?preview=true`, '_blank')}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+                    title="Preview — mock device frame"
+                  >
+                    <Monitor className="w-3.5 h-3.5" />
+                    Preview
                   </button>
                   <button
                     onClick={() => openEditForm(display)}

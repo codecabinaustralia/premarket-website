@@ -56,11 +56,22 @@ export async function GET(request) {
       .orderBy('createdAt', 'desc')
       .get();
 
+    const EXPIRY_MS = 72 * 60 * 60 * 1000;
+    const now = Date.now();
+
     const links = snapshot.docs.map((doc) => {
       const data = doc.data();
+      const createdAtDate = data.createdAt?.toDate?.();
+      const createdAt = createdAtDate?.toISOString() || null;
+      const expired = createdAtDate ? now - createdAtDate.getTime() > EXPIRY_MS : false;
+      const expiresAt = createdAtDate
+        ? new Date(createdAtDate.getTime() + EXPIRY_MS).toISOString()
+        : null;
       return {
         ...data,
-        createdAt: data.createdAt?.toDate?.()?.toISOString() || null,
+        createdAt,
+        expired,
+        expiresAt,
       };
     });
 

@@ -21,6 +21,7 @@ import {
   MousePointer,
   Type,
   Globe,
+  RefreshCw,
 } from 'lucide-react';
 
 function formatDate(iso) {
@@ -71,6 +72,7 @@ export default function DocsAnalyticsPage() {
   const [selectedSession, setSelectedSession] = useState(null);
   const [copiedToken, setCopiedToken] = useState(null);
   const [deactivating, setDeactivating] = useState(null);
+  const [resetting, setResetting] = useState(null);
 
   // Auth guard
   useEffect(() => {
@@ -138,6 +140,25 @@ export default function DocsAnalyticsPage() {
     navigator.clipboard.writeText(`https://premarket.homes/docs?t=${token}`);
     setCopiedToken(token);
     setTimeout(() => setCopiedToken(null), 2000);
+  };
+
+  const handleReset = async (token) => {
+    setResetting(token);
+    try {
+      await fetch(`/api/docs/links/${token}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid: user.uid }),
+      });
+      await fetchLinks();
+      if (selectedLink?.token === token) {
+        setSelectedLink((prev) => prev ? { ...prev, expired: false } : prev);
+      }
+    } catch (err) {
+      console.error('Failed to reset:', err);
+    } finally {
+      setResetting(null);
+    }
   };
 
   const handleDeactivate = async (token) => {
@@ -215,13 +236,31 @@ export default function DocsAnalyticsPage() {
                     </h2>
                     <p className="text-xs text-slate-500 font-mono mt-0.5">{selectedLink.token}</p>
                   </div>
-                  <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${
-                    selectedLink.active
-                      ? 'bg-emerald-100 text-emerald-700'
-                      : 'bg-red-100 text-red-700'
-                  }`}>
-                    {selectedLink.active ? 'Active' : 'Deactivated'}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {selectedLink.expired && selectedLink.active && (
+                      <button
+                        onClick={() => handleReset(selectedLink.token)}
+                        disabled={resetting === selectedLink.token}
+                        className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors disabled:opacity-50"
+                      >
+                        {resetting === selectedLink.token ? (
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-amber-600" />
+                        ) : (
+                          <RefreshCw className="w-3 h-3" />
+                        )}
+                        Reset
+                      </button>
+                    )}
+                    <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${
+                      !selectedLink.active
+                        ? 'bg-red-100 text-red-700'
+                        : selectedLink.expired
+                          ? 'bg-amber-100 text-amber-700'
+                          : 'bg-emerald-100 text-emerald-700'
+                    }`}>
+                      {!selectedLink.active ? 'Deactivated' : selectedLink.expired ? 'Expired' : 'Active'}
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -324,11 +363,13 @@ export default function DocsAnalyticsPage() {
                           {link.label || 'Unlabelled'}
                         </p>
                         <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${
-                          link.active
-                            ? 'bg-emerald-100 text-emerald-700'
-                            : 'bg-red-100 text-red-700'
+                          !link.active
+                            ? 'bg-red-100 text-red-700'
+                            : link.expired
+                              ? 'bg-amber-100 text-amber-700'
+                              : 'bg-emerald-100 text-emerald-700'
                         }`}>
-                          {link.active ? 'Active' : 'Deactivated'}
+                          {!link.active ? 'Deactivated' : link.expired ? 'Expired' : 'Active'}
                         </span>
                       </div>
                       <p className="text-xs text-slate-400 font-mono">{link.token}</p>
@@ -350,6 +391,20 @@ export default function DocsAnalyticsPage() {
                           <Copy className="w-4 h-4 text-slate-400" />
                         )}
                       </button>
+                      {link.expired && link.active && (
+                        <button
+                          onClick={() => handleReset(link.token)}
+                          disabled={resetting === link.token}
+                          className="p-2 rounded-lg text-amber-500 hover:bg-amber-50 hover:text-amber-700 transition-colors disabled:opacity-50"
+                          title="Reset expiry"
+                        >
+                          {resetting === link.token ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-amber-500" />
+                          ) : (
+                            <RefreshCw className="w-4 h-4" />
+                          )}
+                        </button>
+                      )}
                       {link.active && (
                         <button
                           onClick={() => handleDeactivate(link.token)}

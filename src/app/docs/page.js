@@ -27,6 +27,11 @@ import {
   BarChart3,
   Copy,
   Check,
+  Lock,
+  TrendingUp,
+  AlertCircle,
+  Zap,
+  DollarSign,
 } from 'lucide-react';
 
 /* ─── Sidebar Navigation Structure ─── */
@@ -36,6 +41,15 @@ const NAV_SECTIONS = [
     items: [
       { id: 'introduction', label: 'Introduction', icon: BookOpen },
       { id: 'how-it-works', label: 'How It Works', icon: List },
+    ],
+  },
+  {
+    group: 'Solutions',
+    items: [
+      { id: 'price-education', label: 'Price Education', icon: TrendingUp },
+      { id: 'the-problem', label: 'The Problem', icon: AlertCircle },
+      { id: 'the-data-engine', label: 'The Data Engine', icon: Zap },
+      { id: 'the-business', label: 'The Business', icon: DollarSign },
     ],
   },
   {
@@ -130,7 +144,7 @@ function DocsGate() {
   const router = useRouter();
   const token = searchParams.get('t');
 
-  const [accessState, setAccessState] = useState('checking'); // checking | granted | denied
+  const [accessState, setAccessState] = useState('checking'); // checking | granted | denied | expired
   const [isTokenAccess, setIsTokenAccess] = useState(false);
 
   useEffect(() => {
@@ -153,6 +167,8 @@ function DocsGate() {
           if (data.valid) {
             setAccessState('granted');
             setIsTokenAccess(true);
+          } else if (data.expired) {
+            setAccessState('expired');
           } else {
             setAccessState('denied');
           }
@@ -173,6 +189,26 @@ function DocsGate() {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="animate-spin rounded-full h-10 w-10 border-b-4 border-orange-500" />
+      </div>
+    );
+  }
+
+  if (accessState === 'expired') {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center max-w-sm px-6">
+          <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Lock className="w-6 h-6 text-amber-600" />
+          </div>
+          <h1 className="text-xl font-bold text-slate-900 mb-2">Link Expired</h1>
+          <p className="text-slate-500 text-sm mb-6">This link has expired after 72 hours. Please request a new link to access the documentation.</p>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-800 transition-colors"
+          >
+            Go to Homepage
+          </Link>
+        </div>
       </div>
     );
   }
@@ -642,22 +678,34 @@ function DocsContent({ isAdmin, isTokenAccess, linkToken, user }) {
               Premarket Documentation
             </h1>
             <p className="text-slate-600 leading-relaxed mb-4">
-              Premarket is a platform that brings transparency to the pre-listing phase of real estate. It connects listing agents, sellers, buyers, and buyer&apos;s agents before a property goes to market — replacing guesswork and gut feel with real buyer evidence.
+              Premarket is a platform built on a single idea: <span className="font-medium text-slate-900">a home is worth what a buyer would pay for it</span> — not what the house across the street sold for two months ago. We call this Price Education backed by data, and it&apos;s the foundation of everything the platform does.
             </p>
             <p className="text-slate-600 leading-relaxed mb-4">
-              The platform captures something that has never existed in real estate before: forward-looking intent data. Every interaction — every price opinion submitted, every property saved, every interest registered — creates a live signal about where the market is heading, not where it&apos;s been.
+              The platform connects listing agents, sellers, buyers, and buyer&apos;s agents before a property goes to market — replacing guesswork, gut feel, and backward-looking estimates with live buyer evidence. Every interaction — every price opinion submitted, every property saved, every interest registered — creates a real-time signal about what the market would pay today, not what it paid last quarter.
             </p>
             <p className="text-slate-600 leading-relaxed mb-4">
-              This documentation covers how each stakeholder interacts with the platform, the product mechanics that drive value for all participants, and the Market Intelligence API for developers building on top of Premarket&apos;s data layer.
+              This documentation covers the{' '}
+              <button onClick={() => scrollTo('price-education')} className="text-orange-600 hover:text-orange-700 underline">
+                problem Premarket solves
+              </button>
+              , the{' '}
+              <button onClick={() => scrollTo('the-data-engine')} className="text-orange-600 hover:text-orange-700 underline">
+                data engine
+              </button>
+              {' '}that powers it, how each stakeholder interacts with the platform, the product mechanics that drive value for all participants, and the Market Intelligence API for developers building on top of Premarket&apos;s data layer.
             </p>
 
             <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg mt-6">
               <p className="text-sm text-blue-800">
                 <span className="font-semibold">New to Premarket?</span> Start with{' '}
+                <button onClick={() => scrollTo('price-education')} className="underline hover:no-underline">
+                  Price Education
+                </button>{' '}
+                to understand the problem we solve, or jump to{' '}
                 <button onClick={() => scrollTo('how-it-works')} className="underline hover:no-underline">
                   How It Works
                 </button>{' '}
-                for a quick overview, then explore the user journey for your role.
+                for a quick overview of the process.
               </p>
             </div>
           </section>
@@ -687,11 +735,11 @@ function DocsContent({ isAdmin, isTokenAccess, linkToken, user }) {
                 },
                 {
                   title: 'Live vendor report builds automatically',
-                  desc: 'Premarket compiles engagement into a live report: price opinion distribution, median buyer value, interest signals, and activity trends. The seller receives a data-driven view of their property\'s market position — updated in real time.',
+                  desc: 'Premarket compiles engagement into a live report: price opinion distribution, median buyer value, interest signals, and activity trends. This is price education backed by data — the seller sees what real buyers would actually pay, not what an algorithm estimates based on past sales.',
                 },
                 {
-                  title: 'Agent progresses the sale with evidence',
-                  desc: 'Armed with buyer evidence instead of estimates, the agent can secure the listing, recommend a realistic guide price, negotiate off-market, or transition to a full marketing campaign. The conversation shifts from agent opinion vs seller expectation to buyer evidence.',
+                  title: 'Agent educates on price with evidence',
+                  desc: 'Armed with buyer data instead of estimates, the agent can confidently educate the seller on price. The conversation shifts from "trust my opinion" to "look at what buyers are telling us." This is the core of what Premarket enables — credible, evidence-based price education that aligns expectations with reality.',
                 },
               ].map((step, i) => (
                 <li key={i} className="flex gap-4">
@@ -710,19 +758,334 @@ function DocsContent({ isAdmin, isTokenAccess, linkToken, user }) {
           <hr className="border-slate-200 my-12" />
 
           {/* ════════════════════════════════════════ */}
+          {/* SOLUTIONS                                */}
+          {/* ════════════════════════════════════════ */}
+
+          {/* Price Education — hero-style header */}
+          <section id="price-education" className="scroll-mt-20">
+            <div className="rounded-xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8 sm:p-10 mb-10 relative overflow-hidden">
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-orange-500/10 via-transparent to-transparent" />
+              <div className="relative">
+                <p className="text-xs font-semibold text-orange-400 uppercase tracking-wider mb-3">Solutions</p>
+                <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
+                  Price Education backed by data.
+                </h2>
+                <p className="text-slate-300 leading-relaxed max-w-2xl">
+                  Real estate has a pricing problem. Sellers have expectations. Agents have opinions. Buyers have budgets. Until now, there was no single source of truth to align them. Premarket changes that by replacing gut feel and guesswork with live buyer evidence — the only data that actually determines what a home is worth.
+                </p>
+              </div>
+            </div>
+
+            <p className="text-slate-600 leading-relaxed mb-4">
+              The most valuable thing an agent can do for a seller is not find a buyer — it&apos;s educate them on price. But price education has always been built on shaky foundations: comparable sales that may no longer be relevant, algorithm-driven estimates that extrapolate from the past, and ultimately, the agent&apos;s professional judgement — which the seller may or may not trust.
+            </p>
+            <p className="text-slate-600 leading-relaxed mb-4">
+              Premarket creates a fundamentally different kind of price education. One built on what buyers would actually pay <span className="font-medium text-slate-900">right now</span>, for <span className="font-medium text-slate-900">this specific property</span>, based on <span className="font-medium text-slate-900">their direct input</span>. Not a statistical model. Not a prediction. Live market evidence from the people who would write the cheque.
+            </p>
+            <p className="text-slate-600 leading-relaxed">
+              When the pricing conversation is backed by buyer data rather than agent opinion, everything changes. The awkward conversations disappear. Unrealistic expectations get corrected by evidence, not arguments. And the agent transforms from someone with an opinion into someone with proof.
+            </p>
+          </section>
+
+          <hr className="border-slate-200 my-12" />
+
+          {/* The Problem */}
+          <section id="the-problem" className="scroll-mt-20">
+            <h2 className="text-2xl font-bold text-slate-900 mb-4">The Problem</h2>
+            <p className="text-lg text-slate-500 mb-6">The pricing conversation in real estate is broken — and everyone knows it.</p>
+
+            <h3 className="text-lg font-semibold text-slate-900 mb-3">Unrealistic expectations</h3>
+            <p className="text-slate-600 leading-relaxed mb-4">
+              Every agent has been in this situation. A seller is convinced their home is worth $1.5 million because their neighbour sold for $1.4 million six months ago — and their kitchen is nicer. The agent knows the market has shifted. Interest rates have moved. Buyer sentiment has changed. But the seller has anchored to a number, and no amount of professional advice will shift it.
+            </p>
+            <p className="text-slate-600 leading-relaxed mb-6">
+              This isn&apos;t a rare edge case. It&apos;s the default dynamic in the majority of listing conversations. Sellers overestimate because they&apos;re emotionally invested, because they&apos;ve seen headlines, because they&apos;ve checked an online estimate, or simply because they need a certain number to make their next move work. The agent is stuck trying to correct expectations using the same tools the seller has already seen — and didn&apos;t believe.
+            </p>
+
+            <h3 className="text-lg font-semibold text-slate-900 mb-3">The awkward conversation</h3>
+            <p className="text-slate-600 leading-relaxed mb-4">
+              The hardest part of being a listing agent isn&apos;t finding buyers. It&apos;s the conversation where you tell a seller their home is worth less than they think. It&apos;s adversarial by nature — the agent appears to be arguing <em>against</em> the seller&apos;s interest, even when they&apos;re trying to protect it.
+            </p>
+            <p className="text-slate-600 leading-relaxed mb-6">
+              Agents lose listings over this conversation. They either tell the truth and lose to an agent who inflates the number, or they agree to an unrealistic price and spend weeks watching the campaign fail. Neither outcome is good for anyone. The root cause is always the same: the agent has no independent, credible evidence to support their pricing recommendation. It&apos;s their word against the seller&apos;s hopes.
+            </p>
+
+            <h3 className="text-lg font-semibold text-slate-900 mb-3">Static photos collecting dust, not data</h3>
+            <p className="text-slate-600 leading-relaxed mb-4">
+              Walk past any real estate office and look at the window. Static photos of properties. No engagement data. No buyer feedback. No indication of demand. The same image sits there for weeks — a poster in a glass case, doing nothing.
+            </p>
+            <p className="text-slate-600 leading-relaxed mb-6">
+              The same is true of most digital advertising. A property is listed with photos and a price guide. Buyers either enquire or they don&apos;t. There&apos;s no middle ground — no mechanism to capture the buyer who looked, considered, and had a view on price but wasn&apos;t ready to call. That buyer&apos;s insight is lost entirely. Every impression that doesn&apos;t convert to an enquiry is wasted. The photos collect views, not intelligence. Dust, not data.
+            </p>
+
+            <h3 className="text-lg font-semibold text-slate-900 mb-3">Backward-looking data in a forward-moving market</h3>
+            <p className="text-slate-600 leading-relaxed mb-4">
+              The industry&apos;s current answer to price education is historical data. CoreLogic, Pricefinder, RPData — they all work the same way. They take past transactions, apply statistical models, and project a current estimate. The house down the street sold for $X three months ago, so this one should be worth approximately $Y.
+            </p>
+            <p className="text-slate-600 leading-relaxed mb-4">
+              The fundamental flaw is obvious: <span className="font-medium text-slate-900">they&apos;re using the past to predict the future.</span> In a stable market, this works reasonably well. But markets aren&apos;t stable. Interest rates move. Buyer sentiment shifts. Supply changes. Seasonal patterns disrupt. By the time a comparable sale is recorded, settled, and published, the market conditions that produced it no longer exist.
+            </p>
+
+            <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg mb-6">
+              <p className="text-sm text-red-800">
+                <span className="font-semibold">The core problem.</span> A home is worth what a buyer would pay for it — not what the house across the street sold for two months ago. The entire industry prices property based on lagging indicators, and then wonders why seller expectations are misaligned with market reality.
+              </p>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="rounded-lg border border-slate-200 p-5">
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Current approach</p>
+                <div className="space-y-2.5">
+                  {[
+                    'Comparable sales from months ago',
+                    'Statistical models extrapolating trends',
+                    'Agent opinion vs seller expectation',
+                    'Static advertising with zero feedback',
+                    'No data captured from non-enquiring buyers',
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-start gap-2.5">
+                      <X className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm text-slate-600">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-lg border-2 border-orange-200 bg-orange-50/30 p-5">
+                <p className="text-xs font-semibold text-orange-600 uppercase tracking-wider mb-3">Premarket approach</p>
+                <div className="space-y-2.5">
+                  {[
+                    'Live buyer price opinions in real time',
+                    'Direct data from qualified buyers',
+                    'Evidence replaces opinion in conversations',
+                    'Every view generates usable data',
+                    'Non-enquiring buyers still contribute value',
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-start gap-2.5">
+                      <Check className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm text-slate-700">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <hr className="border-slate-200 my-12" />
+
+          {/* The Data Engine */}
+          <section id="the-data-engine" className="scroll-mt-20">
+            <h2 className="text-2xl font-bold text-slate-900 mb-2">The Data Engine</h2>
+            <p className="text-lg text-slate-500 mb-6">Live buyer feedback — the only real-time valuation signal in real estate.</p>
+
+            <p className="text-slate-600 leading-relaxed mb-4">
+              At the centre of Premarket is a data warehouse that operates fundamentally differently from every other real estate data provider. It doesn&apos;t scrape public listings. It doesn&apos;t wait for settlements to record a price. It doesn&apos;t extrapolate from historical trends.
+            </p>
+            <p className="text-slate-600 leading-relaxed mb-6">
+              <span className="font-medium text-slate-900">It captures what buyers would pay, right now, for a specific property, directly from the buyers themselves.</span>
+            </p>
+
+            <h3 className="text-lg font-semibold text-slate-900 mb-3">How the engine works</h3>
+            <p className="text-slate-600 leading-relaxed mb-4">
+              When an agent creates a pre-market campaign and distributes it to their buyer network, every interaction generates a data point. A buyer views the property — that&apos;s a signal. They save it — stronger signal. They submit a price opinion — that&apos;s a direct valuation from a real market participant. They register interest — that&apos;s confirmed demand.
+            </p>
+            <p className="text-slate-600 leading-relaxed mb-6">
+              Aggregate these signals across every campaign, every property, every suburb, and you have something that has never existed before in real estate: a live, continuously updating picture of buyer demand and property value, sourced directly from the people who would actually buy.
+            </p>
+
+            <div className="rounded-xl bg-gradient-to-br from-blue-50 to-slate-50 border border-blue-100 p-6 sm:p-8 mb-8">
+              <h3 className="text-lg font-bold text-slate-900 mb-4">Why this is more accurate than CoreLogic</h3>
+              <p className="text-slate-600 leading-relaxed mb-4">
+                CoreLogic is the industry standard. Agents use it. Banks use it. It powers automated valuations across Australia. But CoreLogic has an inherent limitation: <span className="font-medium text-slate-900">it can only tell you what already happened.</span>
+              </p>
+              <p className="text-slate-600 leading-relaxed mb-4">
+                CoreLogic collects settlement data — properties that sold, the price they sold for, and the characteristics of those properties. It then applies hedonic regression models, median price calculations, and automated valuation methodologies to estimate what a similar property might be worth today. It&apos;s backward-looking by design. It uses the past to predict the future.
+              </p>
+              <p className="text-slate-600 leading-relaxed mb-6">
+                <span className="font-medium text-slate-900">Premarket does the opposite.</span> Instead of looking backward at what sold, it looks forward at what buyers would pay. Instead of modelling from comparable sales, it captures direct input from actual market participants. Instead of publishing quarterly updates, it updates continuously — in real time, as buyers engage.
+              </p>
+
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="rounded-lg bg-white border border-slate-200 p-4">
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">CoreLogic</p>
+                  <div className="space-y-2">
+                    {[
+                      ['Source', 'Settlement records (past transactions)'],
+                      ['Timing', 'Weeks to months after a sale'],
+                      ['Method', 'Statistical models & extrapolation'],
+                      ['Updates', 'Monthly or quarterly'],
+                      ['Tells you', 'What similar homes sold for'],
+                    ].map(([label, value], i) => (
+                      <div key={i} className="flex items-start gap-2">
+                        <span className="text-xs font-medium text-slate-500 w-16 flex-shrink-0 mt-0.5">{label}</span>
+                        <span className="text-xs text-slate-600">{value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="rounded-lg bg-white border-2 border-orange-200 p-4">
+                  <p className="text-xs font-semibold text-orange-600 uppercase tracking-wider mb-3">Premarket</p>
+                  <div className="space-y-2">
+                    {[
+                      ['Source', 'Buyer price opinions (direct input)'],
+                      ['Timing', 'Real time, as buyers engage'],
+                      ['Method', 'Direct measurement, not modelling'],
+                      ['Updates', 'Continuously, with every interaction'],
+                      ['Tells you', 'What buyers would pay today'],
+                    ].map(([label, value], i) => (
+                      <div key={i} className="flex items-start gap-2">
+                        <span className="text-xs font-medium text-slate-500 w-16 flex-shrink-0 mt-0.5">{label}</span>
+                        <span className="text-xs text-slate-700 font-medium">{value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <h3 className="text-lg font-semibold text-slate-900 mb-3">The data comes from buyers — that&apos;s the entire point</h3>
+            <p className="text-slate-600 leading-relaxed mb-4">
+              Every other data provider in real estate is one or more steps removed from the actual buyer. CoreLogic sees a settlement record weeks after the fact. Pricefinder sees a listing price that may bear no relation to the final sale. Domain and REA see search behaviour — clicks and saves — but never a price opinion. None of them capture what a buyer would actually pay.
+            </p>
+            <p className="text-slate-600 leading-relaxed mb-4">
+              Premarket goes directly to the source. When a buyer submits a price opinion, they&apos;re telling you — in real terms — what this property is worth to them. Multiply that across dozens of buyers for a single property, and you have a statistically meaningful valuation built entirely from primary data. Not modelled. Not inferred. Measured.
+            </p>
+            <p className="text-slate-600 leading-relaxed mb-6">
+              This is why the accuracy is higher. It&apos;s not a better algorithm — it&apos;s a better data source. The algorithm doesn&apos;t need to be clever when the input is already the answer. Buyers <em>are</em> the market. Their opinions <em>are</em> the value. Premarket simply captures that signal in a structured, scalable way.
+            </p>
+
+            <h3 className="text-lg font-semibold text-slate-900 mb-3">What the engine produces</h3>
+            <div className="space-y-3 mb-8">
+              {[
+                ['Per-property valuations', 'Median buyer price opinion, price distribution, opinion count, and confidence score — for individual properties, updated in real time.'],
+                ['Suburb-level demand signals', 'Aggregated buyer intent by location — which suburbs are heating up, which are cooling, and where demand is concentrated.'],
+                ['Trend data', 'How buyer sentiment and pricing opinions are shifting over time — weekly, monthly, and quarterly trends at every geographic level.'],
+                ['Price gap analysis', 'The gap between what sellers expect and what buyers would pay — the single most useful metric for price education.'],
+                ['Forward-looking market forecasts', 'Which properties are likely to come to market, what buyers would pay for them, and where demand exceeds supply — predictive intelligence that backward-looking data cannot provide.'],
+              ].map(([title, desc], i) => (
+                <div key={i} className="flex gap-3">
+                  <span className="flex-shrink-0 w-1.5 h-1.5 bg-orange-500 rounded-full mt-2" />
+                  <p className="text-slate-600 text-sm leading-relaxed">
+                    <span className="font-medium text-slate-900">{title}.</span> {desc}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+              <p className="text-sm text-blue-800">
+                <span className="font-semibold">The compounding effect.</span> Every new campaign, every new buyer, every new price opinion makes the engine more accurate and more valuable. This is a dataset that cannot be replicated by scraping public records or modelling historical sales. It can only be built by capturing real buyer intent at scale — and that requires the platform, the agent network, and the buyer engagement that Premarket has built.
+              </p>
+            </div>
+          </section>
+
+          <hr className="border-slate-200 my-12" />
+
+          {/* The Business */}
+          <section id="the-business" className="scroll-mt-20">
+            <h2 className="text-2xl font-bold text-slate-900 mb-2">The Business</h2>
+            <p className="text-lg text-slate-500 mb-6">How it works, how it makes money, and where the real value sits.</p>
+
+            <h3 className="text-lg font-semibold text-slate-900 mb-3">The How — agents and their database</h3>
+            <p className="text-slate-600 leading-relaxed mb-4">
+              The distribution engine behind Premarket is the agent and their existing buyer database. Agents don&apos;t need to build a new audience. They already have one — years of contacts, active buyers from past campaigns, buyer&apos;s agents they work with regularly, and CRM databases full of qualified prospects.
+            </p>
+            <p className="text-slate-600 leading-relaxed mb-4">
+              When an agent creates a pre-market campaign, they share it through channels they already control: SMS, email, CRM workflows, and direct outreach. The agent is the distribution channel. Their database is the audience. Premarket provides the platform that turns those existing relationships into structured, usable market data.
+            </p>
+            <p className="text-slate-600 leading-relaxed mb-6">
+              This is why adoption scales efficiently. Agents aren&apos;t being asked to do something new. They&apos;re being asked to do what they already do — share properties with buyers — through a tool that captures data they&apos;ve never been able to capture before.
+            </p>
+
+            <h3 className="text-lg font-semibold text-slate-900 mb-3">The Cashflow — vendor-paid fees</h3>
+            <p className="text-slate-600 leading-relaxed mb-4">
+              Revenue comes from the seller. When an agent creates a pre-market campaign, the vendor pays a campaign fee. This aligns incentives perfectly: the seller pays for market intelligence about their own property, the agent gets a tool that helps them win and retain listings, and the buyer participates for free — which is critical for data quality and volume.
+            </p>
+            <p className="text-slate-600 leading-relaxed mb-6">
+              The fee is a fraction of traditional marketing spend. A seller might pay $10,000–$30,000 for a full marketing campaign (photography, styling, portal listings, print advertising) with no guarantee of success. A Premarket campaign costs significantly less and delivers actionable intelligence before the seller commits to anything else.
+            </p>
+
+            <div className="rounded-lg border border-slate-200 overflow-hidden mb-8">
+              <div className="divide-y divide-slate-200">
+                {[
+                  ['Campaign fee', 'Vendor pays per pre-market campaign — the primary revenue driver'],
+                  ['Subscription', 'Agents subscribe for premium features, advanced analytics, and priority support'],
+                  ['API access', 'Developers and platforms pay for access to the Market Intelligence API'],
+                ].map(([item, desc], i) => (
+                  <div key={i} className="flex items-start gap-4 px-4 py-3">
+                    <span className="flex-shrink-0 w-28 text-sm font-medium text-slate-900">{item}</span>
+                    <p className="text-sm text-slate-600">{desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <h3 className="text-lg font-semibold text-slate-900 mb-3">The Value — the data is the company</h3>
+            <p className="text-slate-600 leading-relaxed mb-4">
+              Campaign fees drive cashflow. But the real value of Premarket is the data engine underneath.
+            </p>
+            <p className="text-slate-600 leading-relaxed mb-4">
+              Every campaign generates buyer price opinions. Every price opinion is a primary data point that no other company in real estate has. Aggregated across thousands of properties and suburbs, this becomes a proprietary dataset of live buyer valuations — a forward-looking valuation layer that covers the entire market and improves with every interaction.
+            </p>
+            <p className="text-slate-600 leading-relaxed mb-4">
+              The cashflow comes from fees. The value of the company comes from owning the most accurate, most current, and most direct source of property valuation data in the market. A dataset that cannot be replicated by scraping, modelling, or extrapolating. It can only be built by capturing real buyer intent at scale.
+            </p>
+            <p className="text-slate-600 leading-relaxed mb-6">
+              And the output of that data is what makes everything work: <span className="font-medium text-slate-900">the ability to educate on price — confidently, credibly, and backed by evidence.</span> That&apos;s what agents need. That&apos;s what sellers need. And that&apos;s what Premarket delivers.
+            </p>
+
+            <div className="rounded-xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6 sm:p-8 relative overflow-hidden">
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-orange-500/10 via-transparent to-transparent" />
+              <div className="relative">
+                <div className="grid sm:grid-cols-3 gap-6">
+                  <div>
+                    <p className="text-xs font-semibold text-orange-400 uppercase tracking-wider mb-2">The How</p>
+                    <p className="text-white font-medium mb-1">Agents &amp; their database</p>
+                    <p className="text-slate-400 text-sm">Existing relationships become structured market data through the platform.</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-orange-400 uppercase tracking-wider mb-2">The Cashflow</p>
+                    <p className="text-white font-medium mb-1">Vendor-paid fees</p>
+                    <p className="text-slate-400 text-sm">Sellers pay for market intelligence. Buyers participate free. Incentives align.</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-orange-400 uppercase tracking-wider mb-2">The Value</p>
+                    <p className="text-white font-medium mb-1">The data &amp; its accuracy</p>
+                    <p className="text-slate-400 text-sm">A proprietary, forward-looking valuation layer that improves with every interaction.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <hr className="border-slate-200 my-12" />
+
+          {/* ════════════════════════════════════════ */}
           {/* USER JOURNEYS                            */}
           {/* ════════════════════════════════════════ */}
 
           {/* Listing Agents */}
           <section id="listing-agents" className="scroll-mt-20">
             <h2 className="text-2xl font-bold text-slate-900 mb-2">Listing Agents</h2>
-            <p className="text-lg text-slate-500 mb-6">Win listings and build seller confidence with real buyer feedback instead of promises.</p>
+            <p className="text-lg text-slate-500 mb-6">Educate sellers on price with buyer evidence — not opinions, not comparables, not guesswork.</p>
 
             <p className="text-slate-600 leading-relaxed mb-4">
-              In competitive markets, listing agents are typically pitching against two or three other agencies for the same property. Every agent offers marketing. Every agent has comparables. What separates one pitch from another is usually presentation style and personal rapport.
+              In competitive markets, listing agents are typically pitching against two or three other agencies for the same property. Every agent offers marketing. Every agent has comparables. Every agent has an opinion on price. But opinions create friction — especially when they don&apos;t match what the seller wants to hear. The agent who tells the truth risks losing the listing. The agent who inflates the number wins the pitch but fails the campaign.
+            </p>
+            <p className="text-slate-600 leading-relaxed mb-4">
+              Premarket changes this dynamic entirely. Instead of asking a vendor to trust an appraisal built on what similar homes sold for months ago, the agent presents{' '}
+              <button onClick={() => scrollTo('the-data-engine')} className="text-orange-600 hover:text-orange-700 underline">
+                live buyer evidence
+              </button>
+              {' '} — real price opinions from qualified buyers, genuine interest signals, and a data-driven view of what the market would pay today. The conversation shifts from &ldquo;trust me&rdquo; to &ldquo;look at what buyers are telling us.&rdquo;
             </p>
             <p className="text-slate-600 leading-relaxed mb-6">
-              Premarket changes the dynamic entirely. Instead of asking a vendor to trust an appraisal, the agent presents live buyer evidence — real price opinions from qualified buyers, genuine interest signals, and a data-driven view of market demand. The conversation shifts from &ldquo;trust me&rdquo; to &ldquo;look at the evidence.&rdquo;
+              This is{' '}
+              <button onClick={() => scrollTo('price-education')} className="text-orange-600 hover:text-orange-700 underline">
+                Price Education backed by data
+              </button>
+              {' '}in practice. The agent doesn&apos;t need to convince the seller — the buyer data does that. And because the data comes directly from buyers rather than from historical sales or algorithms, it carries a credibility that no comparable sale or automated valuation can match.
             </p>
 
             <h3 className="text-lg font-semibold text-slate-900 mt-8 mb-4">The agent journey</h3>
@@ -763,7 +1126,7 @@ function DocsContent({ isAdmin, isTokenAccess, linkToken, user }) {
                 </p>
                 <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg mt-3">
                   <p className="text-sm text-blue-800">
-                    <span className="font-semibold">This is where the dynamic shifts.</span> The listing conversation is no longer agent opinion vs seller expectation. It becomes buyer evidence — and that&apos;s very difficult to argue with.
+                    <span className="font-semibold">This is price education in action.</span> The listing conversation is no longer agent opinion vs seller expectation. It becomes buyer evidence — data from the people who would actually write the cheque. That&apos;s very difficult to argue with.
                   </p>
                 </div>
               </div>
@@ -779,9 +1142,9 @@ function DocsContent({ isAdmin, isTokenAccess, linkToken, user }) {
             <h3 className="text-lg font-semibold text-slate-900 mb-3">Why agents choose Premarket</h3>
             <div className="space-y-3 mb-2">
               {[
-                ['Win listings', 'Competing agents offer marketing. Premarket agents offer market intelligence — a fundamentally different pitch.'],
-                ['Differentiation', 'The agent has a tool that produces evidence no other agency can replicate in a pitch.'],
-                ['Vendor trust', 'Buyers determine the value — not the agent. This removes the most common source of friction in the listing conversation.'],
+                ['Win listings', 'Competing agents offer marketing and opinions. Premarket agents offer price education backed by buyer data — a fundamentally different pitch that sellers trust.'],
+                ['Differentiation', 'The agent has a tool that produces live buyer evidence no other agency can replicate. Not comparables. Not estimates. Direct buyer valuations.'],
+                ['End awkward conversations', 'When buyers determine the value — not the agent — the most adversarial part of the listing conversation disappears. The data does the educating.'],
               ].map(([title, desc], i) => (
                 <div key={i} className="flex gap-3">
                   <span className="flex-shrink-0 w-1.5 h-1.5 bg-orange-500 rounded-full mt-2" />
@@ -851,7 +1214,7 @@ function DocsContent({ isAdmin, isTokenAccess, linkToken, user }) {
               {[
                 ['Client attraction', 'Clients expect their buyer\'s agent to have access to off-market and pre-market deals. Premarket delivers that consistently.'],
                 ['Reduced competition', 'Properties in the pre-market phase have a fraction of the buyer interest they\'ll attract once publicly listed. Less competition means better outcomes.'],
-                ['Professional positioning', 'Submitting informed price opinions and engaging early demonstrates the kind of deep market access that sets top buyer\'s agents apart.'],
+                ['Shape the data', 'Every price opinion a buyer\'s agent submits feeds the data engine that powers price education for agents and sellers. Their professional valuations carry weight — and contribute to the most accurate pricing dataset in real estate.'],
               ].map(([title, desc], i) => (
                 <div key={i} className="flex gap-3">
                   <span className="flex-shrink-0 w-1.5 h-1.5 bg-orange-500 rounded-full mt-2" />
@@ -868,13 +1231,20 @@ function DocsContent({ isAdmin, isTokenAccess, linkToken, user }) {
           {/* Sellers */}
           <section id="sellers" className="scroll-mt-20">
             <h2 className="text-2xl font-bold text-slate-900 mb-2">Sellers</h2>
-            <p className="text-lg text-slate-500 mb-6">Understand true market value without committing to a full campaign.</p>
+            <p className="text-lg text-slate-500 mb-6">See what buyers would actually pay — before committing to anything.</p>
 
             <p className="text-slate-600 leading-relaxed mb-4">
               Sellers face a fundamental problem: they have to commit significant time, money, and emotional energy to a marketing campaign before they know whether the market will meet their expectations. Photography, styling, advertising spend, open homes — all before a single offer comes in. If the campaign fails, the property sits on the portals with a stale listing and a damaged perception.
             </p>
+            <p className="text-slate-600 leading-relaxed mb-4">
+              The root cause is a lack of price education. Sellers set expectations based on online estimates, neighbour conversations, and emotional attachment — none of which reflect what today&apos;s buyers would actually pay. By the time the market corrects those expectations, the seller has already spent thousands and weeks of time.
+            </p>
             <p className="text-slate-600 leading-relaxed mb-6">
-              Premarket eliminates that risk. Sellers get real buyer feedback — genuine price opinions and interest signals — before committing to anything. No obligation, no public exposure.
+              Premarket eliminates that risk by delivering{' '}
+              <button onClick={() => scrollTo('price-education')} className="text-orange-600 hover:text-orange-700 underline">
+                price education backed by data
+              </button>
+              {' '}before the seller commits to anything. Real buyer price opinions. Genuine interest signals. A live view of what the market would pay — not what an algorithm thinks it should be worth.
             </p>
 
             <h3 className="text-lg font-semibold text-slate-900 mt-8 mb-4">The seller journey</h3>
@@ -902,9 +1272,9 @@ function DocsContent({ isAdmin, isTokenAccess, linkToken, user }) {
               </div>
 
               <div>
-                <h4 className="font-medium text-slate-900 mb-1">4. The seller receives a live report</h4>
+                <h4 className="font-medium text-slate-900 mb-1">4. The seller receives price education</h4>
                 <p className="text-slate-600 text-sm leading-relaxed">
-                  As buyers engage, the seller sees the data build in real time: how many buyers have viewed the property, their price opinions, the median buyer value, and the level of registered interest. This is direct market feedback — not an agent&apos;s estimate, not an algorithm&apos;s guess. Real buyers, real numbers.
+                  As buyers engage, the seller sees the data build in real time: how many buyers have viewed the property, their price opinions, the median buyer value, and the level of registered interest. This is price education in its purest form — not an agent&apos;s estimate, not an algorithm projecting from past sales. Real buyers telling you what they&apos;d pay, right now, for your property.
                 </p>
               </div>
 
@@ -926,9 +1296,9 @@ function DocsContent({ isAdmin, isTokenAccess, linkToken, user }) {
             <h3 className="text-lg font-semibold text-slate-900 mb-3">Why sellers choose Premarket</h3>
             <div className="space-y-3 mb-2">
               {[
-                ['Market intelligence before commitment', 'Sellers see real buyer interest before spending anything on marketing or making any public commitment.'],
-                ['Privacy', 'No portal listing, no public exposure, no risk of a stale listing damaging perception.'],
-                ['Buyer validation', 'Price opinions come from real buyers — not algorithms, not agents. This is the most credible pricing signal available.'],
+                ['Price education before commitment', 'Sellers see what real buyers would pay — direct price opinions, not estimates — before spending anything on marketing or making any public commitment.'],
+                ['Privacy', 'No portal listing, no public exposure, no risk of a stale listing damaging perception. Static photos in office windows collect dust. Premarket campaigns collect data.'],
+                ['Buyer-determined value', 'Price opinions come directly from buyers — not algorithms extrapolating from past sales, not agent appraisals. A home is worth what a buyer would pay. Premarket measures exactly that.'],
               ].map(([title, desc], i) => (
                 <div key={i} className="flex gap-3">
                   <span className="flex-shrink-0 w-1.5 h-1.5 bg-orange-500 rounded-full mt-2" />
@@ -998,7 +1368,7 @@ function DocsContent({ isAdmin, isTokenAccess, linkToken, user }) {
               {[
                 ['Early access', 'Properties appear on Premarket weeks before they hit the public portals. Being early changes everything.'],
                 ['Reduced competition', 'Fewer buyers means less pressure, more time for due diligence, and better negotiating conditions.'],
-                ['Influence on pricing', 'Buyer price opinions actively contribute to the market\'s view of a property\'s value. Buyers become participants, not spectators.'],
+                ['Your opinion matters', 'Every price opinion directly feeds the data engine. Buyers aren\'t passive spectators — they\'re the primary source of truth. Their input is what makes price education backed by data possible.'],
               ].map(([title, desc], i) => (
                 <div key={i} className="flex gap-3">
                   <span className="flex-shrink-0 w-1.5 h-1.5 bg-orange-500 rounded-full mt-2" />
@@ -1069,10 +1439,18 @@ function DocsContent({ isAdmin, isTokenAccess, linkToken, user }) {
             </div>
 
             <p className="text-slate-600 leading-relaxed mb-4">
-              The buyer becomes the evaluator of value. Not an algorithm trained on historical sales. Not an agent&apos;s appraisal. Real buyers, expressing what they&apos;d genuinely pay, in real time.
+              The buyer becomes the evaluator of value. Not an algorithm trained on historical sales. Not an agent&apos;s appraisal. Real buyers, expressing what they&apos;d genuinely pay, in real time. This is why Premarket delivers{' '}
+              <button onClick={() => scrollTo('price-education')} className="text-orange-600 hover:text-orange-700 underline">
+                price education backed by data
+              </button>
+              {' '}— the data comes from the only source that actually determines value: the buyers themselves.
             </p>
             <p className="text-slate-600 leading-relaxed">
-              This is a structural shift. Every interaction on the platform — every price opinion, every interest registration, every saved property — generates a forward-looking signal about market demand. The more participants in the system, the more accurate and valuable those signals become.
+              This is a structural shift. Every interaction on the platform — every price opinion, every interest registration, every saved property — feeds into{' '}
+              <button onClick={() => scrollTo('the-data-engine')} className="text-orange-600 hover:text-orange-700 underline">
+                the data engine
+              </button>
+              , generating forward-looking signals about market demand that backward-looking providers like CoreLogic simply cannot capture. The more participants in the system, the more accurate and valuable those signals become.
             </p>
           </section>
 
@@ -1087,12 +1465,12 @@ function DocsContent({ isAdmin, isTokenAccess, linkToken, user }) {
 
             <ol className="space-y-4 mb-8">
               {[
-                ['Agents bring listings', 'Properties enter the system, creating inventory for buyers to discover.'],
-                ['Buyers give price opinions', 'Real buyer evaluations of property value — the core data asset — are generated at scale.'],
-                ['Data creates market insight', 'Aggregated buyer intent, price opinion distributions, and demand signals form a predictive market intelligence layer.'],
-                ['Sellers gain confidence', 'Evidence-based reports give sellers the confidence to list, reducing the friction that keeps properties off the market.'],
-                ['More listings appear', 'Confident sellers and successful agents bring more properties onto the platform.'],
-                ['Buyers return for early access', 'A growing inventory of pre-market properties attracts more buyers, who provide more data, which creates better insights.'],
+                ['Agents bring listings', 'Properties enter the system, creating inventory for buyers to discover and evaluate.'],
+                ['Buyers give price opinions', 'Real buyer evaluations of property value flow into the data engine — primary data that no other platform captures.'],
+                ['Data enables price education', 'Aggregated buyer intent, price opinion distributions, and demand signals form a live valuation layer — replacing backward-looking estimates with forward-looking evidence.'],
+                ['Sellers gain confidence', 'Price education backed by buyer data gives sellers the confidence to list. Expectations align with reality because the evidence is undeniable.'],
+                ['More listings appear', 'Confident sellers and successful agents bring more properties onto the platform — each one generating more buyer data.'],
+                ['Buyers return for early access', 'A growing inventory of pre-market properties attracts more buyers, who provide more price opinions, which makes the data engine more accurate. The accuracy compounds.'],
               ].map(([title, desc], i) => (
                 <li key={i} className="flex gap-4">
                   <span className="flex-shrink-0 w-7 h-7 rounded-full bg-slate-900 text-white text-sm font-bold flex items-center justify-center mt-0.5">
@@ -1187,10 +1565,18 @@ function DocsContent({ isAdmin, isTokenAccess, linkToken, user }) {
 
             <h3 className="text-lg font-semibold text-slate-900 mb-3">Backward-looking vs forward-looking</h3>
             <p className="text-slate-600 leading-relaxed mb-4">
-              Traditional real estate data is built on historical transactions. A property sold six months ago for $1.2M. A suburb&apos;s median price moved 4% last quarter. These are useful reference points, but they describe a market that no longer exists. By the time the data is published, the conditions that produced it have already changed.
+              As covered in{' '}
+              <button onClick={() => scrollTo('the-data-engine')} className="text-orange-600 hover:text-orange-700 underline">
+                The Data Engine
+              </button>
+              , traditional real estate data is built on historical transactions. A property sold six months ago for $1.2M. A suburb&apos;s median price moved 4% last quarter. These are useful reference points, but they describe a market that no longer exists. By the time the data is published, the conditions that produced it have already changed.
             </p>
             <p className="text-slate-600 leading-relaxed mb-6">
-              Premarket captures something fundamentally different: <span className="font-medium text-slate-900">forward-looking intent signals</span>. What buyers are actively searching for right now. What they&apos;re willing to pay today. Which properties are generating interest before they&apos;ve hit the market. Where demand is building, shifting, or cooling — in real time.
+              Premarket captures something fundamentally different: <span className="font-medium text-slate-900">forward-looking intent signals</span>. What buyers are actively searching for right now. What they&apos;re willing to pay today. Which properties are generating interest before they&apos;ve hit the market. Where demand is building, shifting, or cooling — in real time. This is the API layer built on top of the same buyer data that powers{' '}
+              <button onClick={() => scrollTo('price-education')} className="text-orange-600 hover:text-orange-700 underline">
+                price education
+              </button>
+              {' '}for agents and sellers.
             </p>
 
             <h3 className="text-lg font-semibold text-slate-900 mb-3">What the data captures</h3>

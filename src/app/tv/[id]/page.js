@@ -1,6 +1,7 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { db } from '../../firebase/clientApp';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
@@ -21,7 +22,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronLeft,
   ChevronRight,
-  ChevronDown,
   Play,
   X,
   BedDouble,
@@ -73,8 +73,26 @@ const getPropertyImages = (p) => {
 
 /* ─────────── component ─────────── */
 
-export default function TvDisplayPage() {
+export default function TvDisplayPageWrapper() {
+  return (
+    <Suspense fallback={
+      <div className="h-dvh bg-[#1a1a1a] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-orange-500" />
+      </div>
+    }>
+      <TvDisplayPage />
+    </Suspense>
+  );
+}
+
+function TvDisplayPage() {
   const { id: displayId } = useParams();
+  const searchParams = useSearchParams();
+  const [isPreview, setIsPreview] = useState(false);
+
+  useEffect(() => {
+    setIsPreview(searchParams.get('preview') === 'true');
+  }, [searchParams]);
 
   /* data */
   const [displayConfig, setDisplayConfig] = useState(null);
@@ -109,7 +127,6 @@ export default function TvDisplayPage() {
   const [showThankYou, setShowThankYou] = useState(false);
   const [showViewAll, setShowViewAll] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
-  const [showFullDescription, setShowFullDescription] = useState(false);
   const [showSignupModal, setShowSignupModal] = useState(false);
 
   /* signup form */
@@ -223,10 +240,11 @@ export default function TvDisplayPage() {
     setPriceOpinion(Math.round(((min + max) / 2) / 1000) * 1000);
     setCurrentImageIndex(0);
     setSavedOfferId(null);
-    setShowFullDescription(false);
   }, [currentPropertyIndex, property?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ═══════ auto-rotation ═══════ */
+  const modalOpen = showQualificationModal || showSignupModal || showThankYou;
+
   const startAutoRotate = useCallback(() => {
     clearInterval(autoRotateRef.current);
     if (properties.length <= 1) return;
@@ -240,6 +258,16 @@ export default function TvDisplayPage() {
     clearTimeout(idleRef.current);
     idleRef.current = setTimeout(() => startAutoRotate(), 30000);
   }, [startAutoRotate]);
+
+  /* Pause carousel while any modal is open */
+  useEffect(() => {
+    if (modalOpen) {
+      clearInterval(autoRotateRef.current);
+      clearTimeout(idleRef.current);
+    } else {
+      startAutoRotate();
+    }
+  }, [modalOpen, startAutoRotate]);
 
   useEffect(() => {
     startAutoRotate();
@@ -430,333 +458,341 @@ export default function TvDisplayPage() {
   ].filter(Boolean);
 
   /* ═══════════════════════════════════════════════════════════════════
-     RENDER — Kiosk mock frame wrapping 9:16 screen
+     RENDER
      ═══════════════════════════════════════════════════════════════════ */
-  return (
-    <div className="h-dvh w-full bg-[#111] flex flex-col items-center justify-start overflow-hidden select-none">
 
-      {/* ═══════ KIOSK FRAME ═══════ */}
-      <div className="relative flex flex-col items-center h-full w-full max-w-[56.25dvh]">
+  const goToPrevProperty = () => {
+    setCurrentPropertyIndex((i) => (i - 1 + properties.length) % properties.length);
+    pauseAutoRotate();
+  };
+  const goToNextProperty = () => {
+    setCurrentPropertyIndex((i) => (i + 1) % properties.length);
+    pauseAutoRotate();
+  };
 
-        {/* ── Display bezel ── */}
-        <div className="relative flex-1 w-full min-h-0" style={{ margin: '0.8% 0 0 0' }}>
-          {/* Outer bezel gradient — mimics brushed black plastic */}
-          <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-b from-[#2a2a2a] via-[#1a1a1a] to-[#0d0d0d] shadow-[0_0_60px_rgba(0,0,0,0.8)]" />
+  const screenContent = (
+    <>
+      {/* ════════ A. Agent Header ════════ */}
+      <div className="flex-shrink-0 bg-white px-4 py-2.5 border-b border-slate-100">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={property.userId}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+            className="flex items-center gap-2.5"
+          >
+            {agent ? (
+              <>
+                <div className="flex-shrink-0">
+                  {agent.avatar ? (
+                    <img
+                      src={agent.avatar}
+                      alt={agent.firstName || 'Agent'}
+                      className="rounded-lg object-cover w-9 h-9"
+                    />
+                  ) : (
+                    <div className="w-9 h-9 bg-gradient-to-br from-orange-400 to-amber-500 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                      {(agent.firstName?.[0] || '?').toUpperCase()}
+                    </div>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-slate-900 text-xs truncate leading-tight">
+                    {agent.firstName} {agent.lastName}
+                  </p>
+                  {agent.companyName && (
+                    <p className="text-[10px] text-slate-500 truncate leading-tight">{agent.companyName}</p>
+                  )}
+                </div>
+                {agent.logoUrl && (
+                  <div className="flex-shrink-0 ml-auto">
+                    <img src={agent.logoUrl} alt="" className="h-8 w-auto max-w-[80px] object-contain" />
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="h-9" />
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </div>
 
-          {/* Inner bezel bevel — subtle shine on top edge */}
-          <div className="absolute inset-[3px] rounded-[1.85rem] bg-gradient-to-b from-[#333] via-[#181818] to-[#111]" />
+      {/* ════════ B. Price Slider ════════ */}
+      <div className="flex-shrink-0 bg-slate-800 px-5 py-4">
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-sm text-white font-bold uppercase tracking-wide">What would you pay?</p>
+          <motion.p
+            key={priceOpinion}
+            initial={{ scale: 1.08 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.15 }}
+            className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-[#e48900] to-[#c64500]"
+          >
+            {formatMoney(priceOpinion)}
+          </motion.p>
+        </div>
+        <div className="pt-6 pb-8">
+          <input
+            type="range"
+            min={minPrice}
+            max={maxPrice}
+            step={1000}
+            value={priceOpinion}
+            onChange={(e) => setPriceOpinion(Number(e.target.value))}
+            onMouseDown={() => setIsSliding(true)}
+            onMouseUp={() => { setIsSliding(false); saveTvPriceOpinion(); }}
+            onTouchStart={() => setIsSliding(true)}
+            onTouchEnd={() => { setIsSliding(false); saveTvPriceOpinion(); }}
+            className="w-full cursor-pointer tv-slider"
+          />
+        </div>
+        <div className="flex justify-between text-[11px] font-semibold">
+          <span className="text-slate-400">{formatCompact(minPrice)}</span>
+          <span className="text-slate-500 text-[10px]">Drag & release to register interest</span>
+          <span className="text-slate-400">{formatCompact(maxPrice)}</span>
+        </div>
+      </div>
 
-          {/* Screen area with inset */}
-          <div className="absolute rounded-[1.5rem] overflow-hidden bg-slate-50 flex flex-col"
-               style={{ top: '2.5%', left: '3.5%', right: '3.5%', bottom: '2.5%' }}>
+      {/* ════════ C. Hero Image ════════ */}
+      <div className="flex-shrink-0 relative bg-slate-900" style={{ height: '36%' }}>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={`${property.id}-${currentImageIndex}`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="absolute inset-0"
+          >
+            {imageUrls[currentImageIndex] ? (
+              <img
+                src={imageUrls[currentImageIndex]}
+                alt={property.title || property.address || ''}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-slate-800 flex items-center justify-center text-slate-500 text-sm">
+                No Image
+              </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
 
-            {/* ════════ A. Agent Header ════════ */}
-            <div className="flex-shrink-0 bg-white px-4 py-2.5 border-b border-slate-100">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={property.userId}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                  className="flex items-center gap-2.5"
-                >
-                  {agent ? (
-                    <>
-                      <div className="flex-shrink-0">
-                        {agent.avatar ? (
-                          <img
-                            src={agent.avatar}
-                            alt={agent.firstName || 'Agent'}
-                            className="rounded-lg object-cover w-9 h-9"
-                          />
+        {/* Video button */}
+        {videoUrl && (
+          <button
+            onClick={() => setShowVideo(true)}
+            className="absolute top-3 right-3 z-10 px-3 py-1.5 bg-black/60 backdrop-blur-sm text-white text-xs font-semibold rounded-full flex items-center gap-1.5"
+          >
+            <Play className="w-3 h-3" fill="white" />
+            Video
+          </button>
+        )}
+
+        {/* Gallery arrows */}
+        {imageUrls.length > 1 && (
+          <>
+            <button
+              onClick={() => setCurrentImageIndex((i) => (i - 1 + imageUrls.length) % imageUrls.length)}
+              className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center text-white active:bg-black/70 transition-colors"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+            <button
+              onClick={() => setCurrentImageIndex((i) => (i + 1) % imageUrls.length)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center text-white active:bg-black/70 transition-colors"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+          </>
+        )}
+
+        {/* Dots */}
+        {imageUrls.length > 1 && (
+          <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 z-10 flex gap-1.5">
+            {imageUrls.slice(0, 8).map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentImageIndex(i)}
+                className={`h-2 rounded-full transition-all ${
+                  i === currentImageIndex ? 'bg-white w-4' : 'bg-white/50 w-2'
+                }`}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ════════ D. Property Info ════════ */}
+      <div className="flex-1 min-h-0 flex flex-col px-4 py-3">
+        {/* Title */}
+        <h1 className="text-lg font-bold text-slate-900 leading-tight flex-shrink-0">{property.title || property.address}</h1>
+
+        {/* Address */}
+        {property.address && property.title && (
+          <p className="text-[11px] text-slate-500 mt-0.5 truncate flex-shrink-0">
+            {property.showSuburbOnly
+              ? property.address?.split(',')[1]?.trim() || property.location?.suburb || ''
+              : property.address}
+          </p>
+        )}
+
+        {/* Specs */}
+        {specs.length > 0 && (
+          <div className="flex items-center gap-3 mt-2 flex-shrink-0">
+            {specs.map(({ icon: Icon, val }, i) => (
+              <div key={i} className="flex items-center gap-1 text-slate-600">
+                <Icon className="w-3.5 h-3.5" />
+                <span className="text-xs font-semibold">{val}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Description — always expanded, scrollable */}
+        {property.description && (
+          <div className="mt-2 flex-1 min-h-0 overflow-y-auto scrollbar-hide">
+            <p className="text-[11px] text-slate-500 leading-relaxed">
+              {property.description}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* ════════ E. Property Navigation + View All ════════ */}
+      {properties.length > 1 && (
+        <div className="flex-shrink-0 border-t border-slate-100">
+          <div className="flex items-center gap-2 px-3 py-2">
+            <button
+              onClick={goToPrevProperty}
+              className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-gradient-to-r from-[#e48900] to-[#c64500] text-white font-bold rounded-xl active:opacity-80 transition-opacity shadow-md text-sm"
+            >
+              <ChevronLeft className="w-5 h-5" />
+              Prev
+            </button>
+            <button
+              onClick={() => setShowViewAll(true)}
+              className="flex items-center justify-center gap-1.5 px-3 py-3 bg-slate-100 rounded-xl active:bg-slate-200 transition-colors"
+            >
+              <Grid2X2 className="w-4 h-4 text-slate-600" />
+              <span className="text-xs font-bold text-orange-600 bg-orange-100 px-1.5 py-0.5 rounded-full">
+                {properties.length}
+              </span>
+            </button>
+            <button
+              onClick={goToNextProperty}
+              className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-gradient-to-r from-[#e48900] to-[#c64500] text-white font-bold rounded-xl active:opacity-80 transition-opacity shadow-md text-sm"
+            >
+              Next
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ════════ G. Footer ════════ */}
+      <div className="flex-shrink-0 bg-white border-t border-slate-100 py-1.5 flex items-center justify-center gap-1.5">
+        <span className="text-[8px] text-slate-400 font-medium uppercase tracking-wider">Powered by</span>
+        <Image
+          src="https://premarketvideos.b-cdn.net/assets/logo.png"
+          alt="Premarket"
+          width={70}
+          height={17}
+          className="opacity-40"
+          unoptimized
+        />
+      </div>
+
+      {/* ════════ View All Panel (inside screen) ════════ */}
+      <AnimatePresence>
+        {showViewAll && (
+          <motion.div
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            className="absolute inset-0 bg-white z-20 flex flex-col overflow-hidden"
+          >
+            <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-200 flex-shrink-0">
+              <h2 className="text-sm font-bold text-slate-900">All Properties ({properties.length})</h2>
+              <button
+                onClick={() => setShowViewAll(false)}
+                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-slate-600" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-3 scrollbar-hide">
+              <div className="grid grid-cols-2 gap-2">
+                {properties.map((p, i) => {
+                  const imgs = getPropertyImages(p);
+                  const thumb = imgs[0];
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => {
+                        setCurrentPropertyIndex(i);
+                        setShowViewAll(false);
+                      }}
+                      className={`rounded-lg overflow-hidden border-2 text-left transition-all ${
+                        i === currentPropertyIndex ? 'border-orange-500' : 'border-slate-200'
+                      }`}
+                    >
+                      <div className="aspect-[4/3] bg-slate-200 relative">
+                        {thumb ? (
+                          <img src={thumb} alt="" className="w-full h-full object-cover" />
                         ) : (
-                          <div className="w-9 h-9 bg-gradient-to-br from-orange-400 to-amber-500 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-                            {(agent.firstName?.[0] || '?').toUpperCase()}
+                          <div className="w-full h-full flex items-center justify-center text-slate-400 text-[10px]">
+                            No image
                           </div>
                         )}
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-semibold text-slate-900 text-xs truncate leading-tight">
-                          {agent.firstName} {agent.lastName}
-                        </p>
-                        {agent.companyName && (
-                          <p className="text-[10px] text-slate-500 truncate leading-tight">{agent.companyName}</p>
-                        )}
+                      <div className="px-1.5 py-1">
+                        <p className="text-[10px] font-semibold text-slate-900 truncate">{p.title || p.address || 'Property'}</p>
+                        {p.price && <p className="text-[10px] font-bold text-orange-600">{typeof p.price === 'number' ? formatMoney(p.price) : p.price}</p>}
                       </div>
-                      {agent.logoUrl && (
-                        <div className="flex-shrink-0 ml-auto">
-                          <img src={agent.logoUrl} alt="" className="h-8 w-auto max-w-[80px] object-contain" />
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <div className="h-9" />
-                  )}
-                </motion.div>
-              </AnimatePresence>
-            </div>
-
-            {/* ════════ B. Hero Image ════════ */}
-            <div className="flex-shrink-0 relative bg-slate-900" style={{ height: '38%' }}>
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={`${property.id}-${currentImageIndex}`}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="absolute inset-0"
-                >
-                  {imageUrls[currentImageIndex] ? (
-                    <img
-                      src={imageUrls[currentImageIndex]}
-                      alt={property.title || property.address || ''}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-slate-800 flex items-center justify-center text-slate-500 text-sm">
-                      No Image
-                    </div>
-                  )}
-                </motion.div>
-              </AnimatePresence>
-
-              {/* PRE-MARKET badge */}
-              <div className="absolute top-2.5 left-2.5 z-10">
-                <span className="px-2.5 py-1 bg-gradient-to-r from-[#e48900] to-[#c64500] text-white text-[10px] font-bold rounded-full shadow-lg tracking-wide">
-                  PRE-MARKET
-                </span>
-              </div>
-
-              {/* Video button */}
-              {videoUrl && (
-                <button
-                  onClick={() => setShowVideo(true)}
-                  className="absolute top-2.5 right-2.5 z-10 px-2.5 py-1 bg-black/60 backdrop-blur-sm text-white text-[10px] font-semibold rounded-full flex items-center gap-1"
-                >
-                  <Play className="w-2.5 h-2.5" fill="white" />
-                  Video
-                </button>
-              )}
-
-              {/* Gallery arrows */}
-              {imageUrls.length > 1 && (
-                <>
-                  <button
-                    onClick={() => setCurrentImageIndex((i) => (i - 1 + imageUrls.length) % imageUrls.length)}
-                    className="absolute left-1.5 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-black/40 backdrop-blur-sm rounded-full flex items-center justify-center text-white"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setCurrentImageIndex((i) => (i + 1) % imageUrls.length)}
-                    className="absolute right-1.5 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-black/40 backdrop-blur-sm rounded-full flex items-center justify-center text-white"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </>
-              )}
-
-              {/* Dots */}
-              {imageUrls.length > 1 && (
-                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 flex gap-1">
-                  {imageUrls.slice(0, 8).map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setCurrentImageIndex(i)}
-                      className={`h-1.5 rounded-full transition-all ${
-                        i === currentImageIndex ? 'bg-white w-3' : 'bg-white/50 w-1.5'
-                      }`}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* ════════ C. Property Info + Price Slider ════════ */}
-            <div className="flex-1 min-h-0 flex flex-col px-4 py-3 overflow-y-auto scrollbar-hide">
-              {/* Title */}
-              <h1 className="text-lg font-bold text-slate-900 leading-tight">{property.title || property.address}</h1>
-
-              {/* Address */}
-              {property.address && property.title && (
-                <p className="text-[11px] text-slate-500 mt-0.5 truncate">
-                  {property.showSuburbOnly
-                    ? property.address?.split(',')[1]?.trim() || property.location?.suburb || ''
-                    : property.address}
-                </p>
-              )}
-
-              {/* Specs */}
-              {specs.length > 0 && (
-                <div className="flex items-center gap-3 mt-2">
-                  {specs.map(({ icon: Icon, val }, i) => (
-                    <div key={i} className="flex items-center gap-1 text-slate-600">
-                      <Icon className="w-3.5 h-3.5" />
-                      <span className="text-xs font-semibold">{val}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Description — single line with expand */}
-              {property.description && (
-                <button
-                  onClick={() => setShowFullDescription(!showFullDescription)}
-                  className="mt-1.5 flex items-start gap-1 text-left w-full"
-                >
-                  <p className={`text-[11px] text-slate-500 leading-relaxed flex-1 ${showFullDescription ? '' : 'line-clamp-1'}`}>
-                    {property.description}
-                  </p>
-                  <ChevronDown className={`w-3.5 h-3.5 text-slate-400 flex-shrink-0 mt-0.5 transition-transform ${showFullDescription ? 'rotate-180' : ''}`} />
-                </button>
-              )}
-
-              {/* Spacer to push price card down */}
-              <div className="flex-1 min-h-2" />
-
-              {/* Price opinion — slim */}
-              <div className="bg-gradient-to-r from-[#e48900]/8 to-[#c64500]/8 rounded-lg px-3 py-2 border border-orange-200/30">
-                <div className="flex items-center justify-between mb-1.5">
-                  <p className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider">Price opinion</p>
-                  <motion.p
-                    key={priceOpinion}
-                    initial={{ scale: 1.05 }}
-                    animate={{ scale: 1 }}
-                    transition={{ duration: 0.15 }}
-                    className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#e48900] to-[#c64500]"
-                  >
-                    {formatMoney(priceOpinion)}
-                  </motion.p>
-                </div>
-                <input
-                  type="range"
-                  min={minPrice}
-                  max={maxPrice}
-                  step={1000}
-                  value={priceOpinion}
-                  onChange={(e) => setPriceOpinion(Number(e.target.value))}
-                  onMouseDown={() => setIsSliding(true)}
-                  onMouseUp={() => { setIsSliding(false); saveTvPriceOpinion(); }}
-                  onTouchStart={() => setIsSliding(true)}
-                  onTouchEnd={() => { setIsSliding(false); saveTvPriceOpinion(); }}
-                  className="w-full h-2 bg-gradient-to-r from-orange-400 via-yellow-400 to-green-500 rounded-full appearance-none cursor-pointer tv-slider"
-                />
-                <div className="flex justify-between mt-0.5 text-[9px] text-slate-400 font-medium">
-                  <span>{formatCompact(minPrice)}</span>
-                  <span>{formatCompact(maxPrice)}</span>
-                </div>
-                <p className="text-[9px] text-slate-400 text-center mt-1">Drag & release to register interest</p>
-              </div>
-            </div>
-
-            {/* ════════ D. View All Bar ════════ */}
-            {properties.length > 1 && (
-              <button
-                onClick={() => setShowViewAll(true)}
-                className="flex-shrink-0 bg-white border-t border-slate-100 px-4 py-2.5 flex items-center justify-between"
-              >
-                <div className="flex items-center gap-2">
-                  <Grid2X2 className="w-3.5 h-3.5 text-orange-600" />
-                  <span className="text-xs font-semibold text-slate-700">
-                    View All Properties
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] font-bold text-orange-600 bg-orange-100 px-1.5 py-0.5 rounded-full">
-                    {properties.length}
-                  </span>
-                  <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-                </div>
-              </button>
-            )}
-
-            {/* ════════ E. Footer ════════ */}
-            <div className="flex-shrink-0 bg-white border-t border-slate-100 py-1.5 flex items-center justify-center gap-1.5">
-              <span className="text-[8px] text-slate-400 font-medium uppercase tracking-wider">Powered by</span>
-              <Image
-                src="https://premarketvideos.b-cdn.net/assets/logo.png"
-                alt="Premarket"
-                width={70}
-                height={17}
-                className="opacity-40"
-                unoptimized
-              />
-            </div>
-
-            {/* ════════ View All Panel (inside screen) ════════ */}
-            <AnimatePresence>
-              {showViewAll && (
-                <motion.div
-                  initial={{ y: '100%' }}
-                  animate={{ y: 0 }}
-                  exit={{ y: '100%' }}
-                  transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                  className="absolute inset-0 bg-white z-20 flex flex-col rounded-[1.5rem] overflow-hidden"
-                >
-                  <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-200 flex-shrink-0">
-                    <h2 className="text-sm font-bold text-slate-900">All Properties ({properties.length})</h2>
-                    <button
-                      onClick={() => setShowViewAll(false)}
-                      className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors"
-                    >
-                      <X className="w-4 h-4 text-slate-600" />
                     </button>
-                  </div>
-                  <div className="flex-1 overflow-y-auto p-3 scrollbar-hide">
-                    <div className="grid grid-cols-2 gap-2">
-                      {properties.map((p, i) => {
-                        const imgs = getPropertyImages(p);
-                        const thumb = imgs[0];
-                        return (
-                          <button
-                            key={p.id}
-                            onClick={() => {
-                              setCurrentPropertyIndex(i);
-                              setShowViewAll(false);
-                            }}
-                            className={`rounded-lg overflow-hidden border-2 text-left transition-all ${
-                              i === currentPropertyIndex ? 'border-orange-500' : 'border-slate-200'
-                            }`}
-                          >
-                            <div className="aspect-[4/3] bg-slate-200 relative">
-                              {thumb ? (
-                                <img src={thumb} alt="" className="w-full h-full object-cover" />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center text-slate-400 text-[10px]">
-                                  No image
-                                </div>
-                              )}
-                            </div>
-                            <div className="px-1.5 py-1">
-                              <p className="text-[10px] font-semibold text-slate-900 truncate">{p.title || p.address || 'Property'}</p>
-                              {p.price && <p className="text-[10px] font-bold text-orange-600">{typeof p.price === 'number' ? formatMoney(p.price) : p.price}</p>}
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  );
+                })}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+
+  return (
+    <div className="h-dvh w-full bg-[#111] flex flex-col items-center justify-start overflow-hidden select-none">
+
+      {isPreview ? (
+        /* ═══════ PREVIEW MODE — Mock kiosk frame ═══════ */
+        <div className="relative flex flex-col items-center h-full w-full max-w-[56.25dvh]">
+          {/* ── Display bezel ── */}
+          <div className="relative flex-1 w-full min-h-0" style={{ margin: '0.8% 0 0 0' }}>
+            <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-b from-[#2a2a2a] via-[#1a1a1a] to-[#0d0d0d] shadow-[0_0_60px_rgba(0,0,0,0.8)]" />
+            <div className="absolute inset-[3px] rounded-[1.85rem] bg-gradient-to-b from-[#333] via-[#181818] to-[#111]" />
+            <div className="absolute rounded-[1.5rem] overflow-hidden bg-slate-50 flex flex-col"
+                 style={{ top: '2.5%', left: '3.5%', right: '3.5%', bottom: '2.5%' }}>
+              {screenContent}
+            </div>
+            <div className="absolute bottom-[1.2%] left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.6)]" />
           </div>
-
-          {/* Small power LED on bezel bottom-center */}
-          <div className="absolute bottom-[1.2%] left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.6)]" />
+          {/* ── Stand / Pedestal ── */}
+          <div className="flex-shrink-0 flex flex-col items-center" style={{ height: '12%' }}>
+            <div className="w-[8%] flex-1 bg-gradient-to-b from-[#222] via-[#1a1a1a] to-[#252525] rounded-b-sm" />
+            <div className="w-[35%] h-[30%] bg-gradient-to-b from-[#2a2a2a] to-[#1f1f1f] rounded-t-lg rounded-b-[50%] shadow-[0_4px_20px_rgba(0,0,0,0.5)]" />
+            <div className="w-[50%] h-[8%] bg-black/30 rounded-[50%] blur-sm mt-0.5" />
+          </div>
         </div>
-
-        {/* ── Stand / Pedestal ── */}
-        <div className="flex-shrink-0 flex flex-col items-center" style={{ height: '12%' }}>
-          {/* Neck */}
-          <div className="w-[8%] flex-1 bg-gradient-to-b from-[#222] via-[#1a1a1a] to-[#252525] rounded-b-sm" />
-          {/* Base */}
-          <div className="w-[35%] h-[30%] bg-gradient-to-b from-[#2a2a2a] to-[#1f1f1f] rounded-t-lg rounded-b-[50%] shadow-[0_4px_20px_rgba(0,0,0,0.5)]" />
-          {/* Shadow on floor */}
-          <div className="w-[50%] h-[8%] bg-black/30 rounded-[50%] blur-sm mt-0.5" />
+      ) : (
+        /* ═══════ LIVE MODE — Fullscreen ═══════ */
+        <div className="relative h-full w-full bg-slate-50 flex flex-col overflow-hidden">
+          {screenContent}
         </div>
-      </div>
+      )}
 
       {/* ════════ Qualification Modal ════════ */}
       <AnimatePresence>
@@ -1068,25 +1104,44 @@ export default function TvDisplayPage() {
       </AnimatePresence>
 
       {/* ════════ Custom CSS ════════ */}
-      <style jsx>{`
+      <style dangerouslySetInnerHTML={{ __html: `
+        .tv-slider {
+          -webkit-appearance: none !important;
+          appearance: none !important;
+          background: transparent !important;
+          height: 20px !important;
+        }
+        .tv-slider::-webkit-slider-runnable-track {
+          height: 20px !important;
+          border-radius: 9999px !important;
+          background: linear-gradient(to right, #fb923c, #facc15, #22c55e) !important;
+        }
         .tv-slider::-webkit-slider-thumb {
-          appearance: none;
-          width: 44px;
-          height: 44px;
-          border-radius: 50%;
-          background: white;
-          cursor: pointer;
-          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-          border: 4px solid #ea580c;
+          -webkit-appearance: none !important;
+          appearance: none !important;
+          width: 72px !important;
+          height: 72px !important;
+          border-radius: 50% !important;
+          background: white !important;
+          cursor: pointer !important;
+          box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3) !important;
+          border: 6px solid #ea580c !important;
+          margin-top: -26px !important;
+        }
+        .tv-slider::-moz-range-track {
+          height: 20px !important;
+          border-radius: 9999px !important;
+          background: linear-gradient(to right, #fb923c, #facc15, #22c55e) !important;
+          border: none !important;
         }
         .tv-slider::-moz-range-thumb {
-          width: 44px;
-          height: 44px;
-          border-radius: 50%;
-          background: white;
-          cursor: pointer;
-          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-          border: 4px solid #ea580c;
+          width: 72px !important;
+          height: 72px !important;
+          border-radius: 50% !important;
+          background: white !important;
+          cursor: pointer !important;
+          box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3) !important;
+          border: 6px solid #ea580c !important;
         }
         .scrollbar-hide::-webkit-scrollbar {
           display: none;
@@ -1095,7 +1150,7 @@ export default function TvDisplayPage() {
           -ms-overflow-style: none;
           scrollbar-width: none;
         }
-      `}</style>
+      `}} />
     </div>
   );
 }
