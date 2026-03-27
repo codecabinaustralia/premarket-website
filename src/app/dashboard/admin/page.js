@@ -528,8 +528,35 @@ function PropertiesTab({ user }) {
             return bTime - aTime;
           });
 
+        // Fetch opinion + registered interest counts from offers collection
+        const propertyIds = props.map(p => p.id);
+        const opinionCounts = {};
+        const interestCounts = {};
+        for (let i = 0; i < propertyIds.length; i += 30) {
+          const batch = propertyIds.slice(i, i + 30);
+          const offersSnap = await getDocs(
+            query(collection(db, 'offers'), where('propertyId', 'in', batch))
+          );
+          offersSnap.docs.forEach(d => {
+            const data = d.data();
+            if (data.type === 'opinion') {
+              opinionCounts[data.propertyId] = (opinionCounts[data.propertyId] || 0) + 1;
+              if (data.serious === true) {
+                interestCounts[data.propertyId] = (interestCounts[data.propertyId] || 0) + 1;
+              }
+            }
+          });
+        }
+
+        // Attach counts to properties
+        const propsWithCounts = props.map(p => ({
+          ...p,
+          _opinionCount: opinionCounts[p.id] || 0,
+          _interestCount: interestCounts[p.id] || 0,
+        }));
+
         setAllUsers(userMap);
-        setProperties(props);
+        setProperties(propsWithCounts);
 
         // Fetch all agent docs referenced by properties
         const agentIds = [...new Set(props.map(p => p.agentId).filter(Boolean))];
@@ -687,7 +714,8 @@ function PropertiesTab({ user }) {
                     <span className="flex items-center gap-1">
                       <Eye className="w-3 h-3" /> {p.stats?.views || 0}
                     </span>
-                    <span>{p.stats?.opinions || 0} opinions</span>
+                    <span>{p._opinionCount || 0} opinions</span>
+                    <span>{p._interestCount || 0} interested</span>
                   </div>
                   <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full flex-shrink-0 ${
                     p.visibility ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'
