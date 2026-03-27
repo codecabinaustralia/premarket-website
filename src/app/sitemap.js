@@ -9,6 +9,18 @@ export default function sitemap() {
       priority: 1.0,
     },
     {
+      url: `${baseUrl}/listings`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/v2`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.7,
+    },
+    {
       url: `${baseUrl}/find-property`,
       lastModified: new Date(),
       changeFrequency: 'daily',

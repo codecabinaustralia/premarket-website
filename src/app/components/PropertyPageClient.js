@@ -156,13 +156,30 @@ export default function PropertyPageClient() {
         const userDoc = await getDoc(doc(db, 'users', property.userId));
         if (userDoc.exists()) {
           const userData = userDoc.data();
-          setAgentData({
+          const data = {
             firstName: userData.firstName,
             lastName: userData.lastName,
             companyName: userData.companyName,
             avatar: userData.avatar,
             logoUrl: userData.logoUrl,
-          });
+          };
+
+          // If property has an assigned agent, override name/avatar with agent doc
+          if (property.agentId) {
+            try {
+              const agentDoc = await getDoc(doc(db, 'agents', property.agentId));
+              if (agentDoc.exists()) {
+                const agentInfo = agentDoc.data();
+                data.firstName = agentInfo.name;
+                data.lastName = '';
+                if (agentInfo.avatar) data.avatar = agentInfo.avatar;
+              }
+            } catch (err) {
+              console.error('Error fetching assigned agent:', err);
+            }
+          }
+
+          setAgentData(data);
         }
       } catch (error) {
         console.error('Error fetching agent data:', error);
@@ -170,7 +187,7 @@ export default function PropertyPageClient() {
     };
 
     fetchAgentData();
-  }, [property?.userId]);
+  }, [property?.userId, property?.agentId]);
 
   // Fetch nearby properties based on geohash - only active properties
   useEffect(() => {
@@ -183,6 +200,7 @@ export default function PropertyPageClient() {
           collection(db, 'properties'),
           where('active', '==', true),
           where('visibility', '==', true),
+          orderBy('createdAt', 'desc'),
           limit(12)
         );
 
@@ -640,9 +658,8 @@ export default function PropertyPageClient() {
   const areaStats = getNestedValue(propertyJob, 'area_statistics');
 
   const displayVideoUrl = aiVideo?.url || videoUrl;
-  const displayPropertyType = propertyType === 0 ? 'House' :
-                              propertyType === 1 ? 'Apartment' :
-                              propertyData?.property_type || 'Property';
+  const typeMap = { 1: 'House', 2: 'Apartment', 3: 'Villa', 4: 'Townhouse', 5: 'Acreage' };
+  const displayPropertyType = typeMap[propertyType] || propertyData?.property_type || 'Property';
 
   // ═══════════════════════════════════════════════════════════════
   // iPad Open Home Mode - Fullscreen price opinion kiosk

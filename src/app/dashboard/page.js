@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase/clientApp';
-import { collection, query, where, getDocs, doc, updateDoc, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, updateDoc, onSnapshot, orderBy } from 'firebase/firestore';
 import {
   LayoutDashboard,
   Home,
@@ -36,6 +36,7 @@ import {
   Upload,
   Settings,
   User,
+  Users,
   Trash2,
   ExternalLink,
   FileText,
@@ -57,6 +58,25 @@ function formatDate(ts) {
   return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+// --- Shimmer Image Wrapper ---
+function ShimmerImage({ src, alt, ...props }) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <>
+      {!loaded && (
+        <div className="absolute inset-0 bg-slate-200 animate-pulse" />
+      )}
+      <Image
+        src={src}
+        alt={alt}
+        {...props}
+        onLoad={() => setLoaded(true)}
+        style={{ opacity: loaded ? 1 : 0, transition: 'opacity 0.3s ease' }}
+      />
+    </>
+  );
+}
+
 // --- Sidebar ---
 function Sidebar({ active, onNavigate, onSignOut, sidebarOpen, setSidebarOpen, userName, userData }) {
   const navItems = [
@@ -64,6 +84,7 @@ function Sidebar({ active, onNavigate, onSignOut, sidebarOpen, setSidebarOpen, u
     { id: 'archived', label: 'Archive', icon: Archive },
     { id: 'add', label: 'Add Property', icon: Plus, href: '/dashboard/add' },
     { id: 'user-manual', label: 'User Manual', icon: BookOpen, href: '/dashboard/user-manual' },
+    { id: 'agents', label: 'Team', icon: Users, href: '/dashboard/agents' },
     { id: 'settings', label: 'Settings', icon: Settings, href: '/dashboard/settings' },
     ...(userData?.apiAccess?.status === 'approved'
       ? [{ id: 'playground', label: 'Playground', icon: Sparkles, href: '/dashboard/playground' }]
@@ -238,21 +259,26 @@ function StatCard({ label, value, icon: Icon }) {
 }
 
 // --- Property Card ---
-function PropertyCard({ property, onToggleVisibility, toggling, onArchive, archiving, isArchived, onHide }) {
+function PropertyCard({ property, onToggleVisibility, toggling, onArchive, archiving, isArchived, onHide, teamAgents }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className="bg-white border border-slate-200 rounded-xl overflow-hidden hover:shadow-lg transition-shadow"
     >
-      {/* Image */}
-      <div className="relative h-48 bg-slate-100">
+      {/* Image — clickable to preview listing */}
+      <a
+        href={`/find-property?propertyId=${property.id}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block relative h-48 bg-slate-100 cursor-pointer group"
+      >
         {property.imageUrls?.[0] ? (
-          <Image
+          <ShimmerImage
             src={property.imageUrls[0]}
             alt={property.address || 'Property'}
             fill
-            className="object-cover"
+            className="object-cover group-hover:scale-[1.02] transition-transform duration-300"
             unoptimized
           />
         ) : property.imageUploadProgress?.inProgress ? (
@@ -279,21 +305,18 @@ function PropertyCard({ property, onToggleVisibility, toggling, onArchive, archi
         </div>
         {/* Top-right badges */}
         <div className="absolute top-3 right-3 flex items-center gap-1.5">
+          <span className={`px-2 py-1 text-[10px] font-bold rounded-full ${
+            property.listingStatus === 'on-market'
+              ? 'bg-emerald-600 text-white'
+              : 'bg-gradient-to-r from-[#e48900] to-[#c64500] text-white'
+          }`}>
+            {property.listingStatus === 'on-market' ? 'On Market' : 'Pre-Market'}
+          </span>
           {(property.videoUrl || property.aiVideo?.url) && (
             <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full bg-black/60 text-white">
               <Video className="w-3 h-3" />
             </span>
           )}
-          <a
-            href={`/find-property?propertyId=${property.id}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-black/60 hover:bg-black/80 text-white transition-colors"
-            title="Preview listing"
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-          </a>
         </div>
         {/* Upload Progress Bar */}
         {property.imageUploadProgress?.inProgress && (
@@ -306,11 +329,22 @@ function PropertyCard({ property, onToggleVisibility, toggling, onArchive, archi
             </div>
           </div>
         )}
-      </div>
+      </a>
 
-      {/* Details */}
+      {/* Details — address clickable to preview listing */}
       <div className="p-4">
-        <p className="font-semibold text-slate-900 text-sm truncate mb-1">{property.formattedAddress || property.address || 'No address'}</p>
+        <a
+          href={`/find-property?propertyId=${property.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-semibold text-slate-900 text-sm truncate mb-1 block hover:text-orange-600 transition-colors"
+        >
+          {property.formattedAddress || property.address || 'No address'}
+        </a>
+        {property.agentId && teamAgents?.length > 0 && (() => {
+          const agent = teamAgents.find(a => a.id === property.agentId);
+          return agent ? <p className="text-xs text-slate-500 mb-0.5">{agent.name}</p> : null;
+        })()}
         <p className="text-lg font-bold text-slate-900 mb-2">{formatPrice(property.price)}</p>
 
         <div className="flex items-center gap-3 text-xs text-slate-500 mb-3">
@@ -638,6 +672,8 @@ function DashboardPage() {
   const [archiving, setArchiving] = useState(false);
   const [successModal, setSuccessModal] = useState(null); // 'created' | 'updated' | null
   const [showLogoModal, setShowLogoModal] = useState(false);
+  const [teamAgents, setTeamAgents] = useState([]);
+  const [filterAgentId, setFilterAgentId] = useState('');
 
   // Logo onboarding for agents without a logo
   useEffect(() => {
@@ -670,7 +706,7 @@ function DashboardPage() {
   useEffect(() => {
     if (!user) return;
     setPropertiesLoading(true);
-    const q = query(collection(db, 'properties'), where('userId', '==', user.uid));
+    const q = query(collection(db, 'properties'), where('userId', '==', user.uid), orderBy('createdAt', 'desc'));
     let isFirst = true;
     const unsub = onSnapshot(q, async (snapshot) => {
       const props = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -697,6 +733,20 @@ function DashboardPage() {
       setPropertiesLoading(false);
     });
     return () => unsub();
+  }, [user]);
+
+  // Fetch team agents
+  useEffect(() => {
+    if (!user) return;
+    const fetchAgents = async () => {
+      try {
+        const snap = await getDocs(query(collection(db, 'agents'), where('userId', '==', user.uid)));
+        setTeamAgents(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      } catch (err) {
+        console.error('Error fetching agents:', err);
+      }
+    };
+    fetchAgents();
   }, [user]);
 
   const handleSignOut = async () => {
@@ -771,7 +821,10 @@ function DashboardPage() {
   const archivedProperties = properties.filter(p => p.archived === true && p.hidden !== true);
   const liveProperties = activeProperties.filter(p => p.visibility === true);
   const totalViews = activeProperties.reduce((sum, p) => sum + (p.stats?.views || 0), 0);
-  const displayProperties = activeTab === 'archived' ? archivedProperties : activeProperties;
+  const agentFilteredProperties = filterAgentId
+    ? (activeTab === 'archived' ? archivedProperties : activeProperties).filter(p => p.agentId === filterAgentId)
+    : (activeTab === 'archived' ? archivedProperties : activeProperties);
+  const displayProperties = agentFilteredProperties;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -824,6 +877,22 @@ function DashboardPage() {
             </Link>
           </div>
 
+          {/* Agent Filter */}
+          {teamAgents.length > 0 && (
+            <div className="flex items-center gap-3">
+              <select
+                value={filterAgentId}
+                onChange={(e) => setFilterAgentId(e.target.value)}
+                className="px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400"
+              >
+                <option value="">All agents</option>
+                {teamAgents.map((a) => (
+                  <option key={a.id} value={a.id}>{a.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {/* Overview Stats */}
           {activeTab === 'overview' && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -875,6 +944,7 @@ function DashboardPage() {
                   archiving={archiving}
                   isArchived={property.archived === true}
                   onHide={handleHideProperty}
+                  teamAgents={teamAgents}
                 />
               ))}
             </div>

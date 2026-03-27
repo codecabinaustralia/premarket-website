@@ -32,10 +32,10 @@ const antons = Anton({
 export const metadata = {
   metadataBase: new URL('https://premarket.homes'),
   title: {
-    default: "Premarket - Australia's Off-Market Property Platform",
+    default: "Premarket - See It Before Everyone Else",
     template: "%s | Premarket"
   },
-  description: "Australia's leading off-market property platform. Homeowners test the market free, buyers access exclusive pre-market listings, agents win more listings. Operating across Sydney, Melbourne, Brisbane & all of Australia.",
+  description: "Properties you won't find anywhere else. Browse exclusive pre-market listings, share your price opinion, and get ahead of the market.",
   applicationName: 'Premarket',
   authors: [{ name: 'Premarket' }],
   generator: 'Next.js',
@@ -53,8 +53,8 @@ export const metadata = {
     apple: '/apple.png',
   },
   openGraph: {
-    title: "Premarket - Australia's Off-Market Property Platform",
-    description: "Australia's leading off-market property platform. Homeowners test the market free, buyers access exclusive pre-market listings.",
+    title: "Premarket - See It Before Everyone Else",
+    description: "Properties you won't find anywhere else. Browse exclusive pre-market listings, share your price opinion, and get ahead of the market.",
     url: 'https://premarket.homes',
     siteName: 'Premarket',
     images: [
@@ -70,8 +70,8 @@ export const metadata = {
   },
   twitter: {
     card: 'summary',
-    title: "Premarket - Australia's Off-Market Property Platform",
-    description: "Australia's leading off-market property platform. Homeowners test the market free, buyers access exclusive pre-market listings.",
+    title: "Premarket - See It Before Everyone Else",
+    description: "Properties you won't find anywhere else. Browse exclusive pre-market listings, share your price opinion, and get ahead of the market.",
     images: ['https://premarketvideos.b-cdn.net/assets/logo.png'],
   },
 };

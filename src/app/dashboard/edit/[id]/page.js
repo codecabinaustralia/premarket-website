@@ -6,14 +6,20 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../../../context/AuthContext';
 import { db, storage } from '../../../firebase/clientApp';
-import { LoadScript, Autocomplete } from '@react-google-maps/api';
+import { useJsApiLoader, Autocomplete } from '@react-google-maps/api';
 import {
   doc,
   getDoc,
+  getDocs,
   updateDoc,
   setDoc,
   serverTimestamp,
+  collection,
+  query,
+  where,
 } from 'firebase/firestore';
+import AgentSelector from '../../../components/AgentSelector';
+import AgentModal from '../../../components/AgentModal';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import {
   MapPin,
@@ -48,12 +54,20 @@ const homeFeatures = [
   'Study', 'Ensuite', 'Smart Home Features', 'Built-in Wardrobes',
 ];
 
+const GMAPS_LIBRARIES = ['places'];
+
 export default function EditPropertyPage() {
   const { user, userData, loading: authLoading } = useAuth();
   const router = useRouter();
   const params = useParams();
   const propertyId = params.id;
   const autocompleteRef = useRef(null);
+
+  const { isLoaded: mapsLoaded } = useJsApiLoader({
+    id: 'gmaps-script',
+    googleMapsApiKey: 'AIzaSyBbLrFWUU62O_by81ihAVKvye4bHA0sah8',
+    libraries: GMAPS_LIBRARIES,
+  });
 
   const [step, setStep] = useState(STEPS.ADDRESS);
   const [pageLoading, setPageLoading] = useState(true);
@@ -63,6 +77,7 @@ export default function EditPropertyPage() {
   const [address, setAddress] = useState('');
   const [location, setLocation] = useState(null);
   const [type, setType] = useState(null);
+  const [listingStatus, setListingStatus] = useState('premarket');
   const [priceRaw, setPriceRaw] = useState('');
   const [bedrooms, setBedrooms] = useState('');
   const [bathrooms, setBathrooms] = useState('');
@@ -75,6 +90,11 @@ export default function EditPropertyPage() {
   const [images, setImages] = useState([]);
   const [video, setVideo] = useState(null); // new File to upload
   const [existingVideoUrl, setExistingVideoUrl] = useState(null);
+
+  // Agent assignment state
+  const [selectedAgentId, setSelectedAgentId] = useState(null);
+  const [teamAgents, setTeamAgents] = useState([]);
+  const [showAgentModal, setShowAgentModal] = useState(false);
 
   // UX state
   const [errors, setErrors] = useState({});
@@ -129,6 +149,7 @@ export default function EditPropertyPage() {
         } else {
           setType(null);
         }
+        setListingStatus(p.listingStatus || 'premarket');
         setPriceRaw(String(p.price || '').replace(/[^0-9]/g, ''));
         setBedrooms(p.bedrooms != null ? String(p.bedrooms) : '');
         setBathrooms(p.bathrooms != null ? String(p.bathrooms) : '');
@@ -147,6 +168,9 @@ export default function EditPropertyPage() {
 
         // Existing video
         setExistingVideoUrl(p.videoUrl || p.aiVideo?.url || null);
+
+        // Agent assignment
+        setSelectedAgentId(p.agentId || null);
       } catch (err) {
         console.error('Error loading property:', err);
         router.push('/dashboard');
@@ -156,6 +180,20 @@ export default function EditPropertyPage() {
     };
     loadProperty();
   }, [user, propertyId, router]);
+
+  // Fetch team agents
+  useEffect(() => {
+    if (!user) return;
+    const fetchAgents = async () => {
+      try {
+        const snap = await getDocs(query(collection(db, 'agents'), where('userId', '==', user.uid)));
+        setTeamAgents(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      } catch (err) {
+        console.error('Error fetching agents:', err);
+      }
+    };
+    fetchAgents();
+  }, [user]);
 
   // Revoke object URLs on unmount only (not on every reorder)
   const imagesRef = useRef(images);
@@ -369,7 +407,8 @@ export default function EditPropertyPage() {
     const uploadedUrls = [...existingUrls];
 
     try {
-      for (const file of newFiles) {
+      for (const rawFile of newFiles) {
+        const file = rawFile;
         const storageRef = ref(storage, `propertyImages/${userId}/${Date.now()}-${file.name}`);
         const uploadTask = uploadBytesResumable(storageRef, file);
 
@@ -395,17 +434,26 @@ export default function EditPropertyPage() {
         });
       }
 
-      // Upload new video
+      // Upload new video to Firebase Storage
       if (videoFile) {
-        const videoFormData = new FormData();
-        videoFormData.append('file', videoFile);
-        const videoRes = await fetch('/api/upload-image', {
-          method: 'POST',
-          body: videoFormData,
-        });
-        if (videoRes.ok) {
-          const videoData = await videoRes.json();
-          await updateDoc(doc(db, 'properties', propId), { videoUrl: videoData.url });
+        try {
+          const videoStorageRef = ref(storage, `propertyVideos/${userId}/${Date.now()}-${videoFile.name}`);
+          const videoUploadTask = uploadBytesResumable(videoStorageRef, videoFile);
+
+          await new Promise((resolve, reject) => {
+            videoUploadTask.on(
+              'state_changed',
+              null,
+              reject,
+              async () => {
+                const videoDownloadURL = await getDownloadURL(videoUploadTask.snapshot.ref);
+                await updateDoc(doc(db, 'properties', propId), { videoUrl: videoDownloadURL });
+                resolve();
+              }
+            );
+          });
+        } catch (err) {
+          console.error('Video upload failed:', err);
         }
       }
 
@@ -455,8 +503,10 @@ export default function EditPropertyPage() {
         squareFootage,
         title,
         propertyType: type,
+        listingStatus,
+        agentId: selectedAgentId || null,
         updatedAt: serverTimestamp(),
-        ...(existingVideoUrl ? { videoUrl: existingVideoUrl } : !video ? { videoUrl: null } : {}),
+        ...(existingVideoUrl ? { videoUrl: existingVideoUrl } : !video ? { videoUrl: null } : { videoUrl: existingVideoUrl || null }),
         ...(newFiles.length > 0 && {
           imageUploadProgress: { uploaded: 0, total: newFiles.length, inProgress: true },
         }),
@@ -550,11 +600,7 @@ export default function EditPropertyPage() {
                 <h2 className="text-2xl font-bold text-slate-900 mb-2">Where is the property?</h2>
                 <p className="text-slate-500 mb-6">Start typing and select from the suggestions.</p>
 
-                <LoadScript
-                  id="gmaps-script"
-                  googleMapsApiKey="AIzaSyBbLrFWUU62O_by81ihAVKvye4bHA0sah8"
-                  libraries={['places']}
-                >
+                {mapsLoaded ? (
                   <Autocomplete onLoad={(ref) => (autocompleteRef.current = ref)} onPlaceChanged={handlePlaceChanged}>
                     <div className="relative">
                       <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -566,7 +612,17 @@ export default function EditPropertyPage() {
                       />
                     </div>
                   </Autocomplete>
-                </LoadScript>
+                ) : (
+                  <div className="relative">
+                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300" />
+                    <input
+                      type="text"
+                      placeholder="Loading address search..."
+                      disabled
+                      className="w-full pl-12 pr-4 py-4 rounded-xl border border-slate-200 bg-slate-50 text-slate-400 text-lg"
+                    />
+                  </div>
+                )}
 
                 {address && (
                   <div className="mt-4 p-4 bg-orange-50 rounded-xl border border-orange-200">
@@ -596,6 +652,38 @@ export default function EditPropertyPage() {
                       {item}
                     </button>
                   ))}
+                </div>
+
+                {/* Listing Status Toggle */}
+                <div className="mt-8 pt-6 border-t border-slate-200">
+                  <label className="block text-sm font-medium text-slate-700 mb-3">Listing status</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={() => setListingStatus('premarket')}
+                      className={`px-5 py-3.5 rounded-xl text-sm font-semibold transition-all border ${
+                        listingStatus === 'premarket'
+                          ? 'bg-gradient-to-r from-[#e48900] to-[#c64500] text-white border-orange-500 shadow-lg'
+                          : 'bg-white text-slate-700 border-slate-200 hover:border-orange-300'
+                      }`}
+                    >
+                      Pre-Market
+                    </button>
+                    <button
+                      onClick={() => setListingStatus('on-market')}
+                      className={`px-5 py-3.5 rounded-xl text-sm font-semibold transition-all border ${
+                        listingStatus === 'on-market'
+                          ? 'bg-emerald-600 text-white border-emerald-500 shadow-lg'
+                          : 'bg-white text-slate-700 border-slate-200 hover:border-emerald-300'
+                      }`}
+                    >
+                      On Market
+                    </button>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-2">
+                    {listingStatus === 'premarket'
+                      ? 'This property is not yet publicly listed — collect buyer opinions before going to market.'
+                      : 'This property is currently listed on the market.'}
+                  </p>
                 </div>
               </div>
             )}
@@ -866,9 +954,34 @@ export default function EditPropertyPage() {
                       className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none transition-all text-slate-900 resize-none"
                     />
                   </div>
+
+                  {/* Agent Selector */}
+                  {teamAgents.length > 0 && (
+                    <AgentSelector
+                      agents={teamAgents}
+                      selectedAgentId={selectedAgentId}
+                      onSelect={setSelectedAgentId}
+                      onAddNew={() => setShowAgentModal(true)}
+                    />
+                  )}
                 </div>
               </div>
             )}
+
+            {/* Agent Modal for inline create */}
+            <AnimatePresence>
+              {showAgentModal && (
+                <AgentModal
+                  show={showAgentModal}
+                  onClose={() => setShowAgentModal(false)}
+                  onSave={(saved) => {
+                    setTeamAgents((prev) => [...prev, saved]);
+                    setSelectedAgentId(saved.id);
+                  }}
+                  userId={user.uid}
+                />
+              )}
+            </AnimatePresence>
 
             {/* Error */}
             {errors.step && (

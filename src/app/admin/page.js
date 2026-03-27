@@ -465,7 +465,13 @@ function AdminDashboard() {
             return bTime - aTime;
           });
 
-        const propsData = propsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const propsData = propsSnap.docs
+          .map(d => ({ id: d.id, ...d.data() }))
+          .sort((a, b) => {
+            const aTime = a.createdAt?.toMillis?.() || a.createdAt?.seconds * 1000 || 0;
+            const bTime = b.createdAt?.toMillis?.() || b.createdAt?.seconds * 1000 || 0;
+            return bTime - aTime;
+          });
 
         // Group properties by userId
         const propsByUser = {};

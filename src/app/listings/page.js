@@ -9,6 +9,24 @@ import { collection, query, where, orderBy, getDocs, doc, getDoc } from 'firebas
 import Nav from '../components/Nav';
 import AgentFooter from '../components/AgentFooter';
 
+function ShimmerImage({ src, alt, ...props }) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <>
+      {!loaded && (
+        <div className="absolute inset-0 bg-slate-200 animate-pulse" />
+      )}
+      <Image
+        src={src}
+        alt={alt}
+        {...props}
+        onLoad={() => setLoaded(true)}
+        style={{ opacity: loaded ? 1 : 0, transition: 'opacity 0.3s ease' }}
+      />
+    </>
+  );
+}
+
 const RADIUS_OPTIONS = [
   { value: '', label: 'Any Distance' },
   { value: '5', label: '5 km' },
@@ -163,6 +181,7 @@ function ListingsContent() {
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [agents, setAgents] = useState({});
+  const [agentDocs, setAgentDocs] = useState({});
   const searchInputRef = useRef(null);
 
   // Filters
@@ -289,13 +308,13 @@ function ListingsContent() {
       const snapshot = await getDocs(q);
       console.log('Fetched properties:', snapshot.docs.length);
 
-      // Filter visibility client-side and sort by created
+      // Filter visibility client-side and sort by newest first
       const docs = snapshot.docs
         .map(doc => ({ id: doc.id, ...doc.data() }))
         .filter(doc => doc.visibility === true)
         .sort((a, b) => {
-          const aTime = a.created?.toMillis?.() || 0;
-          const bTime = b.created?.toMillis?.() || 0;
+          const aTime = a.createdAt?.toMillis?.() || a.created?.toMillis?.() || 0;
+          const bTime = b.createdAt?.toMillis?.() || b.created?.toMillis?.() || 0;
           return bTime - aTime;
         });
 
@@ -333,6 +352,25 @@ function ListingsContent() {
         })
       );
       setAgents(agentData);
+
+      // Fetch agent docs for properties with agentId
+      const agentIds = [...new Set(docs.map(p => p.agentId).filter(Boolean))];
+      if (agentIds.length > 0) {
+        const agentDocsMap = {};
+        await Promise.all(
+          agentIds.map(async (agentId) => {
+            try {
+              const agentDoc = await getDoc(doc(db, 'agents', agentId));
+              if (agentDoc.exists()) {
+                agentDocsMap[agentId] = agentDoc.data();
+              }
+            } catch (err) {
+              console.error('Error fetching agent doc:', agentId, err);
+            }
+          })
+        );
+        setAgentDocs(agentDocsMap);
+      }
     } catch (error) {
       console.error('Error fetching properties:', error);
     } finally {
@@ -380,7 +418,8 @@ function ListingsContent() {
 
     if (propertyType) {
       filtered = filtered.filter(p => {
-        const pType = p.propertyType === 0 ? 'House' : p.propertyType === 1 ? 'Apartment' : p.propertyJob?.property_data?.property_type;
+        const typeMap = { 1: 'House', 2: 'Apartment', 3: 'Villa', 4: 'Townhouse', 5: 'Acreage' };
+        const pType = typeMap[p.propertyType] || p.propertyJob?.property_data?.property_type;
         return pType?.toLowerCase() === propertyType.toLowerCase();
       });
     }
@@ -791,7 +830,7 @@ function ListingsContent() {
                   >
                     <div className="aspect-[16/10] relative overflow-hidden">
                       {property.imageUrls?.[0] ? (
-                        <Image
+                        <ShimmerImage
                           src={property.imageUrls[0]}
                           alt={property.title || 'Property'}
                           fill
@@ -806,8 +845,12 @@ function ListingsContent() {
                         </div>
                       )}
                       <div className="absolute top-3 left-3 flex items-center gap-2">
-                        <span className="px-3 py-1 bg-gradient-to-r from-[#e48900] to-[#c64500] text-white rounded-full text-xs font-bold shadow-lg">
-                          Pre-Market
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold shadow-lg ${
+                          property.listingStatus === 'on-market'
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-gradient-to-r from-[#e48900] to-[#c64500] text-white'
+                        }`}>
+                          {property.listingStatus === 'on-market' ? 'On Market' : 'Pre-Market'}
                         </span>
                         {(property.videoUrl || property.aiVideo?.url) && (
                           <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full bg-black/60 text-white shadow-lg">
@@ -873,52 +916,60 @@ function ListingsContent() {
                       </div>
 
                       {/* Agent Details */}
-                      {property.userId && agents[property.userId] && (
-                        <div className="pt-3 border-t border-slate-100">
-                          <div className="flex items-center gap-2.5">
-                            <div className="flex-shrink-0">
-                              {agents[property.userId].avatar ? (
-                                <Image
-                                  src={agents[property.userId].avatar}
-                                  alt={`${agents[property.userId].firstName || 'Agent'}`}
-                                  width={36}
-                                  height={36}
-                                  className="rounded-lg object-cover w-9 h-9"
-                                  unoptimized
-                                />
-                              ) : (
-                                <div className="w-9 h-9 bg-slate-200 rounded-lg flex items-center justify-center">
-                                  <svg className="w-4 h-4 text-slate-400" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                                  </svg>
+                      {property.userId && agents[property.userId] && (() => {
+                        const accountAgent = agents[property.userId];
+                        const assignedAgent = property.agentId && agentDocs[property.agentId];
+                        const displayName = assignedAgent
+                          ? assignedAgent.name
+                          : [accountAgent.firstName, accountAgent.lastName].filter(Boolean).join(' ');
+                        const displayAvatar = assignedAgent?.avatar || accountAgent.avatar;
+                        return (
+                          <div className="pt-3 border-t border-slate-100">
+                            <div className="flex items-center gap-2.5">
+                              <div className="flex-shrink-0">
+                                {displayAvatar ? (
+                                  <Image
+                                    src={displayAvatar}
+                                    alt={displayName || 'Agent'}
+                                    width={36}
+                                    height={36}
+                                    className="rounded-lg object-cover w-9 h-9"
+                                    unoptimized
+                                  />
+                                ) : (
+                                  <div className="w-9 h-9 bg-slate-200 rounded-lg flex items-center justify-center">
+                                    <svg className="w-4 h-4 text-slate-400" fill="currentColor" viewBox="0 0 20 20">
+                                      <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                                    </svg>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-semibold text-slate-800 truncate">
+                                  {displayName}
+                                </p>
+                                {accountAgent.companyName && (
+                                  <p className="text-[11px] text-slate-500 truncate font-medium">
+                                    {accountAgent.companyName}
+                                  </p>
+                                )}
+                              </div>
+                              {accountAgent.logoUrl && (
+                                <div className="flex-shrink-0">
+                                  <Image
+                                    src={accountAgent.logoUrl}
+                                    alt="Agency"
+                                    width={32}
+                                    height={32}
+                                    className="w-8 h-8 rounded-lg object-contain bg-white border border-slate-100"
+                                    unoptimized
+                                  />
                                 </div>
                               )}
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs font-semibold text-slate-800 truncate">
-                                {agents[property.userId].firstName} {agents[property.userId].lastName}
-                              </p>
-                              {agents[property.userId].companyName && (
-                                <p className="text-[11px] text-slate-500 truncate font-medium">
-                                  {agents[property.userId].companyName}
-                                </p>
-                              )}
-                            </div>
-                            {agents[property.userId].logoUrl && (
-                              <div className="flex-shrink-0">
-                                <Image
-                                  src={agents[property.userId].logoUrl}
-                                  alt="Agency"
-                                  width={32}
-                                  height={32}
-                                  className="w-8 h-8 rounded-lg object-contain bg-white border border-slate-100"
-                                  unoptimized
-                                />
-                              </div>
-                            )}
                           </div>
-                        </div>
-                      )}
+                        );
+                      })()}
                     </div>
                   </motion.a>
                 ))}

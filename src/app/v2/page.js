@@ -7,7 +7,7 @@ import SchemaOrganization from '../components/SchemaOrganization';
 import SchemaWebsite from '../components/SchemaWebsite';
 
 export const metadata = {
-  title: "Premarket - Price Education Backed by Data | Real Estate Agents Australia",
+  title: "Premarket For Agents - Price Education Backed by Data | Real Estate Agents Australia",
   description: "Stop guessing what a property is worth. Premarket gives agents real buyer price opinions so you can educate sellers with evidence, not opinions. The only platform with live buyer data.",
   keywords: "price education, real estate data, buyer price opinions, listing tool australia, agent platform, real estate technology, property valuation, buyer feedback",
   openGraph: {
@@ -30,8 +30,8 @@ export const metadata = {
     canonical: 'https://premarket.homes/v2',
   },
   robots: {
-    index: false,
-    follow: false,
+    index: true,
+    follow: true,
   },
 };
 

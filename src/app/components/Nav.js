@@ -36,6 +36,7 @@ export default function Nav({ isHomepage = false }) {
 
   const navLinks = [
     { name: 'Browse Properties', href: '/listings' },
+    { name: 'For Agents', href: '/v2' },
   ];
 
   const initials = user

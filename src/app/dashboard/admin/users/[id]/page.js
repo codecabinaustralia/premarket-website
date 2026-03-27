@@ -100,6 +100,11 @@ export default function AdminUserPage() {
         userProperties = propsSnap2.docs.map((d) => ({ id: d.id, ...d.data() }));
       }
 
+      userProperties.sort((a, b) => {
+        const aTime = a.createdAt?.toMillis?.() || a.createdAt?.seconds * 1000 || 0;
+        const bTime = b.createdAt?.toMillis?.() || b.createdAt?.seconds * 1000 || 0;
+        return bTime - aTime;
+      });
       setProperties(userProperties);
 
       // Fetch notes

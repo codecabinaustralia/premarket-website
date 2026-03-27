@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../firebase/clientApp';
-import { collection, getDocs, query, where, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, getDocs, getDoc, query, where, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
 import {
   ArrowLeft,
   Shield,
@@ -499,9 +499,11 @@ function UsersTab({ user }) {
 function PropertiesTab({ user }) {
   const [properties, setProperties] = useState([]);
   const [allUsers, setAllUsers] = useState({});
+  const [allAgentDocs, setAllAgentDocs] = useState({});
   const [propertiesLoading, setPropertiesLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
+  const [agentFilter, setAgentFilter] = useState('');
 
   useEffect(() => {
     async function fetchData() {
@@ -517,12 +519,36 @@ function PropertiesTab({ user }) {
           userMap[u.id] = u;
         }
 
+        const props = propertiesSnap.docs
+          .map((d) => ({ id: d.id, ...d.data() }))
+          .filter((p) => p.active !== false && p.archived !== true)
+          .sort((a, b) => {
+            const aTime = a.createdAt?.toMillis?.() || a.createdAt?.seconds * 1000 || 0;
+            const bTime = b.createdAt?.toMillis?.() || b.createdAt?.seconds * 1000 || 0;
+            return bTime - aTime;
+          });
+
         setAllUsers(userMap);
-        setProperties(
-          propertiesSnap.docs
-            .map((d) => ({ id: d.id, ...d.data() }))
-            .filter((p) => p.active !== false && p.archived !== true)
-        );
+        setProperties(props);
+
+        // Fetch all agent docs referenced by properties
+        const agentIds = [...new Set(props.map(p => p.agentId).filter(Boolean))];
+        if (agentIds.length > 0) {
+          const agentDocsMap = {};
+          await Promise.all(
+            agentIds.map(async (agentId) => {
+              try {
+                const agentDoc = await getDoc(doc(db, 'agents', agentId));
+                if (agentDoc.exists()) {
+                  agentDocsMap[agentId] = { id: agentId, ...agentDoc.data() };
+                }
+              } catch (err) {
+                console.error('Error fetching agent doc:', agentId, err);
+              }
+            })
+          );
+          setAllAgentDocs(agentDocsMap);
+        }
       } catch (err) {
         console.error('Properties fetch error:', err);
       } finally {
@@ -539,6 +565,10 @@ function PropertiesTab({ user }) {
     else if (filter === 'private') result = result.filter((p) => !p.visibility);
     else if (filter === 'archived') result = result.filter((p) => p.archived === true);
 
+    if (agentFilter) {
+      result = result.filter((p) => p.agentId === agentFilter);
+    }
+
     if (search.trim()) {
       const q = search.toLowerCase();
       result = result.filter((p) => {
@@ -553,7 +583,7 @@ function PropertiesTab({ user }) {
     }
 
     return result;
-  }, [properties, search, filter, allUsers]);
+  }, [properties, search, filter, agentFilter, allUsers]);
 
   const filters = [
     { key: 'all', label: 'All' },
@@ -575,7 +605,7 @@ function PropertiesTab({ user }) {
         />
       </div>
 
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex gap-2 flex-wrap items-center">
         {filters.map((f) => (
           <button
             key={f.key}
@@ -589,6 +619,18 @@ function PropertiesTab({ user }) {
             {f.label}
           </button>
         ))}
+        {Object.keys(allAgentDocs).length > 0 && (
+          <select
+            value={agentFilter}
+            onChange={(e) => setAgentFilter(e.target.value)}
+            className="px-3 py-1.5 text-xs font-medium rounded-full border border-slate-200 text-slate-600 bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+          >
+            <option value="">All agents</option>
+            {Object.values(allAgentDocs).map((a) => (
+              <option key={a.id} value={a.id}>{a.name}</option>
+            ))}
+          </select>
+        )}
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
@@ -633,7 +675,13 @@ function PropertiesTab({ user }) {
                     <p className="font-semibold text-slate-900 text-sm truncate">
                       {p.address || p.formattedAddress || 'No address'}
                     </p>
-                    <p className="text-xs text-slate-500">{agentName} &middot; {p.price || '--'}</p>
+                    <p className="text-xs text-slate-500">
+                      {agentName}
+                      {p.agentId && allAgentDocs[p.agentId] && (
+                        <span className="text-orange-500"> ({allAgentDocs[p.agentId].name})</span>
+                      )}
+                      {' '}&middot; {p.price || '--'}
+                    </p>
                   </div>
                   <div className="hidden sm:flex items-center gap-3 flex-shrink-0 text-xs text-slate-400">
                     <span className="flex items-center gap-1">

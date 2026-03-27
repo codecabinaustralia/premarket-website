@@ -15,6 +15,7 @@ import {
   serverTimestamp,
   setDoc,
   getDoc,
+  getDocs,
 } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import {
@@ -37,7 +38,9 @@ import {
   FileText,
   GripVertical,
 } from 'lucide-react';
-import { onSnapshot } from 'firebase/firestore';
+import { onSnapshot, query, where } from 'firebase/firestore';
+import AgentSelector from '../../components/AgentSelector';
+import AgentModal from '../../components/AgentModal';
 
 const STEPS = {
   ADDRESS: 1,
@@ -76,6 +79,7 @@ export default function AddPropertyPage() {
   const [address, setAddress] = useState('');
   const [location, setLocation] = useState(null);
   const [type, setType] = useState(null);
+  const [listingStatus, setListingStatus] = useState('premarket'); // 'premarket' or 'on-market'
   const [priceRaw, setPriceRaw] = useState('');
   const [bedrooms, setBedrooms] = useState('');
   const [bathrooms, setBathrooms] = useState('');
@@ -99,6 +103,11 @@ export default function AddPropertyPage() {
   const [mediaError, setMediaError] = useState(null);
   const [dragIndex, setDragIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
+
+  // Agent assignment state
+  const [selectedAgentId, setSelectedAgentId] = useState(null);
+  const [teamAgents, setTeamAgents] = useState([]);
+  const [showAgentModal, setShowAgentModal] = useState(false);
 
   // AgentBox state
   const [agentboxConnected, setAgentboxConnected] = useState(false);
@@ -135,6 +144,20 @@ export default function AddPropertyPage() {
     };
     loadTerms();
   }, [user, userData?.agent]);
+
+  // Fetch team agents
+  useEffect(() => {
+    if (!user) return;
+    const fetchAgents = async () => {
+      try {
+        const snap = await getDocs(query(collection(db, 'agents'), where('userId', '==', user.uid)));
+        setTeamAgents(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      } catch (err) {
+        console.error('Error fetching agents:', err);
+      }
+    };
+    fetchAgents();
+  }, [user]);
 
   // Listen for AgentBox integration status
   useEffect(() => {
@@ -453,17 +476,26 @@ export default function AddPropertyPage() {
         });
       }
 
-      // Upload video to Bunny CDN
+      // Upload video to Firebase Storage, then move to Bunny CDN
       if (videoFile) {
-        const videoFormData = new FormData();
-        videoFormData.append('file', videoFile);
-        const videoRes = await fetch('/api/upload-image', {
-          method: 'POST',
-          body: videoFormData,
-        });
-        if (videoRes.ok) {
-          const videoData = await videoRes.json();
-          await updateDoc(doc(db, 'properties', propertyId), { videoUrl: videoData.url });
+        try {
+          const videoStorageRef = ref(storage, `propertyVideos/${userId}/${Date.now()}-${videoFile.name}`);
+          const videoUploadTask = uploadBytesResumable(videoStorageRef, videoFile);
+
+          await new Promise((resolve, reject) => {
+            videoUploadTask.on(
+              'state_changed',
+              null,
+              reject,
+              async () => {
+                const videoDownloadURL = await getDownloadURL(videoUploadTask.snapshot.ref);
+                await updateDoc(doc(db, 'properties', propertyId), { videoUrl: videoDownloadURL });
+                resolve();
+              }
+            );
+          });
+        } catch (err) {
+          console.error('Video upload failed:', err);
         }
       }
 
@@ -530,11 +562,13 @@ export default function AddPropertyPage() {
         campaignId: 'FqMZd0mWlNlSBl66s7BN',
         isEager: 80,
         propertyType: type,
+        listingStatus,
         wantsPremiumListing: false,
         agent: true,
         vendorUploaded: true,
         agentManaged: true,
         userId: user.uid,
+        agentId: selectedAgentId || null,
         stats: { views: 0 },
         termsAcceptedAt: serverTimestamp(),
       };
@@ -821,6 +855,38 @@ export default function AddPropertyPage() {
                     </button>
                   ))}
                 </div>
+
+                {/* Listing Status Toggle */}
+                <div className="mt-8 pt-6 border-t border-slate-200">
+                  <label className="block text-sm font-medium text-slate-700 mb-3">Listing status</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={() => setListingStatus('premarket')}
+                      className={`px-5 py-3.5 rounded-xl text-sm font-semibold transition-all border ${
+                        listingStatus === 'premarket'
+                          ? 'bg-gradient-to-r from-[#e48900] to-[#c64500] text-white border-orange-500 shadow-lg'
+                          : 'bg-white text-slate-700 border-slate-200 hover:border-orange-300'
+                      }`}
+                    >
+                      Pre-Market
+                    </button>
+                    <button
+                      onClick={() => setListingStatus('on-market')}
+                      className={`px-5 py-3.5 rounded-xl text-sm font-semibold transition-all border ${
+                        listingStatus === 'on-market'
+                          ? 'bg-emerald-600 text-white border-emerald-500 shadow-lg'
+                          : 'bg-white text-slate-700 border-slate-200 hover:border-emerald-300'
+                      }`}
+                    >
+                      On Market
+                    </button>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-2">
+                    {listingStatus === 'premarket'
+                      ? 'This property is not yet publicly listed — collect buyer opinions before going to market.'
+                      : 'This property is currently listed on the market.'}
+                  </p>
+                </div>
               </div>
             )}
 
@@ -1091,9 +1157,34 @@ export default function AddPropertyPage() {
                       className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none transition-all text-slate-900 resize-none"
                     />
                   </div>
+
+                  {/* Agent Selector */}
+                  {teamAgents.length > 0 && (
+                    <AgentSelector
+                      agents={teamAgents}
+                      selectedAgentId={selectedAgentId}
+                      onSelect={setSelectedAgentId}
+                      onAddNew={() => setShowAgentModal(true)}
+                    />
+                  )}
                 </div>
               </div>
             )}
+
+            {/* Agent Modal for inline create */}
+            <AnimatePresence>
+              {showAgentModal && (
+                <AgentModal
+                  show={showAgentModal}
+                  onClose={() => setShowAgentModal(false)}
+                  onSave={(saved) => {
+                    setTeamAgents((prev) => [...prev, saved]);
+                    setSelectedAgentId(saved.id);
+                  }}
+                  userId={user.uid}
+                />
+              )}
+            </AnimatePresence>
 
             {/* Step 7: Terms & Conditions */}
             {step === STEPS.TERMS && (

@@ -174,6 +174,11 @@ function TvDisplayPage() {
             const s = await getDocs(q);
             s.docs.forEach((d) => allDocs.push({ id: d.id, ...d.data() }));
           }
+          allDocs.sort((a, b) => {
+            const aTime = a.createdAt?.toMillis?.() || a.createdAt?.seconds * 1000 || 0;
+            const bTime = b.createdAt?.toMillis?.() || b.createdAt?.seconds * 1000 || 0;
+            return bTime - aTime;
+          });
           setProperties(allDocs);
         } else {
           const propsQuery = query(
@@ -182,7 +187,13 @@ function TvDisplayPage() {
             where('visibility', '==', true)
           );
           const propsSnap = await getDocs(propsQuery);
-          setProperties(propsSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
+          const allProps = propsSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+          allProps.sort((a, b) => {
+            const aTime = a.createdAt?.toMillis?.() || a.createdAt?.seconds * 1000 || 0;
+            const bTime = b.createdAt?.toMillis?.() || b.createdAt?.seconds * 1000 || 0;
+            return bTime - aTime;
+          });
+          setProperties(allProps);
         }
       } catch (err) {
         console.error('TV display load error:', err);
