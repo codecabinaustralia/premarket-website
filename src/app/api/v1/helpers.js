@@ -350,15 +350,8 @@ export function median(arr) {
   return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
-/**
- * Format a price as AUD.
- */
-export function formatPrice(price) {
-  if (!price) return null;
-  const num = parseFloat(String(price).replace(/[^0-9.]/g, ''));
-  if (isNaN(num)) return null;
-  return '$' + num.toLocaleString('en-AU', { maximumFractionDigits: 0 });
-}
+// Re-export formatPrice from shared utility
+export { formatPrice } from '../../utils/formatters';
 
 /**
  * Parse common location query params from a request URL.

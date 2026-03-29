@@ -1,11 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '../../../../firebase/adminApp';
-
-async function verifyAdmin(adminUid) {
-  if (!adminUid) return false;
-  const doc = await adminDb.collection('users').doc(adminUid).get();
-  return doc.exists && doc.data().superAdmin === true;
-}
+import { verifyAdmin } from '../../../middleware/auth';
 
 const DEFAULT_SETTINGS = {
   pricePerListing: 200,
@@ -21,11 +16,9 @@ const DEFAULT_SETTINGS = {
 
 export async function GET(request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const adminUid = searchParams.get('adminUid');
-
-    if (!(await verifyAdmin(adminUid))) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    const auth = await verifyAdmin(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
     const [settingsDoc, xeroDoc] = await Promise.all([
@@ -46,12 +39,12 @@ export async function GET(request) {
 
 export async function PUT(request) {
   try {
-    const body = await request.json();
-    const { adminUid, settings } = body;
-
-    if (!(await verifyAdmin(adminUid))) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    const auth = await verifyAdmin(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
+
+    const { settings } = await request.json();
 
     const allowedFields = [
       'pricePerListing', 'gstRate', 'paymentTermsDays', 'invoicePrefix',

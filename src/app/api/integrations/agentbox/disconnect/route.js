@@ -1,20 +1,15 @@
 import { NextResponse } from 'next/server';
+import { verifyAuth } from '../../../../api/middleware/auth';
 import { removeCredentials, deleteContactsForAgent } from '../../../../api/services/agentboxService';
 import { adminDb } from '../../../../firebase/adminApp';
 
 export async function POST(request) {
   try {
-    const { uid } = await request.json();
-
-    if (!uid) {
-      return NextResponse.json({ error: 'Missing uid' }, { status: 400 });
+    const auth = await verifyAuth(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
-
-    // Verify user exists
-    const userDoc = await adminDb.collection('users').doc(uid).get();
-    if (!userDoc.exists) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
+    const uid = auth.uid;
 
     // Remove credentials
     await removeCredentials(uid);

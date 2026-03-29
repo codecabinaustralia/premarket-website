@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { verifyAuth } from '../../../../api/middleware/auth';
 import { validateCredentials, storeCredentials, syncContacts, getAccessToken } from '../../../../api/services/rexService';
 import { DEMO_OFFICES } from '../../../../api/services/rexDemoData';
 import { adminDb } from '../../../../firebase/adminApp';
@@ -6,12 +7,14 @@ import { FieldValue } from 'firebase-admin/firestore';
 
 export async function POST(request) {
   try {
-    const body = await request.json();
-    const { uid, clientId, clientSecret, demo } = body;
-
-    if (!uid) {
-      return NextResponse.json({ error: 'Missing uid' }, { status: 400 });
+    const auth = await verifyAuth(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
+    const uid = auth.uid;
+
+    const body = await request.json();
+    const { clientId, clientSecret, demo } = body;
 
     // Verify user exists
     const userDoc = await adminDb.collection('users').doc(uid).get();

@@ -1,14 +1,15 @@
 import { NextResponse } from 'next/server';
+import { verifyAuth } from '../middleware/auth';
 import { adminDb } from '../../firebase/adminApp';
 import { FieldValue } from 'firebase-admin/firestore';
 
 export async function POST(request) {
   try {
-    const { uid } = await request.json();
-
-    if (!uid) {
-      return NextResponse.json({ error: 'Missing uid' }, { status: 400 });
+    const auth = await verifyAuth(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
+    const uid = auth.uid;
 
     const userRef = adminDb.collection('users').doc(uid);
     const userDoc = await userRef.get();

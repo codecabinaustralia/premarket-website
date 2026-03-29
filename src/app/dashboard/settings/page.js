@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
+import { authFetch } from '../../utils/authFetch';
 import { db } from '../../firebase/clientApp';
 import { doc, updateDoc } from 'firebase/firestore';
 import { sendPasswordResetEmail } from 'firebase/auth';
@@ -109,7 +110,7 @@ export default function SettingsPage() {
         setUploadingAvatar(true);
         const formData = new FormData();
         formData.append('file', avatarFile);
-        const res = await fetch('/api/upload-image', {
+        const res = await authFetch('/api/upload-image', {
           method: 'POST',
           body: formData,
         });
@@ -126,7 +127,7 @@ export default function SettingsPage() {
       if (logoFile) {
         const logoFormData = new FormData();
         logoFormData.append('file', logoFile);
-        const logoRes = await fetch('/api/upload-image', {
+        const logoRes = await authFetch('/api/upload-image', {
           method: 'POST',
           body: logoFormData,
         });

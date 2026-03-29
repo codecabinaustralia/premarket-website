@@ -306,8 +306,6 @@ function ListingsContent() {
       );
 
       const snapshot = await getDocs(q);
-      console.log('Fetched properties:', snapshot.docs.length);
-
       // Filter visibility client-side and sort by newest first
       const docs = snapshot.docs
         .map(doc => ({ id: doc.id, ...doc.data() }))
@@ -318,7 +316,6 @@ function ListingsContent() {
           return bTime - aTime;
         });
 
-      console.log('Filtered properties:', docs.length);
       setProperties(docs);
 
       // Extract unique suburbs — try location.suburb first, then parse formattedAddress
@@ -472,14 +469,6 @@ function ListingsContent() {
   };
 
   const activeFilterCount = [selectedSuburb, propertyType, minBedrooms, priceRange, searchCoords ? radius : ''].filter(Boolean).length;
-
-  const formatPrice = (price) => {
-    if (!price) return 'Price on Application';
-    const num = parseFloat(String(price).replace(/[^0-9.]/g, ''));
-    if (num >= 1000000) return `$${(num / 1000000).toFixed(1)}M`;
-    if (num >= 1000) return `$${(num / 1000).toFixed(0)}K`;
-    return `$${num.toLocaleString()}`;
-  };
 
   const displayedSuburbs = showAllSuburbs ? suburbs : suburbs.slice(0, 5);
 

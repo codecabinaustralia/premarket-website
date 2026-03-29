@@ -236,7 +236,7 @@ export default function Hero() {
       {videoOpen && (
         <div 
           className="fixed inset-0 bg-black/95 z-[100] flex items-center justify-center p-4"
-          onClick={() => setVideoOpen(false)}
+          onMouseDown={(e) => { if (e.target === e.currentTarget) setVideoOpen(false); }}
         >
           {/* Close Button */}
           <button

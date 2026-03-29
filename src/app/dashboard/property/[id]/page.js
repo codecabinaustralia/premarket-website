@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../../../context/AuthContext';
+import { authFetch } from '../../../utils/authFetch';
 import { db } from '../../../firebase/clientApp';
 import {
   doc,
@@ -60,19 +61,7 @@ import {
   RotateCcw,
   Sparkles,
 } from 'lucide-react';
-
-function formatPrice(price) {
-  if (!price) return '--';
-  const num = parseFloat(String(price).replace(/[^0-9.]/g, ''));
-  if (isNaN(num)) return '--';
-  return '$' + num.toLocaleString('en-AU', { maximumFractionDigits: 0 });
-}
-
-function formatDate(ts) {
-  if (!ts) return '--';
-  const d = ts.toDate ? ts.toDate() : new Date(ts);
-  return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
-}
+import { formatPrice, formatDate } from '../../../utils/formatters';
 
 function median(arr) {
   if (!arr.length) return 0;
@@ -735,7 +724,7 @@ function ImageEditModal({ imageUrl, imageIndex, propertyId, userId, allImages, o
       const poll = async () => {
         while (pollingRef.current[edit.id]) {
           try {
-            const res = await fetch(`/api/ai/image-edit?editId=${edit.id}`);
+            const res = await authFetch(`/api/ai/image-edit?editId=${edit.id}`);
             const data = await res.json();
             if (data.status === 'completed' || data.status === 'failed') {
               delete pollingRef.current[edit.id];
@@ -775,7 +764,7 @@ function ImageEditModal({ imageUrl, imageIndex, propertyId, userId, allImages, o
       const sourceUrl = activeImageUrl;
       const parentEditId = selectedEdit?.id || null;
 
-      const res = await fetch('/api/ai/image-edit', {
+      const res = await authFetch('/api/ai/image-edit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -803,7 +792,7 @@ function ImageEditModal({ imageUrl, imageIndex, propertyId, userId, allImages, o
   const handleApply = async (edit) => {
     if (!edit.editedImageUrl) return;
     try {
-      const res = await fetch('/api/ai/image-edit/apply', {
+      const res = await authFetch('/api/ai/image-edit/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -831,7 +820,7 @@ function ImageEditModal({ imageUrl, imageIndex, propertyId, userId, allImages, o
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-      onClick={onClose}
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <motion.div
         initial={{ scale: 0.95, opacity: 0 }}
@@ -1475,7 +1464,7 @@ export default function PropertyReportPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-            onClick={() => setShowDeleteConfirm(false)}
+            onMouseDown={(e) => { if (e.target === e.currentTarget) setShowDeleteConfirm(false); }}
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -1519,7 +1508,7 @@ export default function PropertyReportPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-            onClick={() => !sendingReport && setShowSendReport(false)}
+            onMouseDown={(e) => { if (e.target === e.currentTarget && !sendingReport) setShowSendReport(false); }}
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -1595,7 +1584,7 @@ export default function PropertyReportPage() {
                         if (!reportEmail) return;
                         setSendingReport(true);
                         try {
-                          const res = await fetch('/api/send-report', {
+                          const res = await authFetch('/api/send-report', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ email: reportEmail, name: reportName, propertyId: property.id }),

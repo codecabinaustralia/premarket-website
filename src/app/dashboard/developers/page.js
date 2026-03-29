@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
+import { authFetch } from '../../utils/authFetch';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../firebase/clientApp';
 import {
@@ -97,10 +98,10 @@ export default function DevelopersPage() {
   const requestAccess = async () => {
     setRequesting(true);
     try {
-      const res = await fetch('/api/request-api-access', {
+      const res = await authFetch('/api/request-api-access', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uid: user.uid }),
+        body: JSON.stringify({}),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -118,10 +119,10 @@ export default function DevelopersPage() {
     if (!confirm('Are you sure? Your current API key will stop working immediately.')) return;
     setRegenerating(true);
     try {
-      const res = await fetch('/api/admin/api-access', {
+      const res = await authFetch('/api/admin/api-access', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminUid: user.uid, targetUid: user.uid, action: 'regenerate' }),
+        body: JSON.stringify({ targetUid: user.uid, action: 'regenerate' }),
       });
       if (!res.ok) {
         alert('Failed to regenerate key');

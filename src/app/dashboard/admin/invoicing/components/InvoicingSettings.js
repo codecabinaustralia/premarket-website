@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Save, Plug, Unplug, Loader2 } from 'lucide-react';
+import { authFetch } from '../../../../utils/authFetch';
 
 export default function InvoicingSettings({ user, xeroConnected }) {
   const [settings, setSettings] = useState(null);
@@ -12,7 +13,7 @@ export default function InvoicingSettings({ user, xeroConnected }) {
   useEffect(() => {
     async function fetchSettings() {
       try {
-        const res = await fetch(`/api/admin/invoicing/settings?adminUid=${user.uid}`);
+        const res = await authFetch(`/api/admin/invoicing/settings`);
         const data = await res.json();
         setSettings(data.settings);
       } catch (err) {
@@ -28,10 +29,10 @@ export default function InvoicingSettings({ user, xeroConnected }) {
     setSaving(true);
     setSaved(false);
     try {
-      const res = await fetch('/api/admin/invoicing/settings', {
+      const res = await authFetch('/api/admin/invoicing/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminUid: user.uid, settings }),
+        body: JSON.stringify({ settings }),
       });
       if (res.ok) {
         setSaved(true);
@@ -48,17 +49,24 @@ export default function InvoicingSettings({ user, xeroConnected }) {
     setSettings((prev) => ({ ...prev, [key]: value }));
   }
 
-  function connectXero() {
-    window.location.href = `/api/auth/xero?adminUid=${user.uid}`;
+  async function connectXero() {
+    try {
+      const res = await authFetch('/api/auth/xero');
+      if (!res.ok) throw new Error('Failed to start Xero OAuth');
+      const { url } = await res.json();
+      window.location.href = url;
+    } catch (err) {
+      console.error('Xero connect error:', err);
+    }
   }
 
   async function disconnectXero() {
     if (!confirm('Disconnect Xero? You will need to re-authenticate to send invoices.')) return;
     try {
-      await fetch('/api/admin/invoicing/settings', {
+      await authFetch('/api/admin/invoicing/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminUid: user.uid, settings: {} }),
+        body: JSON.stringify({ settings: {} }),
       });
       // We store tokens separately, so we just note disconnection
       // In a full implementation we'd revoke the token

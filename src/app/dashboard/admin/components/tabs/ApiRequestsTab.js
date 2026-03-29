@@ -18,6 +18,7 @@ import StatCard from '../StatCard';
 import { useToast } from '../ToastProvider';
 import useConfirm from '../../hooks/useConfirm';
 import { formatDate } from '../../utils/formatters';
+import { authFetch } from '../../../../utils/authFetch';
 
 export default function ApiRequestsTab({ user }) {
   const toast = useToast();
@@ -63,10 +64,10 @@ export default function ApiRequestsTab({ user }) {
 
     setActionLoading(`${targetUid}-${action}`);
     try {
-      const res = await fetch('/api/admin/api-access', {
+      const res = await authFetch('/api/admin/api-access', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminUid: user.uid, targetUid, action }),
+        body: JSON.stringify({ targetUid, action }),
       });
 
       if (!res.ok) {

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
+import { authFetch } from '../utils/authFetch';
 import {
   BookOpen,
   Users,
@@ -333,10 +334,10 @@ function GenerateLinkModal({ uid, onClose }) {
   const handleCreate = async () => {
     setCreating(true);
     try {
-      const res = await fetch('/api/docs/links', {
+      const res = await authFetch('/api/docs/links', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uid, label: label.trim() || undefined }),
+        body: JSON.stringify({ label: label.trim() || undefined }),
       });
       const data = await res.json();
       if (data.url) {
@@ -356,7 +357,7 @@ function GenerateLinkModal({ uid, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div
         className="bg-white rounded-xl shadow-xl max-w-md w-full p-6"
         onClick={(e) => e.stopPropagation()}

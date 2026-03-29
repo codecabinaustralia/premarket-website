@@ -1,25 +1,20 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '../../../../firebase/adminApp';
-
-async function verifyAdmin(adminUid) {
-  if (!adminUid) return false;
-  const doc = await adminDb.collection('users').doc(adminUid).get();
-  return doc.exists && doc.data().superAdmin === true;
-}
+import { verifyAdmin } from '../../../middleware/auth';
 
 /**
- * GET /api/admin/invoicing/analytics?adminUid=xxx&months=12
+ * GET /api/admin/invoicing/analytics?months=12
  * Monthly aggregates from completed/sent runs + forecast.
  */
 export async function GET(request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const adminUid = searchParams.get('adminUid');
-    const months = parseInt(searchParams.get('months') || '12', 10);
-
-    if (!(await verifyAdmin(adminUid))) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    const auth = await verifyAdmin(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
+
+    const { searchParams } = new URL(request.url);
+    const months = parseInt(searchParams.get('months') || '12', 10);
 
     // Get all completed/sent runs
     const runsSnap = await adminDb

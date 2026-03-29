@@ -567,8 +567,38 @@ export default function PlaygroundPage() {
 
       {/* Content */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left: Map + Search + Report + Tables */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Left sidebar: PHI Metrics Legend */}
+        <div className="hidden xl:flex flex-col w-[180px] flex-shrink-0 border-r border-slate-800 overflow-y-auto">
+          <div className="px-3 py-3">
+            <h3 className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold mb-2">PHI Metrics</h3>
+            <div className="space-y-2.5">
+              {[
+                { key: 'MHI', name: 'Market Heat Index', desc: 'Overall market temperature combining buyer demand, seller activity & engagement' },
+                { key: 'BDI', name: 'Buyer Demand Index', desc: 'Real buyer interest from opinions, serious registrations & likes' },
+                { key: 'SMI', name: 'Seller Motivation Index', desc: 'How eager sellers are to transact based on timelines & listing status' },
+                { key: 'PVI', name: 'Price Validity Index', desc: 'How realistic asking prices are vs. market opinions' },
+                { key: 'EVS', name: 'Engagement Velocity', desc: 'Speed & depth of buyer engagement on listings' },
+                { key: 'BQI', name: 'Buyer Quality Index', desc: 'Seriousness & financial readiness of active buyers' },
+                { key: 'FPI', name: 'Forward Pipeline Index', desc: 'Upcoming supply based on go-to-market timelines' },
+                { key: 'SDB', name: 'Supply-Demand Balance', desc: 'Ratio of available properties vs. active buyer demand' },
+              ].map((m) => (
+                <div key={m.key} className="group">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] font-mono font-bold text-orange-400">{m.key}</span>
+                    <span className="text-[10px] text-slate-400 truncate">{m.name}</span>
+                  </div>
+                  <p className="text-[10px] text-slate-600 leading-snug mt-0.5">{m.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="mt-auto px-3 py-3 border-t border-slate-800">
+            <p className="text-[9px] text-slate-600 leading-snug">All scores are 0–100. Higher = stronger signal.</p>
+          </div>
+        </div>
+
+        {/* Center: Map + Search + Report + Tables */}
+        <div className="flex-1 flex flex-col overflow-hidden min-w-0">
           {/* Map Section */}
           <div className="h-[40vh] lg:h-[50vh] flex-shrink-0 p-3 pb-0">
             <PHIHeatmap
@@ -609,7 +639,7 @@ export default function PlaygroundPage() {
         </div>
 
         {/* Right sidebar: Chat (100%) */}
-        <div className="hidden lg:flex w-[300px] flex-col border-l border-slate-800 flex-shrink-0">
+        <div className="hidden lg:flex w-[300px] flex-col border-l border-slate-800 flex-shrink-0 min-h-0">
           <ChatPanel
             messages={messages}
             input={chatInput}

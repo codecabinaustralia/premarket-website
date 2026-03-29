@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { verifyAuth } from '../../middleware/auth';
 import { adminDb } from '../../../firebase/adminApp';
 import { FieldValue } from 'firebase-admin/firestore';
 
@@ -23,21 +24,21 @@ const SYSTEM_PROMPT = `IMPORTANT INSTRUCTIONS (DO NOT IGNORE):
  */
 export async function POST(request) {
   try {
+    const auth = await verifyAuth(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+    const uid = auth.uid;
+
     if (!KIE_API_KEY) {
       return NextResponse.json({ error: 'KIE API key not configured' }, { status: 500 });
     }
 
     const body = await request.json();
-    const { uid, propertyId, imageUrl, prompt, parentEditId, aspectRatio } = body;
+    const { propertyId, imageUrl, prompt, parentEditId, aspectRatio } = body;
 
-    if (!uid || !imageUrl || !prompt) {
-      return NextResponse.json({ error: 'Missing required fields (uid, imageUrl, prompt)' }, { status: 400 });
-    }
-
-    // Verify user exists
-    const userDoc = await adminDb.collection('users').doc(uid).get();
-    if (!userDoc.exists) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    if (!imageUrl || !prompt) {
+      return NextResponse.json({ error: 'Missing required fields (imageUrl, prompt)' }, { status: 400 });
     }
 
     // Create Firestore doc with pending status
@@ -120,6 +121,11 @@ export async function POST(request) {
  */
 export async function GET(request) {
   try {
+    const auth = await verifyAuth(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+
     if (!KIE_API_KEY) {
       return NextResponse.json({ error: 'KIE API key not configured' }, { status: 500 });
     }

@@ -1,15 +1,22 @@
 import { NextResponse } from 'next/server';
+import { verifyAuth } from '../../../middleware/auth';
 import { adminDb } from '../../../../firebase/adminApp';
 
 /**
  * POST — Apply an edited image to a property (replace in imageUrls array)
- * Body: { uid, editId, propertyId, originalImageUrl, editedImageUrl }
+ * Body: { editId, propertyId, originalImageUrl, editedImageUrl }
  */
 export async function POST(request) {
   try {
-    const { uid, editId, propertyId, originalImageUrl, editedImageUrl } = await request.json();
+    const auth = await verifyAuth(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+    const uid = auth.uid;
 
-    if (!uid || !editId || !propertyId || !editedImageUrl) {
+    const { editId, propertyId, originalImageUrl, editedImageUrl } = await request.json();
+
+    if (!editId || !propertyId || !editedImageUrl) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 

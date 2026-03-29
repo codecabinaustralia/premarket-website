@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { BarChart3, FileText, Settings, Plug, ChevronRight } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
+import { authFetch } from '../../../utils/authFetch';
 import InvoicingOverview from './components/InvoicingOverview';
 import InvoiceRunsPanel from './components/InvoiceRunsPanel';
 import InvoicingSettings from './components/InvoicingSettings';
@@ -28,7 +29,7 @@ function InvoicingPageContent() {
     async function checkXero() {
       if (!user) return;
       try {
-        const res = await fetch(`/api/admin/invoicing/settings?adminUid=${user.uid}`);
+        const res = await authFetch(`/api/admin/invoicing/settings`);
         const data = await res.json();
         setXeroConnected(data.settings?.xeroConnected || false);
       } catch {

@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
+import { authFetch } from '../../utils/authFetch';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../firebase/clientApp';
 import {
@@ -52,7 +53,7 @@ function ConnectModal({ onClose, onConnect, onConnectDemo, connecting }) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-      onClick={onClose}
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -172,7 +173,7 @@ function RexConnectModal({ onClose, onConnect, onConnectDemo, connecting }) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-      onClick={onClose}
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -519,7 +520,7 @@ export default function IntegrationsPage() {
     if (!user || integration?.status !== 'connected') return;
     setListingsLoading(true);
     try {
-      const res = await fetch(`/api/integrations/agentbox/listings?uid=${user.uid}&limit=100`);
+      const res = await authFetch(`/api/integrations/agentbox/listings?uid=${user.uid}&limit=100`);
       if (!res.ok) throw new Error('Failed to fetch');
       const data = await res.json();
       setListings(data.listings || []);
@@ -536,7 +537,7 @@ export default function IntegrationsPage() {
     if (!user || rexIntegration?.status !== 'connected') return;
     setRexListingsLoading(true);
     try {
-      const res = await fetch(`/api/integrations/rex/listings?uid=${user.uid}&limit=100`);
+      const res = await authFetch(`/api/integrations/rex/listings?uid=${user.uid}&limit=100`);
       if (!res.ok) throw new Error('Failed to fetch');
       const data = await res.json();
       setRexListings(data.listings || []);
@@ -570,7 +571,7 @@ export default function IntegrationsPage() {
     setConnecting(true);
     setConnectError('');
     try {
-      const res = await fetch('/api/integrations/agentbox/connect', {
+      const res = await authFetch('/api/integrations/agentbox/connect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ uid: user.uid, clientId, apiKey }),
@@ -597,7 +598,7 @@ export default function IntegrationsPage() {
     setConnecting(true);
     setConnectError('');
     try {
-      const res = await fetch('/api/integrations/agentbox/connect', {
+      const res = await authFetch('/api/integrations/agentbox/connect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ uid: user.uid, demo: true }),
@@ -623,7 +624,7 @@ export default function IntegrationsPage() {
   const handleDisconnect = async () => {
     if (!confirm('Disconnect from Agentbox? Your imported properties will remain but syncing will stop.')) return;
     try {
-      const res = await fetch('/api/integrations/agentbox/disconnect', {
+      const res = await authFetch('/api/integrations/agentbox/disconnect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ uid: user.uid }),
@@ -640,7 +641,7 @@ export default function IntegrationsPage() {
   const handleImport = async (listingId) => {
     setImporting(listingId);
     try {
-      const res = await fetch('/api/integrations/agentbox/import', {
+      const res = await authFetch('/api/integrations/agentbox/import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ uid: user.uid, listingIds: [String(listingId)] }),
@@ -665,7 +666,7 @@ export default function IntegrationsPage() {
     const batch = unimported.slice(0, 20);
     setImporting('all');
     try {
-      const res = await fetch('/api/integrations/agentbox/import', {
+      const res = await authFetch('/api/integrations/agentbox/import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ uid: user.uid, listingIds: batch.map(l => String(l.id)) }),
@@ -685,7 +686,7 @@ export default function IntegrationsPage() {
 
   const handleToggle = async (propertyId, visibility) => {
     try {
-      const res = await fetch(`/api/integrations/agentbox/toggle/${propertyId}`, {
+      const res = await authFetch(`/api/integrations/agentbox/toggle/${propertyId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ uid: user.uid, visibility }),
@@ -702,7 +703,7 @@ export default function IntegrationsPage() {
   const handleSync = async () => {
     setSyncing(true);
     try {
-      const res = await fetch('/api/integrations/agentbox/sync', {
+      const res = await authFetch('/api/integrations/agentbox/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ uid: user.uid }),
@@ -725,7 +726,7 @@ export default function IntegrationsPage() {
     setRexConnecting(true);
     setRexConnectError('');
     try {
-      const res = await fetch('/api/integrations/rex/connect', {
+      const res = await authFetch('/api/integrations/rex/connect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ uid: user.uid, clientId: accountId, clientSecret: apiSecret }),
@@ -752,7 +753,7 @@ export default function IntegrationsPage() {
     setRexConnecting(true);
     setRexConnectError('');
     try {
-      const res = await fetch('/api/integrations/rex/connect', {
+      const res = await authFetch('/api/integrations/rex/connect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ uid: user.uid, demo: true }),
@@ -778,7 +779,7 @@ export default function IntegrationsPage() {
   const handleRexDisconnect = async () => {
     if (!confirm('Disconnect from Rex? Your imported properties will remain but syncing will stop.')) return;
     try {
-      const res = await fetch('/api/integrations/rex/disconnect', {
+      const res = await authFetch('/api/integrations/rex/disconnect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ uid: user.uid }),
@@ -795,7 +796,7 @@ export default function IntegrationsPage() {
   const handleRexImport = async (listingId) => {
     setRexImporting(listingId);
     try {
-      const res = await fetch('/api/integrations/rex/import', {
+      const res = await authFetch('/api/integrations/rex/import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ uid: user.uid, listingIds: [String(listingId)] }),
@@ -820,7 +821,7 @@ export default function IntegrationsPage() {
     const batch = unimported.slice(0, 20);
     setRexImporting('all');
     try {
-      const res = await fetch('/api/integrations/rex/import', {
+      const res = await authFetch('/api/integrations/rex/import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ uid: user.uid, listingIds: batch.map(l => String(l.id)) }),
@@ -840,7 +841,7 @@ export default function IntegrationsPage() {
 
   const handleRexToggle = async (propertyId, visibility) => {
     try {
-      const res = await fetch(`/api/integrations/rex/toggle/${propertyId}`, {
+      const res = await authFetch(`/api/integrations/rex/toggle/${propertyId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ uid: user.uid, visibility }),
@@ -857,7 +858,7 @@ export default function IntegrationsPage() {
   const handleRexSync = async () => {
     setRexSyncing(true);
     try {
-      const res = await fetch('/api/integrations/rex/sync', {
+      const res = await authFetch('/api/integrations/rex/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ uid: user.uid }),

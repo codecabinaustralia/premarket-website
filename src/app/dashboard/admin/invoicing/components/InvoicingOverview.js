@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { DollarSign, TrendingUp, TrendingDown, AlertCircle, Building2 } from 'lucide-react';
 import RevenueChart from './RevenueChart';
+import { authFetch } from '../../../../utils/authFetch';
 
 function StatCard({ label, value, icon: Icon, color, subtext, trend }) {
   const colorClasses = {
@@ -41,8 +42,8 @@ export default function InvoicingOverview({ user }) {
     async function fetchData() {
       try {
         const [analyticsRes, runsRes] = await Promise.all([
-          fetch(`/api/admin/invoicing/analytics?adminUid=${user.uid}&months=12`),
-          fetch(`/api/admin/invoicing/runs?adminUid=${user.uid}`),
+          authFetch(`/api/admin/invoicing/analytics?months=12`),
+          authFetch(`/api/admin/invoicing/runs`),
         ]);
         const analyticsData = await analyticsRes.json();
         const runsData = await runsRes.json();

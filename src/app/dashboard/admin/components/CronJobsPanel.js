@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { RefreshCw, Play, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { CRON_JOBS } from '../utils/constants';
+import { authFetch } from '../../../utils/authFetch';
 
 export default function CronJobsPanel({ user }) {
   const [running, setRunning] = useState({});
@@ -12,10 +13,10 @@ export default function CronJobsPanel({ user }) {
     setRunning((prev) => ({ ...prev, [job.key]: true }));
     setResults((prev) => ({ ...prev, [job.key]: null }));
     try {
-      const res = await fetch('/api/admin/trigger-cron', {
+      const res = await authFetch('/api/admin/trigger-cron', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminUid: user.uid, jobKey: job.key }),
+        body: JSON.stringify({ jobKey: job.key }),
       });
       const data = await res.json().catch(() => ({}));
       setResults((prev) => ({

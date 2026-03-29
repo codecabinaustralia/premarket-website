@@ -21,7 +21,8 @@ import StatCard from '../StatCard';
 import CronJobsPanel from '../CronJobsPanel';
 import SignupsChart from '../charts/SignupsChart';
 import PropertyStatusChart from '../charts/PropertyStatusChart';
-import { formatDate } from '../../utils/formatters';
+import { formatDate, getPropertyImage } from '../../utils/formatters';
+import { authFetch } from '../../../../utils/authFetch';
 
 export default function OverviewTab({ user }) {
   const [data, setData] = useState(null);
@@ -32,7 +33,7 @@ export default function OverviewTab({ user }) {
     async function fetchData() {
       try {
         const [usersRes, propertiesSnap] = await Promise.all([
-          fetch(`/api/admin/users?adminUid=${user.uid}`),
+          authFetch(`/api/admin/users`),
           getDocs(collection(db, 'properties')),
         ]);
         const usersData = await usersRes.json();
@@ -209,8 +210,8 @@ export default function OverviewTab({ user }) {
             {recentProperties.map((p) => (
               <Link key={p.id} href={`/dashboard/property/${p.id}`} className="px-6 py-3 flex items-center gap-3 hover:bg-slate-50 transition-colors">
                 <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
-                  {p.imageUrls?.[0] || p.imageUrl || p.images?.[0] ? (
-                    <img src={p.imageUrls?.[0] || p.imageUrl || p.images[0]} alt="" className="w-full h-full object-cover" />
+                  {getPropertyImage(p) ? (
+                    <img src={getPropertyImage(p)} alt="" className="w-full h-full object-cover" />
                   ) : (
                     <Building2 className="w-4 h-4 text-slate-400" />
                   )}

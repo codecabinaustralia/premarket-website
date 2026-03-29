@@ -1,24 +1,17 @@
 import { NextResponse } from 'next/server';
+import { verifyAdmin } from '../../middleware/auth';
 import { adminDb } from '../../../firebase/adminApp';
 import { FieldValue } from 'firebase-admin/firestore';
 
-async function verifyAdmin(adminUid) {
-  if (!adminUid) return false;
-  const doc = await adminDb.collection('users').doc(adminUid).get();
-  return doc.exists && doc.data().superAdmin === true;
-}
-
 /**
- * GET /api/admin/users?adminUid=xxx
+ * GET /api/admin/users
  * List all users with property counts.
  */
 export async function GET(request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const adminUid = searchParams.get('adminUid');
-
-    if (!(await verifyAdmin(adminUid))) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    const auth = await verifyAdmin(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
     const [usersSnap, propertiesSnap] = await Promise.all([
@@ -73,18 +66,19 @@ export async function GET(request) {
 
 /**
  * PATCH /api/admin/users
- * Update user fields. Body: { adminUid, targetUid, updates }
+ * Update user fields. Body: { targetUid, updates }
  */
 export async function PATCH(request) {
   try {
-    const { adminUid, targetUid, updates } = await request.json();
-
-    if (!adminUid || !targetUid || !updates) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    const auth = await verifyAdmin(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
-    if (!(await verifyAdmin(adminUid))) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    const { targetUid, updates } = await request.json();
+
+    if (!targetUid || !updates) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
     // Only allow specific fields to be updated

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { verifyAdmin } from '../../middleware/auth';
 import {
   fetchBuyersWithPreferences,
   fetchNewestProperties,
@@ -8,6 +9,11 @@ import {
 
 export async function POST(request) {
   try {
+    const auth = await verifyAdmin(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+
     const body = await request.json().catch(() => ({}));
     const { email } = body;
 

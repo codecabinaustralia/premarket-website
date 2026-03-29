@@ -7,12 +7,7 @@ import {
   sendInvoice,
   isXeroConnected,
 } from '../../../../../services/xeroService';
-
-async function verifyAdmin(adminUid) {
-  if (!adminUid) return false;
-  const doc = await adminDb.collection('users').doc(adminUid).get();
-  return doc.exists && doc.data().superAdmin === true;
-}
+import { verifyAdmin } from '../../../../../middleware/auth';
 
 /**
  * POST /api/admin/invoicing/runs/[runId]/send
@@ -20,12 +15,12 @@ async function verifyAdmin(adminUid) {
  */
 export async function POST(request, { params }) {
   try {
-    const { adminUid } = await request.json();
-    const { runId } = await params;
-
-    if (!(await verifyAdmin(adminUid))) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    const auth = await verifyAdmin(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
+
+    const { runId } = await params;
 
     if (!(await isXeroConnected())) {
       return NextResponse.json({ error: 'Xero is not connected' }, { status: 400 });

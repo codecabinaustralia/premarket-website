@@ -1,11 +1,5 @@
 import { NextResponse } from 'next/server';
-import { adminDb } from '../../../firebase/adminApp';
-
-async function verifyAdmin(adminUid) {
-  if (!adminUid) return false;
-  const doc = await adminDb.collection('users').doc(adminUid).get();
-  return doc.exists && doc.data().superAdmin === true;
-}
+import { verifyAdmin } from '../../middleware/auth';
 
 /**
  * Call a cron handler directly with a fake authenticated request.
@@ -53,15 +47,16 @@ const JOBS = {
 /**
  * POST /api/admin/trigger-cron
  * Runs cron job handlers directly (in-process) for superAdmins.
- * Body: { adminUid, jobKey }
+ * Body: { jobKey }
  */
 export async function POST(request) {
   try {
-    const { adminUid, jobKey } = await request.json();
-
-    if (!(await verifyAdmin(adminUid))) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    const auth = await verifyAdmin(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
+
+    const { jobKey } = await request.json();
 
     const job = JOBS[jobKey];
     if (!job) {

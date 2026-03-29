@@ -2,26 +2,23 @@ import { NextResponse } from 'next/server';
 import { adminDb } from '../../../firebase/adminApp';
 import { FieldValue } from 'firebase-admin/firestore';
 import crypto from 'crypto';
+import { verifyAdmin } from '../../middleware/auth';
 
 export async function POST(request) {
   try {
-    const { uid, label } = await request.json();
-
-    if (!uid) {
-      return NextResponse.json({ error: 'Missing uid' }, { status: 400 });
+    const auth = await verifyAdmin(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
-    const adminDoc = await adminDb.collection('users').doc(uid).get();
-    if (!adminDoc.exists || adminDoc.data().superAdmin !== true) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
+    const { label } = await request.json();
 
     const token = 'dl_' + crypto.randomBytes(16).toString('hex');
 
     await adminDb.collection('docLinks').doc(token).set({
       token,
       label: label || null,
-      createdBy: uid,
+      createdBy: auth.uid,
       createdAt: FieldValue.serverTimestamp(),
       active: true,
       sessionCount: 0,
@@ -39,16 +36,9 @@ export async function POST(request) {
 
 export async function GET(request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const uid = searchParams.get('uid');
-
-    if (!uid) {
-      return NextResponse.json({ error: 'Missing uid' }, { status: 400 });
-    }
-
-    const adminDoc = await adminDb.collection('users').doc(uid).get();
-    if (!adminDoc.exists || adminDoc.data().superAdmin !== true) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    const auth = await verifyAdmin(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
     const snapshot = await adminDb

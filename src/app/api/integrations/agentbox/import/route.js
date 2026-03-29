@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { verifyAuth } from '../../../../api/middleware/auth';
 import { getCredentials, fetchListingById, mapListingToProperty } from '../../../../api/services/agentboxService';
 import { DEMO_LISTINGS } from '../../../../api/services/agentboxDemoData';
 import { adminDb } from '../../../../firebase/adminApp';
@@ -6,10 +7,16 @@ import { FieldValue } from 'firebase-admin/firestore';
 
 export async function POST(request) {
   try {
-    const { uid, listingIds } = await request.json();
+    const auth = await verifyAuth(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+    const uid = auth.uid;
 
-    if (!uid || !listingIds || !Array.isArray(listingIds) || listingIds.length === 0) {
-      return NextResponse.json({ error: 'Missing uid or listingIds' }, { status: 400 });
+    const { listingIds } = await request.json();
+
+    if (!listingIds || !Array.isArray(listingIds) || listingIds.length === 0) {
+      return NextResponse.json({ error: 'Missing listingIds' }, { status: 400 });
     }
 
     if (listingIds.length > 20) {

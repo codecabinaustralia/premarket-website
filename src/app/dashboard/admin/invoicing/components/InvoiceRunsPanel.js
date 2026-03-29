@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Plus, ArrowLeft, Trash2, Calendar, Building2, FileText, DollarSign } from 'lucide-react';
 import InvoiceStatusBadge from './InvoiceStatusBadge';
 import InvoiceRunDetail from './InvoiceRunDetail';
+import { authFetch } from '../../../../utils/authFetch';
 
 function getDefaultDates() {
   const now = new Date();
@@ -29,7 +30,7 @@ export default function InvoiceRunsPanel({ user }) {
 
   const fetchRuns = useCallback(async () => {
     try {
-      const res = await fetch(`/api/admin/invoicing/runs?adminUid=${user.uid}`);
+      const res = await authFetch(`/api/admin/invoicing/runs`);
       const data = await res.json();
       setRuns(data.runs || []);
     } catch (err) {
@@ -46,7 +47,7 @@ export default function InvoiceRunsPanel({ user }) {
   const fetchRunDetail = useCallback(async (runId) => {
     setDetailLoading(true);
     try {
-      const res = await fetch(`/api/admin/invoicing/runs/${runId}?adminUid=${user.uid}`);
+      const res = await authFetch(`/api/admin/invoicing/runs/${runId}`);
       const data = await res.json();
       setSelectedRun(data.run);
       setSelectedItems(data.items || []);
@@ -66,10 +67,10 @@ export default function InvoiceRunsPanel({ user }) {
   async function handleCreateRun() {
     setCreating(true);
     try {
-      const res = await fetch('/api/admin/invoicing/runs', {
+      const res = await authFetch('/api/admin/invoicing/runs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminUid: user.uid, dateFrom, dateTo }),
+        body: JSON.stringify({ dateFrom, dateTo }),
       });
       const data = await res.json();
       if (data.success) {
@@ -90,7 +91,7 @@ export default function InvoiceRunsPanel({ user }) {
     e.stopPropagation();
     if (!confirm('Delete this draft run?')) return;
     try {
-      await fetch(`/api/admin/invoicing/runs/${runId}?adminUid=${user.uid}`, { method: 'DELETE' });
+      await authFetch(`/api/admin/invoicing/runs/${runId}`, { method: 'DELETE' });
       if (selectedRunId === runId) {
         setSelectedRunId(null);
         setSelectedRun(null);

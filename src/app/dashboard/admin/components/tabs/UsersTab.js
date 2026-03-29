@@ -6,6 +6,7 @@ import { Users, Search, ChevronRight, Trash2, Loader2 } from 'lucide-react';
 import { formatDate } from '../../utils/formatters';
 import { useToast } from '../ToastProvider';
 import useConfirm from '../../hooks/useConfirm';
+import { authFetch } from '../../../../utils/authFetch';
 
 export default function UsersTab({ user }) {
   const router = useRouter();
@@ -20,7 +21,7 @@ export default function UsersTab({ user }) {
   useEffect(() => {
     async function fetchUsers() {
       try {
-        const res = await fetch(`/api/admin/users?adminUid=${user.uid}`);
+        const res = await authFetch(`/api/admin/users`);
         const data = await res.json();
         setUsers(data.users || []);
       } catch (err) {
@@ -72,10 +73,9 @@ export default function UsersTab({ user }) {
 
     setDeletingId(u.id);
     try {
-      const res = await fetch(`/api/admin/users/${u.id}/delete`, {
+      const res = await authFetch(`/api/admin/users/${u.id}/delete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminUid: user.uid }),
       });
       const data = await res.json();
       if (res.ok) {

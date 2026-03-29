@@ -1,0 +1,314 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ═══════════════════════════════════════════════════════════
+    // HELPER FUNCTIONS
+    // ═══════════════════════════════════════════════════════════
+
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    function isUser(userId) {
+      return isAuth() && request.auth.uid == userId;
+    }
+
+    function isSuperAdmin() {
+      return isAuth() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.superAdmin == true;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // USERS
+    // Public read: listings page fetches agent profiles (name,
+    //   avatar, company) for property cards without auth.
+    // Write: own document only.
+    // ═══════════════════════════════════════════════════════════
+    match /users/{userId} {
+      allow read: if true;
+      allow create: if isUser(userId);
+      allow update: if isUser(userId);
+      allow delete: if false;
+
+      match /adminNotes/{noteId} {
+        allow read, write: if isSuperAdmin();
+      }
+
+      match /purchases/{purchaseId} {
+        allow read: if isUser(userId);
+        allow write: if false;
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // PROPERTIES
+    // Public read: anyone can browse listings.
+    // Write: authenticated owner only (userId field must match).
+    // ═══════════════════════════════════════════════════════════
+    match /properties/{propertyId} {
+      allow read: if true;
+
+      allow create: if isAuth()
+        && request.resource.data.userId == request.auth.uid;
+
+      allow update: if isAuth()
+        && resource.data.userId == request.auth.uid;
+
+      allow delete: if isAuth()
+        && resource.data.userId == request.auth.uid;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // OFFERS (Price Opinions)
+    // Anonymous create: web visitors submit price opinions
+    //   without logging in - this is the core data collection.
+    // Public read: session-based lookups + property owner reads.
+    // Update: propertyId cannot change; if userId is being set
+    //   the authenticated user must match.
+    // ═══════════════════════════════════════════════════════════
+    match /offers/{offerId} {
+      allow read: if true;
+
+      allow create: if request.resource.data.propertyId is string;
+
+      allow update: if request.resource.data.propertyId == resource.data.propertyId
+        && (
+          !request.resource.data.keys().hasAll(['userId'])
+          || (isAuth() && request.resource.data.userId == request.auth.uid)
+        );
+
+      allow delete: if false;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // LIKES
+    // Public read: like counts shown on property pages.
+    // Create/delete: authenticated, own likes only.
+    // Flutter doc ID pattern: {userId}_{propertyId}
+    // ═══════════════════════════════════════════════════════════
+    match /likes/{likeId} {
+      allow read: if true;
+
+      allow create: if isAuth()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.propertyId is string;
+
+      allow delete: if isAuth()
+        && resource.data.userId == request.auth.uid;
+
+      allow update: if false;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // AGENTS (Sub-profiles / team members)
+    // Full CRUD for own agents only (userId match).
+    // Queried with where('userId', '==', auth.uid).
+    // ═══════════════════════════════════════════════════════════
+    match /agents/{agentId} {
+      allow read: if isAuth()
+        && resource.data.userId == request.auth.uid;
+
+      allow create: if isAuth()
+        && request.resource.data.userId == request.auth.uid;
+
+      allow update: if isAuth()
+        && resource.data.userId == request.auth.uid;
+
+      allow delete: if isAuth()
+        && resource.data.userId == request.auth.uid;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // DRAFT PROPERTIES
+    // Full CRUD for own drafts only (userId match).
+    // Created via setDoc with same ID as property.
+    // ═══════════════════════════════════════════════════════════
+    match /draftProperties/{draftId} {
+      allow read: if isAuth()
+        && resource.data.userId == request.auth.uid;
+
+      allow create: if isAuth()
+        && request.resource.data.userId == request.auth.uid;
+
+      allow update: if isAuth()
+        && resource.data.userId == request.auth.uid;
+
+      allow delete: if isAuth()
+        && resource.data.userId == request.auth.uid;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // IMAGE EDITS
+    // Read/update/delete: own edits only (userId match).
+    // Create: authenticated (server also creates via Admin SDK).
+    // Web uses onSnapshot filtered by userId + listingId.
+    // ═══════════════════════════════════════════════════════════
+    match /image_edits/{editId} {
+      allow read: if isAuth()
+        && resource.data.userId == request.auth.uid;
+
+      allow create: if isAuth();
+
+      allow update: if isAuth()
+        && resource.data.userId == request.auth.uid;
+
+      allow delete: if isAuth()
+        && resource.data.userId == request.auth.uid;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // NOTIFICATIONS
+    // Read/update: own notifications only (userId match) or superAdmin.
+    // Create: authenticated (server creates for property events).
+    // ═══════════════════════════════════════════════════════════
+    match /notifications/{notifId} {
+      allow read: if isAuth()
+        && (resource.data.userId == request.auth.uid || isSuperAdmin());
+      allow create: if isAuth();
+      allow update: if isAuth()
+        && resource.data.userId == request.auth.uid;
+      allow delete: if false;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // DISPLAYS (TV / retail screens)
+    // Public read: TV display pages load config by ID.
+    // Write: superAdmin only.
+    // ═══════════════════════════════════════════════════════════
+    match /displays/{displayId} {
+      allow read: if true;
+      allow create, update, delete: if isSuperAdmin();
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // CAMPAIGNS
+    // Public read: homepage loads latest campaign.
+    // Write: server-managed only.
+    // ═══════════════════════════════════════════════════════════
+    match /campaigns/{campaignId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // SETTINGS (App configuration)
+    // Public read: Flutter reads agentPlans, introSlides,
+    //   vendorPlans, phiWeights from client.
+    // Write: server-managed via Admin SDK.
+    // ═══════════════════════════════════════════════════════════
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // CONTACTS (CRM aggregated data)
+    // Read: superAdmin only (CRM dashboard).
+    // Write: server-only (nightly cron compute-contacts).
+    // ═══════════════════════════════════════════════════════════
+    match /contacts/{contactId} {
+      allow read: if isSuperAdmin();
+      allow write: if false;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // PROPERTY ENGAGEMENT (Flutter tracking)
+    // Read/create/update: authenticated users.
+    // Web engagement goes through API route (server-side).
+    // ═══════════════════════════════════════════════════════════
+    match /propertyEngagement/{engagementId} {
+      allow read: if isAuth();
+      allow create: if isAuth();
+      allow update: if isAuth();
+      allow delete: if false;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // XP NOTIFICATIONS (Flutter gamification)
+    // Read: authenticated (Flutter streams).
+    // Write: server-managed.
+    // ═══════════════════════════════════════════════════════════
+    match /xpNotifications/{notifId} {
+      allow read: if isAuth();
+      allow write: if false;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // IN-APP PURCHASES
+    // Read/create: own purchases only (userId match).
+    // No update/delete from client.
+    // ═══════════════════════════════════════════════════════════
+    match /inAppPurchases/{purchaseId} {
+      allow read: if isAuth()
+        && resource.data.userId == request.auth.uid;
+
+      allow create: if isAuth()
+        && request.resource.data.userId == request.auth.uid;
+
+      allow update, delete: if false;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // PRICE OPINIONS (Legacy Flutter collection)
+    // Read/create: authenticated users.
+    // ═══════════════════════════════════════════════════════════
+    match /priceOpinions/{opinionId} {
+      allow read: if isAuth();
+
+      allow create: if isAuth()
+        && request.resource.data.propertyId is string;
+
+      allow update, delete: if false;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // PROPERTY STATS (Denormalized, server-computed)
+    // Read: authenticated (Flutter streams).
+    // Write: server-only.
+    // ═══════════════════════════════════════════════════════════
+    match /propertyStats/{propertyId} {
+      allow read: if isAuth();
+      allow write: if false;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // STRIPE TRANSACTIONS
+    // Read: own transactions only (userId match) or superAdmin.
+    // Write: server-managed.
+    // ═══════════════════════════════════════════════════════════
+    match /stripeTransactions/{transId} {
+      allow read: if isAuth()
+        && (resource.data.userId == request.auth.uid || isSuperAdmin());
+      allow write: if false;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // SERVER-ONLY COLLECTIONS
+    // All access exclusively via Admin SDK (API routes, crons,
+    // Firebase Functions). No client access permitted.
+    // ═══════════════════════════════════════════════════════════
+    match /marketScores/{docId} { allow read, write: if false; }
+    match /marketTrends/{docId} { allow read, write: if false; }
+    match /propertyScores/{docId} { allow read, write: if false; }
+    match /propertyViews/{docId} { allow read, write: if false; }
+    match /agentboxContacts/{docId} { allow read, write: if false; }
+    match /rexContacts/{docId} { allow read, write: if false; }
+    match /coreProperties/{docId} { allow read, write: if false; }
+    match /invoiceRuns/{docId} { allow read, write: if false; }
+    match /invoiceRunItems/{docId} { allow read, write: if false; }
+    match /docLinks/{docId} { allow read, write: if false; }
+    match /docSessions/{docId} { allow read, write: if false; }
+    match /phiVerifications/{docId} { allow read, write: if false; }
+
+    // ═══════════════════════════════════════════════════════════
+    // DEFAULT DENY
+    // Any collection not explicitly listed above is denied.
+    // This is Firestore's default behaviour but stated for clarity.
+    // ═══════════════════════════════════════════════════════════
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

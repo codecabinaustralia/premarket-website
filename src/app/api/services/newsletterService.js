@@ -2,6 +2,7 @@ import { adminDb } from '../../firebase/adminApp';
 import { sendEmail } from './resendService';
 import { wrapEmail, ctaButton, greeting, p, BASE_URL } from './emailTemplates';
 import { Timestamp } from 'firebase-admin/firestore';
+import { formatPriceShort } from '../../utils/formatters';
 
 export async function fetchBuyersWithPreferences() {
   const usersSnapshot = await adminDb
@@ -62,20 +63,9 @@ export async function fetchNewestProperties(limit = 10) {
   });
 }
 
-function parsePrice(price) {
-  if (!price) return null;
-  if (typeof price === 'number') return price;
-  const cleaned = String(price).replace(/[^0-9.]/g, '');
-  return parseFloat(cleaned) || null;
-}
-
 function formatPrice(price) {
-  if (!price) return 'Price on Application';
-  const num = parsePrice(price);
-  if (!num) return 'Price on Application';
-  if (num >= 1000000) return `$${(num / 1000000).toFixed(1)}M`;
-  if (num >= 1000) return `$${Math.round(num / 1000)}K`;
-  return `$${num.toLocaleString()}`;
+  const result = formatPriceShort(price);
+  return result === '--' ? 'Price on Application' : result;
 }
 
 function getDisplayAddress(property) {

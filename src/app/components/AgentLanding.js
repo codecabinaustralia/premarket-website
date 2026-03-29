@@ -18,7 +18,6 @@ export default function AgentLanding({ id }) {
                 const docRef = doc(db, 'agents', id);
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
-                    console.log("docSnap.data()", docSnap.data())
                     setAgent(docSnap.data());
                 } else {
                     console.warn('No agent found for ID!!:', id);

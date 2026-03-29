@@ -21,25 +21,7 @@ import {
   UserCheck,
   Loader2,
 } from 'lucide-react';
-
-function formatDate(ts) {
-  if (!ts) return '--';
-  const d = ts.toDate ? ts.toDate() : new Date(ts);
-  return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
-}
-
-function formatRelative(ts) {
-  if (!ts) return '--';
-  const d = ts.toDate ? ts.toDate() : new Date(ts);
-  const diff = Date.now() - d.getTime();
-  const days = Math.floor(diff / 86400000);
-  if (days === 0) return 'Today';
-  if (days === 1) return 'Yesterday';
-  if (days < 7) return `${days}d ago`;
-  if (days < 30) return `${Math.floor(days / 7)}w ago`;
-  if (days < 365) return `${Math.floor(days / 30)}mo ago`;
-  return `${Math.floor(days / 365)}y ago`;
-}
+import { formatDate, formatRelative } from '../../utils/formatters';
 
 const TABS = [
   { key: 'agencies', label: 'Agencies', icon: Building2 },

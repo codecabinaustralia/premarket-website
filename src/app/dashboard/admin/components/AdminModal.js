@@ -57,7 +57,7 @@ export default function AdminModal({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
-            onClick={onClose}
+            onMouseDown={onClose}
           />
 
           {/* Modal */}

@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server';
+import { verifyAuth } from '../middleware/auth';
 import { sendPropertyLiveEmail, sendPropertyAgentEmail } from '../services/resendService';
 
 export async function POST(request) {
   try {
+    const auth = await verifyAuth(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type');
     const { email, name, address, visibility } = await request.json();

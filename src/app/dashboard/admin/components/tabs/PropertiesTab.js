@@ -12,7 +12,8 @@ import {
   ExternalLink,
   ChevronRight,
 } from 'lucide-react';
-import { formatDate } from '../../utils/formatters';
+import { formatDate, getPropertyImage } from '../../utils/formatters';
+import { authFetch } from '../../../../utils/authFetch';
 
 export default function PropertiesTab({ user }) {
   const [properties, setProperties] = useState([]);
@@ -28,7 +29,7 @@ export default function PropertiesTab({ user }) {
       try {
         const [propertiesSnap, usersRes] = await Promise.all([
           getDocs(collection(db, 'properties')),
-          fetch(`/api/admin/users?adminUid=${user.uid}`),
+          authFetch(`/api/admin/users`),
         ]);
         const usersData = await usersRes.json();
 
@@ -210,8 +211,8 @@ export default function PropertiesTab({ user }) {
                   className="px-6 py-4 flex items-center gap-4 hover:bg-slate-50 transition-colors group block"
                 >
                   <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
-                    {p.imageUrls?.[0] || p.imageUrl || p.images?.[0] ? (
-                      <img src={p.imageUrls?.[0] || p.imageUrl || p.images?.[0]} alt="" className="w-full h-full object-cover" />
+                    {getPropertyImage(p) ? (
+                      <img src={getPropertyImage(p)} alt="" className="w-full h-full object-cover" />
                     ) : (
                       <Building2 className="w-5 h-5 text-slate-400" />
                     )}

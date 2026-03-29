@@ -1,18 +1,20 @@
 import { NextResponse } from 'next/server';
+import { verifyAuth } from '../../../../api/middleware/auth';
 import { fetchListings, getCredentials } from '../../../../api/services/agentboxService';
 import { DEMO_LISTINGS } from '../../../../api/services/agentboxDemoData';
 import { adminDb } from '../../../../firebase/adminApp';
 
 export async function GET(request) {
   try {
+    const auth = await verifyAuth(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+    const uid = auth.uid;
+
     const { searchParams } = new URL(request.url);
-    const uid = searchParams.get('uid');
     const page = searchParams.get('page') || '1';
     const limit = searchParams.get('limit') || '50';
-
-    if (!uid) {
-      return NextResponse.json({ error: 'Missing uid' }, { status: 400 });
-    }
 
     // Get stored credentials
     const creds = await getCredentials(uid);

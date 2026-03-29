@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronUp, ExternalLink, Send, RefreshCw, XCircle, CheckCircle, Trash2 } from 'lucide-react';
 import InvoiceStatusBadge from './InvoiceStatusBadge';
+import { authFetch } from '../../../../utils/authFetch';
 
 export default function InvoiceRunDetail({ run, items, user, onRefresh }) {
   const [expandedAgency, setExpandedAgency] = useState(null);
@@ -28,22 +29,20 @@ export default function InvoiceRunDetail({ run, items, user, onRefresh }) {
     setActionLoading(action);
     try {
       if (action === 'approve' || action === 'cancel') {
-        await fetch(`/api/admin/invoicing/runs/${run.id}`, {
+        await authFetch(`/api/admin/invoicing/runs/${run.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ adminUid: user.uid, action }),
+          body: JSON.stringify({ action }),
         });
       } else if (action === 'send') {
-        await fetch(`/api/admin/invoicing/runs/${run.id}/send`, {
+        await authFetch(`/api/admin/invoicing/runs/${run.id}/send`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ adminUid: user.uid }),
         });
       } else if (action === 'sync') {
-        await fetch(`/api/admin/invoicing/runs/${run.id}/sync`, {
+        await authFetch(`/api/admin/invoicing/runs/${run.id}/sync`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ adminUid: user.uid }),
         });
       }
       onRefresh?.();
@@ -58,10 +57,10 @@ export default function InvoiceRunDetail({ run, items, user, onRefresh }) {
     if (!confirm(`Remove ${agencyName} from this run?`)) return;
     setRemovingItem(itemId);
     try {
-      await fetch(`/api/admin/invoicing/runs/${run.id}`, {
+      await authFetch(`/api/admin/invoicing/runs/${run.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminUid: user.uid, action: 'removeItems', itemIds: [itemId] }),
+        body: JSON.stringify({ action: 'removeItems', itemIds: [itemId] }),
       });
       onRefresh?.();
     } catch (err) {
@@ -75,10 +74,10 @@ export default function InvoiceRunDetail({ run, items, user, onRefresh }) {
     if (!confirm(`Remove "${address}" from this run?`)) return;
     setRemovingProp(`${itemId}-${propertyId}`);
     try {
-      await fetch(`/api/admin/invoicing/runs/${run.id}`, {
+      await authFetch(`/api/admin/invoicing/runs/${run.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminUid: user.uid, action: 'removeProperties', itemId, propertyIds: [propertyId] }),
+        body: JSON.stringify({ action: 'removeProperties', itemId, propertyIds: [propertyId] }),
       });
       onRefresh?.();
     } catch (err) {

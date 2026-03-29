@@ -1,15 +1,7 @@
 'use client';
 
 import { TrendingUp, Home, Users, BarChart3 } from 'lucide-react';
-
-function formatPrice(price) {
-  if (!price) return '--';
-  const num = parseFloat(String(price).replace(/[^0-9.]/g, ''));
-  if (isNaN(num)) return '--';
-  if (num >= 1000000) return `$${(num / 1000000).toFixed(1)}M`;
-  if (num >= 1000) return `$${(num / 1000).toFixed(0)}K`;
-  return '$' + num.toLocaleString('en-AU', { maximumFractionDigits: 0 });
-}
+import { formatPriceShort as formatPrice } from '../../../utils/formatters';
 
 export default function ForecastCard({ forecast, loading }) {
   if (loading) {

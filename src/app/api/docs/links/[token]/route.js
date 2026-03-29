@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { FieldValue } from 'firebase-admin/firestore';
 import { adminDb } from '../../../../firebase/adminApp';
+import { verifyAdmin } from '../../../middleware/auth';
 
 const EXPIRY_MS = 72 * 60 * 60 * 1000; // 72 hours
 
@@ -32,17 +33,12 @@ export async function GET(request, { params }) {
 
 export async function PATCH(request, { params }) {
   try {
+    const auth = await verifyAdmin(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+
     const { token } = await params;
-    const { uid } = await request.json();
-
-    if (!uid) {
-      return NextResponse.json({ error: 'Missing uid' }, { status: 400 });
-    }
-
-    const adminDoc = await adminDb.collection('users').doc(uid).get();
-    if (!adminDoc.exists || adminDoc.data().superAdmin !== true) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
 
     await adminDb.collection('docLinks').doc(token).update({
       createdAt: FieldValue.serverTimestamp(),
@@ -57,17 +53,12 @@ export async function PATCH(request, { params }) {
 
 export async function DELETE(request, { params }) {
   try {
+    const auth = await verifyAdmin(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+
     const { token } = await params;
-    const { uid } = await request.json();
-
-    if (!uid) {
-      return NextResponse.json({ error: 'Missing uid' }, { status: 400 });
-    }
-
-    const adminDoc = await adminDb.collection('users').doc(uid).get();
-    if (!adminDoc.exists || adminDoc.data().superAdmin !== true) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
 
     await adminDb.collection('docLinks').doc(token).update({ active: false });
 

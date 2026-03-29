@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { db } from '../firebase/clientApp';
+import { authFetch } from '../utils/authFetch';
 import { collection, addDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { Camera, X, Loader2, User } from 'lucide-react';
 
@@ -31,7 +32,7 @@ export default function AgentModal({ show, onClose, onSave, agent = null, userId
       if (file) {
         const formData = new FormData();
         formData.append('file', file);
-        const res = await fetch('/api/upload-image', { method: 'POST', body: formData });
+        const res = await authFetch('/api/upload-image', { method: 'POST', body: formData });
         if (res.ok) {
           const { url } = await res.json();
           avatarUrl = url;
@@ -69,7 +70,7 @@ export default function AgentModal({ show, onClose, onSave, agent = null, userId
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
-      onClick={onClose}
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.9, y: 20 }}

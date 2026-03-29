@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../../../context/AuthContext';
+import { authFetch } from '../../../utils/authFetch';
 import { db, storage } from '../../../firebase/clientApp';
 import { useJsApiLoader, Autocomplete } from '@react-google-maps/api';
 import {
@@ -350,7 +351,7 @@ export default function EditPropertyPage() {
     setIsGenerating(true);
     try {
       const selectedFeatures = Object.keys(features).filter((f) => features[f]);
-      const res = await fetch('/api/generate-listing', {
+      const res = await authFetch('/api/generate-listing', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

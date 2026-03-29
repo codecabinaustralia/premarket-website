@@ -1,13 +1,20 @@
 import { NextResponse } from 'next/server';
+import { verifyAuth } from '../../../../../api/middleware/auth';
 import { adminDb } from '../../../../../firebase/adminApp';
 import { FieldValue } from 'firebase-admin/firestore';
 
 export async function PUT(request, { params }) {
   try {
-    const { propertyId } = await params;
-    const { uid, visibility } = await request.json();
+    const auth = await verifyAuth(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+    const uid = auth.uid;
 
-    if (!uid || !propertyId || typeof visibility !== 'boolean') {
+    const { propertyId } = await params;
+    const { visibility } = await request.json();
+
+    if (!propertyId || typeof visibility !== 'boolean') {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 

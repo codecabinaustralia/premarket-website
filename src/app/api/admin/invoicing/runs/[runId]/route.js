@@ -1,26 +1,20 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '../../../../../firebase/adminApp';
 import { FieldValue } from 'firebase-admin/firestore';
-
-async function verifyAdmin(adminUid) {
-  if (!adminUid) return false;
-  const doc = await adminDb.collection('users').doc(adminUid).get();
-  return doc.exists && doc.data().superAdmin === true;
-}
+import { verifyAdmin } from '../../../../middleware/auth';
 
 /**
- * GET /api/admin/invoicing/runs/[runId]?adminUid=xxx
+ * GET /api/admin/invoicing/runs/[runId]
  * Get full run details + all items.
  */
 export async function GET(request, { params }) {
   try {
-    const { searchParams } = new URL(request.url);
-    const adminUid = searchParams.get('adminUid');
-    const { runId } = await params;
-
-    if (!(await verifyAdmin(adminUid))) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    const auth = await verifyAdmin(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
+
+    const { runId } = await params;
 
     const runDoc = await adminDb.collection('invoiceRuns').doc(runId).get();
     if (!runDoc.exists) {
@@ -81,13 +75,14 @@ async function recalculateRunTotals(runId, runRef) {
  */
 export async function PATCH(request, { params }) {
   try {
-    const body = await request.json();
-    const { adminUid, action } = body;
-    const { runId } = await params;
-
-    if (!(await verifyAdmin(adminUid))) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    const auth = await verifyAdmin(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
+
+    const body = await request.json();
+    const { action } = body;
+    const { runId } = await params;
 
     const runRef = adminDb.collection('invoiceRuns').doc(runId);
     const runDoc = await runRef.get();
@@ -101,7 +96,7 @@ export async function PATCH(request, { params }) {
       if (currentStatus !== 'draft') {
         return NextResponse.json({ error: 'Can only approve draft runs' }, { status: 400 });
       }
-      await runRef.update({ status: 'approved', approvedAt: FieldValue.serverTimestamp(), approvedBy: adminUid });
+      await runRef.update({ status: 'approved', approvedAt: FieldValue.serverTimestamp(), approvedBy: auth.uid });
       return NextResponse.json({ success: true, status: 'approved' });
     }
 
@@ -109,7 +104,7 @@ export async function PATCH(request, { params }) {
       if (!['draft', 'approved'].includes(currentStatus)) {
         return NextResponse.json({ error: 'Cannot cancel this run' }, { status: 400 });
       }
-      await runRef.update({ status: 'cancelled', cancelledAt: FieldValue.serverTimestamp(), cancelledBy: adminUid });
+      await runRef.update({ status: 'cancelled', cancelledAt: FieldValue.serverTimestamp(), cancelledBy: auth.uid });
       return NextResponse.json({ success: true, status: 'cancelled' });
     }
 
@@ -185,18 +180,17 @@ export async function PATCH(request, { params }) {
 }
 
 /**
- * DELETE /api/admin/invoicing/runs/[runId]?adminUid=xxx
+ * DELETE /api/admin/invoicing/runs/[runId]
  * Delete draft runs + their items.
  */
 export async function DELETE(request, { params }) {
   try {
-    const { searchParams } = new URL(request.url);
-    const adminUid = searchParams.get('adminUid');
-    const { runId } = await params;
-
-    if (!(await verifyAdmin(adminUid))) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    const auth = await verifyAdmin(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
+
+    const { runId } = await params;
 
     const runRef = adminDb.collection('invoiceRuns').doc(runId);
     const runDoc = await runRef.get();

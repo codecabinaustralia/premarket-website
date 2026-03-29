@@ -1,20 +1,16 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '../../../../firebase/adminApp';
 import { FieldValue } from 'firebase-admin/firestore';
-
-async function verifyAdmin(adminUid) {
-  if (!adminUid) return false;
-  const doc = await adminDb.collection('users').doc(adminUid).get();
-  return doc.exists && doc.data().superAdmin === true;
-}
+import { verifyAdmin } from '../../../middleware/auth';
 
 export async function POST(request) {
   try {
-    const { adminUid, action, userIds } = await request.json();
-
-    if (!(await verifyAdmin(adminUid))) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    const auth = await verifyAdmin(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
+
+    const { action, userIds } = await request.json();
 
     if (!Array.isArray(userIds) || userIds.length === 0) {
       return NextResponse.json({ error: 'No users specified' }, { status: 400 });

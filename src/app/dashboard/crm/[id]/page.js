@@ -26,32 +26,7 @@ import {
   Bed,
   DollarSign,
 } from 'lucide-react';
-
-function formatDate(ts) {
-  if (!ts) return '--';
-  const d = ts.toDate ? ts.toDate() : new Date(ts);
-  return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
-}
-
-function formatRelative(ts) {
-  if (!ts) return '';
-  const d = ts.toDate ? ts.toDate() : new Date(ts);
-  const diff = Date.now() - d.getTime();
-  const days = Math.floor(diff / 86400000);
-  if (days === 0) return 'Today';
-  if (days === 1) return 'Yesterday';
-  if (days < 7) return `${days}d ago`;
-  if (days < 30) return `${Math.floor(days / 7)}w ago`;
-  if (days < 365) return `${Math.floor(days / 30)}mo ago`;
-  return `${Math.floor(days / 365)}y ago`;
-}
-
-function formatPrice(price) {
-  if (!price) return '--';
-  const num = parseFloat(String(price).replace(/[^0-9.]/g, ''));
-  if (isNaN(num)) return '--';
-  return '$' + num.toLocaleString('en-AU', { maximumFractionDigits: 0 });
-}
+import { formatDate, formatRelative, formatPrice } from '../../../utils/formatters';
 
 function scoreColor(score) {
   if (score >= 61) return 'text-emerald-600';

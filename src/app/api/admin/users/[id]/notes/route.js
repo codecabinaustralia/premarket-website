@@ -1,26 +1,20 @@
 import { NextResponse } from 'next/server';
+import { verifyAdmin } from '../../../../middleware/auth';
 import { adminDb } from '../../../../../firebase/adminApp';
 import { FieldValue } from 'firebase-admin/firestore';
 
-async function verifyAdmin(adminUid) {
-  if (!adminUid) return false;
-  const doc = await adminDb.collection('users').doc(adminUid).get();
-  return doc.exists && doc.data().superAdmin === true;
-}
-
 /**
- * GET /api/admin/users/[id]/notes?adminUid=xxx
+ * GET /api/admin/users/[id]/notes
  * Get all admin notes for a user.
  */
 export async function GET(request, { params }) {
   try {
-    const { id } = await params;
-    const { searchParams } = new URL(request.url);
-    const adminUid = searchParams.get('adminUid');
-
-    if (!(await verifyAdmin(adminUid))) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    const auth = await verifyAdmin(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
+
+    const { id } = await params;
 
     const snapshot = await adminDb
       .collection('users')
@@ -43,23 +37,24 @@ export async function GET(request, { params }) {
 
 /**
  * POST /api/admin/users/[id]/notes
- * Add a note. Body: { adminUid, text }
+ * Add a note. Body: { text }
  */
 export async function POST(request, { params }) {
   try {
-    const { id } = await params;
-    const { adminUid, text } = await request.json();
+    const auth = await verifyAdmin(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
 
-    if (!adminUid || !text?.trim()) {
+    const { id } = await params;
+    const { text } = await request.json();
+
+    if (!text?.trim()) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    if (!(await verifyAdmin(adminUid))) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
-
     // Get admin name for display
-    const adminDoc = await adminDb.collection('users').doc(adminUid).get();
+    const adminDoc = await adminDb.collection('users').doc(auth.uid).get();
     const adminData = adminDoc.data();
     const adminName = [adminData?.firstName, adminData?.lastName].filter(Boolean).join(' ') || 'Admin';
 
@@ -69,7 +64,7 @@ export async function POST(request, { params }) {
       .collection('adminNotes')
       .add({
         text: text.trim(),
-        createdBy: adminUid,
+        createdBy: auth.uid,
         createdByName: adminName,
         createdAt: FieldValue.serverTimestamp(),
       });
@@ -83,19 +78,20 @@ export async function POST(request, { params }) {
 
 /**
  * DELETE /api/admin/users/[id]/notes
- * Delete a note. Body: { adminUid, noteId }
+ * Delete a note. Body: { noteId }
  */
 export async function DELETE(request, { params }) {
   try {
-    const { id } = await params;
-    const { adminUid, noteId } = await request.json();
-
-    if (!adminUid || !noteId) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    const auth = await verifyAdmin(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
-    if (!(await verifyAdmin(adminUid))) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    const { id } = await params;
+    const { noteId } = await request.json();
+
+    if (!noteId) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
     await adminDb

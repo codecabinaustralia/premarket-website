@@ -1,29 +1,25 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '../../../../firebase/adminApp';
 import { FieldValue } from 'firebase-admin/firestore';
-
-async function verifyAdmin(adminUid) {
-  if (!adminUid) return false;
-  const doc = await adminDb.collection('users').doc(adminUid).get();
-  return doc.exists && doc.data().superAdmin === true;
-}
+import { verifyAdmin } from '../../../middleware/auth';
 
 /**
  * POST /api/admin/invoicing/agency-invoice
  * Create a manual invoice run for a specific agency with selected agents/properties.
  *
- * Body: { adminUid, agencyName, agentIds, propertyIds? }
+ * Body: { agencyName, agentIds, propertyIds? }
  * - agentIds: array of agent user IDs (required)
  * - propertyIds: optional array of specific property IDs (if omitted, uses all active properties for agents)
  * - agencyName: optional display name for the invoice
  */
 export async function POST(request) {
   try {
-    const { adminUid, agencyName, agentIds, propertyIds } = await request.json();
-
-    if (!(await verifyAdmin(adminUid))) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    const auth = await verifyAdmin(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
+
+    const { agencyName, agentIds, propertyIds } = await request.json();
 
     if (!agentIds?.length) {
       return NextResponse.json({ error: 'At least one agent required' }, { status: 400 });
@@ -114,7 +110,7 @@ export async function POST(request) {
       periodStart: null, // Manual invoice, no period
       periodEnd: null,
       createdAt: FieldValue.serverTimestamp(),
-      createdBy: adminUid,
+      createdBy: auth.uid,
       executedAt: null,
       pricePerListing,
       gstRate,

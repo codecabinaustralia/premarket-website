@@ -2209,7 +2209,7 @@ export default function PropertyPageClient() {
       {lightboxOpen && imageUrls.length > 0 && (
         <div 
           className="fixed inset-0 bg-black/95 z-[60] flex items-center justify-center"
-          onClick={closeLightbox}
+          onMouseDown={(e) => { if (e.target === e.currentTarget) closeLightbox(); }}
           onKeyDown={(e) => {
             if (e.key === 'Escape') closeLightbox();
             if (e.key === 'ArrowLeft') prevImage();
@@ -2309,7 +2309,7 @@ export default function PropertyPageClient() {
       {videoModalOpen && displayVideoUrl && (
         <div
           className="fixed inset-0 bg-black/95 z-[60] flex items-center justify-center"
-          onClick={() => setVideoModalOpen(false)}
+          onMouseDown={(e) => { if (e.target === e.currentTarget) setVideoModalOpen(false); }}
         >
           {/* Close Button */}
           <button

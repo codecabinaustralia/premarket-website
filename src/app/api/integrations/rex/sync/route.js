@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { verifyAuth } from '../../../../api/middleware/auth';
 import { getCredentials, fetchListings, mapRexListingToProperty, updateSyncStatus, syncContacts } from '../../../../api/services/rexService';
 import { DEMO_LISTINGS } from '../../../../api/services/rexDemoData';
 import { adminDb } from '../../../../firebase/adminApp';
@@ -6,11 +7,11 @@ import { FieldValue } from 'firebase-admin/firestore';
 
 export async function POST(request) {
   try {
-    const { uid } = await request.json();
-
-    if (!uid) {
-      return NextResponse.json({ error: 'Missing uid' }, { status: 400 });
+    const auth = await verifyAuth(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
+    const uid = auth.uid;
 
     // Get stored credentials
     const creds = await getCredentials(uid);

@@ -1,24 +1,25 @@
 import { NextResponse } from 'next/server';
+import { randomBytes } from 'crypto';
 import { adminDb } from '../../../firebase/adminApp';
 import { FieldValue } from 'firebase-admin/firestore';
+import { verifyAdmin } from '../../middleware/auth';
 
 /**
  * POST /api/admin/api-access
  * Actions: approve, revoke, regenerate, delete
- * Body: { adminUid, targetUid, action }
+ * Body: { targetUid, action }
  */
 export async function POST(request) {
   try {
-    const { adminUid, targetUid, action } = await request.json();
-
-    if (!adminUid || !targetUid || !action) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    const auth = await verifyAdmin(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
-    // Verify admin is superAdmin
-    const adminDoc = await adminDb.collection('users').doc(adminUid).get();
-    if (!adminDoc.exists || adminDoc.data().superAdmin !== true) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    const { targetUid, action } = await request.json();
+
+    if (!targetUid || !action) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
     const targetRef = adminDb.collection('users').doc(targetUid);
@@ -99,12 +100,5 @@ export async function POST(request) {
 }
 
 function generateApiKey() {
-  // Generate a UUID v4-style API key with a prefix
-  const segments = [];
-  for (let i = 0; i < 4; i++) {
-    segments.push(
-      Math.random().toString(16).substring(2, 10)
-    );
-  }
-  return `pm_${segments.join('')}`;
+  return `pm_${randomBytes(32).toString('hex')}`;
 }

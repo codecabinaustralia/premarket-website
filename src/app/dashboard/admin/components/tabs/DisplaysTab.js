@@ -21,6 +21,7 @@ import AdminModal from '../AdminModal';
 import Toggle from '../Toggle';
 import { useToast } from '../ToastProvider';
 import useConfirm from '../../hooks/useConfirm';
+import { authFetch } from '../../../../utils/authFetch';
 
 export default function DisplaysTab({ user }) {
   const toast = useToast();
@@ -44,7 +45,7 @@ export default function DisplaysTab({ user }) {
       try {
         const [displaysSnap, usersRes] = await Promise.all([
           getDocs(collection(db, 'displays')),
-          fetch(`/api/admin/users?adminUid=${user.uid}`),
+          authFetch(`/api/admin/users`),
         ]);
         setDisplays(displaysSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
         const usersData = await usersRes.json();

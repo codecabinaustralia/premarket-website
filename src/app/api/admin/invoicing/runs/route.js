@@ -1,24 +1,17 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '../../../../firebase/adminApp';
 import { FieldValue } from 'firebase-admin/firestore';
-
-async function verifyAdmin(adminUid) {
-  if (!adminUid) return false;
-  const doc = await adminDb.collection('users').doc(adminUid).get();
-  return doc.exists && doc.data().superAdmin === true;
-}
+import { verifyAdmin } from '../../../middleware/auth';
 
 /**
- * GET /api/admin/invoicing/runs?adminUid=xxx
+ * GET /api/admin/invoicing/runs
  * List all invoice runs sorted by createdAt desc.
  */
 export async function GET(request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const adminUid = searchParams.get('adminUid');
-
-    if (!(await verifyAdmin(adminUid))) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    const auth = await verifyAdmin(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
     const snap = await adminDb
@@ -42,11 +35,12 @@ export async function GET(request) {
  */
 export async function POST(request) {
   try {
-    const { adminUid, dateFrom, dateTo } = await request.json();
-
-    if (!(await verifyAdmin(adminUid))) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    const auth = await verifyAdmin(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
+
+    const { dateFrom, dateTo } = await request.json();
 
     // Get settings
     const settingsDoc = await adminDb.collection('settings').doc('invoicing').get();
@@ -172,7 +166,7 @@ export async function POST(request) {
       periodStart,
       periodEnd,
       createdAt: FieldValue.serverTimestamp(),
-      createdBy: adminUid,
+      createdBy: auth.uid,
       executedAt: null,
       pricePerListing,
       gstRate,

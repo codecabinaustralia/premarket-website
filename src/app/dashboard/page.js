@@ -6,8 +6,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
+import { authFetch } from '../utils/authFetch';
 import { db } from '../firebase/clientApp';
 import { collection, query, where, getDocs, doc, updateDoc, onSnapshot, orderBy } from 'firebase/firestore';
+import { formatPrice, formatDate } from '../utils/formatters';
 import {
   LayoutDashboard,
   Home,
@@ -40,19 +42,6 @@ import {
   Building2,
   Loader2,
 } from 'lucide-react';
-
-function formatPrice(price) {
-  if (!price) return '--';
-  const num = parseFloat(String(price).replace(/[^0-9.]/g, ''));
-  if (isNaN(num)) return '--';
-  return '$' + num.toLocaleString('en-AU', { maximumFractionDigits: 0 });
-}
-
-function formatDate(ts) {
-  if (!ts) return '--';
-  const d = ts.toDate ? ts.toDate() : new Date(ts);
-  return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
-}
 
 // --- Shimmer Image Wrapper ---
 function ShimmerImage({ src, alt, ...props }) {
@@ -125,7 +114,7 @@ function Sidebar({ active, onNavigate, onSignOut, sidebarOpen, setSidebarOpen, u
       </div>
 
       {/* Nav Items */}
-      <nav className="flex-1 px-3 py-4 space-y-1">
+      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = active === item.id;
@@ -505,7 +494,7 @@ function LogoUploadModal({ show, onClose, user, userData, setUserData }) {
       if (file) {
         const formData = new FormData();
         formData.append('file', file);
-        const res = await fetch('/api/upload-image', { method: 'POST', body: formData });
+        const res = await authFetch('/api/upload-image', { method: 'POST', body: formData });
         if (res.ok) {
           const { url } = await res.json();
           updates.logoUrl = url;
@@ -534,7 +523,7 @@ function LogoUploadModal({ show, onClose, user, userData, setUserData }) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
-      onClick={handleSkip}
+      onMouseDown={(e) => { if (e.target === e.currentTarget) handleSkip(); }}
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -968,7 +957,7 @@ function DashboardPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
-            onClick={() => setSuccessModal(null)}
+            onMouseDown={(e) => { if (e.target === e.currentTarget) setSuccessModal(null); }}
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}

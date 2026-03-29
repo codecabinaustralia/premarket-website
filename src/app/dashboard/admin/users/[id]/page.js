@@ -30,7 +30,8 @@ import { useToast } from '../../components/ToastProvider';
 import useConfirm from '../../hooks/useConfirm';
 import Toggle from '../../components/Toggle';
 import AdminModal from '../../components/AdminModal';
-import { formatDate, formatDateWithTime } from '../../utils/formatters';
+import { formatDate, formatDateWithTime, getPropertyImage } from '../../utils/formatters';
+import { authFetch } from '../../../../utils/authFetch';
 
 export default function AdminUserPage() {
   const { user, userData, loading } = useAuth();
@@ -98,7 +99,7 @@ export default function AdminUserPage() {
   const fetchNotes = useCallback(async () => {
     if (!user || !userId) return;
     try {
-      const res = await fetch(`/api/admin/users/${userId}/notes?adminUid=${user.uid}`);
+      const res = await authFetch(`/api/admin/users/${userId}/notes`);
       const data = await res.json();
       setNotes(data.notes || []);
     } catch (err) {
@@ -117,11 +118,10 @@ export default function AdminUserPage() {
     if (!targetUser) return;
     setActionLoading(field);
     try {
-      const res = await fetch('/api/admin/users', {
+      const res = await authFetch('/api/admin/users', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          adminUid: user.uid,
           targetUid: userId,
           updates: { [field]: !targetUser[field] },
         }),
@@ -153,10 +153,9 @@ export default function AdminUserPage() {
     if (!ok) return;
     setActionLoading('resetPassword');
     try {
-      const res = await fetch(`/api/admin/users/${userId}/reset-password`, {
+      const res = await authFetch(`/api/admin/users/${userId}/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminUid: user.uid }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -176,10 +175,10 @@ export default function AdminUserPage() {
   const handleApiAction = async (action) => {
     setActionLoading(`api-${action}`);
     try {
-      const res = await fetch('/api/admin/api-access', {
+      const res = await authFetch('/api/admin/api-access', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminUid: user.uid, targetUid: userId, action }),
+        body: JSON.stringify({ targetUid: userId, action }),
       });
 
       if (res.ok) {
@@ -207,10 +206,10 @@ export default function AdminUserPage() {
     if (!noteText.trim()) return;
     setNoteSubmitting(true);
     try {
-      const res = await fetch(`/api/admin/users/${userId}/notes`, {
+      const res = await authFetch(`/api/admin/users/${userId}/notes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminUid: user.uid, text: noteText }),
+        body: JSON.stringify({ text: noteText }),
       });
 
       if (res.ok) {
@@ -239,10 +238,10 @@ export default function AdminUserPage() {
     });
     if (!ok) return;
     try {
-      const res = await fetch(`/api/admin/users/${userId}/notes`, {
+      const res = await authFetch(`/api/admin/users/${userId}/notes`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminUid: user.uid, noteId }),
+        body: JSON.stringify({ noteId }),
       });
 
       if (res.ok) {
@@ -260,7 +259,7 @@ export default function AdminUserPage() {
   const handleSendEmail = async () => {
     setEmailSending(true);
     try {
-      const body = { adminUid: user.uid, emailType };
+      const body = { emailType };
       if (emailType === 'property_live' || emailType === 'follow_up') {
         if (!emailPropertyId) {
           toast.error('Please select a property');
@@ -270,7 +269,7 @@ export default function AdminUserPage() {
         body.propertyId = emailPropertyId;
       }
 
-      const res = await fetch(`/api/admin/users/${userId}/send-email`, {
+      const res = await authFetch(`/api/admin/users/${userId}/send-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -304,10 +303,9 @@ export default function AdminUserPage() {
 
     setDeleteLoading(true);
     try {
-      const res = await fetch(`/api/admin/users/${userId}/delete`, {
+      const res = await authFetch(`/api/admin/users/${userId}/delete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminUid: user.uid }),
       });
 
       const data = await res.json();
@@ -507,8 +505,8 @@ export default function AdminUserPage() {
                   className="px-6 py-4 flex items-center gap-4 hover:bg-slate-50 transition-colors group block"
                 >
                   <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
-                    {p.imageUrls?.[0] || p.imageUrl || p.images?.[0] ? (
-                      <img src={p.imageUrls?.[0] || p.imageUrl || p.images?.[0]} alt="" className="w-full h-full object-cover" />
+                    {getPropertyImage(p) ? (
+                      <img src={getPropertyImage(p)} alt="" className="w-full h-full object-cover" />
                     ) : (
                       <Building2 className="w-4 h-4 text-slate-400" />
                     )}
