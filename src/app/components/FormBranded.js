@@ -96,7 +96,7 @@ export default function PropertyFormModal() {
 
   const [gotoMarketGoal, setGotoMarketGoal] = useState(null);
 
-  const homeTypes = ['House', 'Apartment', 'Villa', 'Townhouse', 'Acreage'];
+  const homeTypes = ['House', 'Apartment', 'Villa', 'Townhouse', 'Acreage', 'Duplex'];
   const homeFeatures = [
     'Pool',
     'Granny Flat',
@@ -310,7 +310,7 @@ export default function PropertyFormModal() {
       showPriceRange: false,
       squareFootage,
       active: false,
-      isEager: 80,
+      isEager: 0,
       wantsPremiumListing: false,
       agent: true,
       clientName,
@@ -429,7 +429,7 @@ export default function PropertyFormModal() {
         visibility: false,
         acceptingOffers: true,
         campaignId: 'FqMZd0mWlNlSBl66s7BN',
-        isEager: 80,
+        isEager: 0,
         propertyType: type,
         wantsPremiumListing: false,
         agent: true,

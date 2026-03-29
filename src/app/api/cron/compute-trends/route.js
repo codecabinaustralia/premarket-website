@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
 import {
   getUniqueSuburbs,
   computeSuburbScores,
@@ -32,6 +33,7 @@ export async function GET(request) {
           skipped++;
         }
       } catch (err) {
+        Sentry.captureException(err, { tags: { route: 'compute-trends', suburbKey: s.key } });
         console.error(`Failed to compute trend for ${s.key}:`, err);
         skipped++;
       }
@@ -45,6 +47,7 @@ export async function GET(request) {
       skipped,
     });
   } catch (err) {
+    Sentry.captureException(err, { tags: { route: 'compute-trends' } });
     console.error('Compute trends cron error:', err);
     return NextResponse.json({ error: 'Failed to compute trends' }, { status: 500 });
   }

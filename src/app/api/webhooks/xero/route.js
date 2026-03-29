@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { updateInvoiceInFirestore } from '../../services/xeroService';
+import { updateInvoiceInFirestore, updateInvoiceRunItem } from '../../services/xeroService';
 import crypto from 'crypto';
 
 const WEBHOOK_KEY = process.env.XERO_WEBHOOK_KEY;
@@ -32,7 +32,11 @@ export async function POST(request) {
     // Process real webhook events
     const invoices = (payload.events || []).map((e) => e.resourceId);
     for (const invoiceId of invoices) {
+      // Update user invoices (existing behavior)
       await updateInvoiceInFirestore({ InvoiceID: invoiceId });
+
+      // Also update invoiceRunItems if this invoice belongs to a run
+      await updateInvoiceRunItem(invoiceId, { Status: 'PAID' });
     }
 
     return NextResponse.json({ success: true, count: invoices.length });

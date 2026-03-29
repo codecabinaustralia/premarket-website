@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import {
   fetchBuyersWithPreferences,
   fetchNewestProperties,
-  fetchHottestProperties,
   matchPropertiesToBuyer,
   generateNewsletterHTML,
 } from '../../services/newsletterService';
@@ -12,10 +11,9 @@ export async function POST(request) {
     const body = await request.json().catch(() => ({}));
     const { email } = body;
 
-    const [buyers, newestProperties, hottestProperties] = await Promise.all([
+    const [buyers, newestProperties] = await Promise.all([
       fetchBuyersWithPreferences(),
-      fetchNewestProperties(5),
-      fetchHottestProperties(5),
+      fetchNewestProperties(10),
     ]);
 
     let buyer = email ? buyers.find((b) => b.email === email) : buyers[0];
@@ -29,12 +27,10 @@ export async function POST(request) {
       };
     }
 
-    const matchedNewest = matchPropertiesToBuyer(buyer, newestProperties);
-    const matchedHottest = matchPropertiesToBuyer(buyer, hottestProperties);
-    const buyerNewest = matchedNewest.length > 0 ? matchedNewest : newestProperties;
-    const buyerHottest = matchedHottest.length > 0 ? matchedHottest : hottestProperties;
+    const matched = matchPropertiesToBuyer(buyer, newestProperties);
+    const buyerProperties = matched.length > 0 ? matched : newestProperties;
 
-    const html = generateNewsletterHTML(buyer, buyerNewest, buyerHottest);
+    const html = generateNewsletterHTML(buyer, buyerProperties);
     return new NextResponse(html, { headers: { 'Content-Type': 'text/html' } });
   } catch (err) {
     console.error('Error previewing newsletter:', err);

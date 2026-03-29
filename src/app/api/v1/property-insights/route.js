@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
 import { validateApiKey } from '../middleware';
 import {
   parseLocationParams,
@@ -8,6 +9,7 @@ import {
   median,
   formatPrice,
 } from '../helpers';
+import { computeConfidence } from '../phiScoring';
 
 export async function GET(request) {
   const auth = await validateApiKey(request);
@@ -59,6 +61,15 @@ export async function GET(request) {
         priceVsOpinionGap = Math.round(((medianOpinion - listingPrice) / listingPrice) * 10000) / 100;
       }
 
+      // PVI status for this property
+      const absGap = Math.abs(priceVsOpinionGap || 0);
+      let pviStatus = null;
+      if (listingPrice > 0 && medianOpinion > 0) {
+        if (absGap <= 7) pviStatus = 'fair';
+        else if ((priceVsOpinionGap || 0) < 0) pviStatus = 'overvalued';
+        else pviStatus = 'undervalued';
+      }
+
       return {
         propertyId: p.id,
         address: p.formattedAddress || p.address || null,
@@ -72,7 +83,10 @@ export async function GET(request) {
         medianOpinion: medianOpinion || null,
         medianOpinionFormatted: formatPrice(medianOpinion),
         priceVsOpinionGapPercent: priceVsOpinionGap,
+        pviStatus,
+        confidenceLevel: offerAmounts.length >= 6 ? 'high' : offerAmounts.length >= 3 ? 'medium' : offerAmounts.length > 0 ? 'low' : null,
         isLive: p.visibility === true,
+        listingStatus: p.listingStatus || 'premarket',
       };
     });
 
@@ -82,12 +96,16 @@ export async function GET(request) {
       return engB - engA;
     });
 
+    const confidence = computeConfidence(properties, offers, likes);
+
     return NextResponse.json({
       location: { lat, lng, radius, ...(resolvedPlace && { resolvedPlace }) },
       totalProperties: properties.length,
+      confidence,
       insights,
     });
   } catch (err) {
+    Sentry.captureException(err, { tags: { route: 'property-insights' } });
     console.error('Property insights error:', err);
     return NextResponse.json({ error: 'Failed to generate property insights' }, { status: 500 });
   }

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
 import { validateApiKey } from '../middleware';
 import { adminDb } from '../../../firebase/adminApp';
 import { getAllCachedScores } from '../scoreComputation';
@@ -23,6 +24,8 @@ export async function GET(request) {
           properties: s.propertyCount || 0,
           buyerScore: s.buyerScore || 0,
           sellerScore: s.sellerScore || 0,
+          phi: s.phi || {},
+          confidence: s.confidence || null,
           stale: s.stale || false,
         }))
         .sort((a, b) => b.buyerScore - a.buyerScore);
@@ -129,6 +132,7 @@ export async function GET(request) {
       totalSuburbs: Object.keys(suburbMap).length,
     });
   } catch (err) {
+    Sentry.captureException(err, { tags: { route: 'trending-areas' } });
     console.error('Trending areas error:', err);
     return NextResponse.json({ error: 'Failed to calculate trending areas' }, { status: 500 });
   }

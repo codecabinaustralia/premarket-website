@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
 import { validateApiKey } from '../middleware';
 import { adminDb } from '../../../firebase/adminApp';
 
@@ -63,6 +64,36 @@ export async function GET(request) {
     const avgBuyerScore = totalWeight > 0 ? Math.round(totalBuyerWeighted / totalWeight) : 0;
     const avgSellerScore = totalWeight > 0 ? Math.round(totalSellerWeighted / totalWeight) : 0;
 
+    // PHI national averages
+    const phiMetrics = ['bdi', 'smi', 'pvi', 'mhi', 'evs', 'bqi', 'fpi', 'sdb'];
+    const phiTotals = {};
+    let phiCount = 0;
+    for (const doc of docs) {
+      if (doc.phi) {
+        phiCount++;
+        for (const m of phiMetrics) {
+          phiTotals[m] = (phiTotals[m] || 0) + (doc.phi[m] || 0);
+        }
+      }
+    }
+    const avgPhi = {};
+    for (const m of phiMetrics) {
+      avgPhi[m] = phiCount > 0 ? Math.round((phiTotals[m] || 0) / phiCount) : 0;
+    }
+
+    // Confidence aggregation
+    let confidenceTotal = 0;
+    let confidenceCount = 0;
+    const confidenceDistribution = { low: 0, medium: 0, high: 0 };
+    for (const doc of docs) {
+      if (doc.confidence) {
+        confidenceCount++;
+        confidenceTotal += doc.confidence.score || 0;
+        const lvl = doc.confidence.level || 'low';
+        confidenceDistribution[lvl] = (confidenceDistribution[lvl] || 0) + 1;
+      }
+    }
+
     // Top areas by buyer score
     const topBuyerAreas = [...docs]
       .sort((a, b) => (b.buyerScore || 0) - (a.buyerScore || 0))
@@ -98,8 +129,15 @@ export async function GET(request) {
         buyer: buyerBuckets,
         seller: sellerBuckets,
       },
+      phi: avgPhi,
+      confidence: {
+        avgScore: confidenceCount > 0 ? Math.round(confidenceTotal / confidenceCount) : 0,
+        distribution: confidenceDistribution,
+        suburbsWithData: confidenceCount,
+      },
     });
   } catch (err) {
+    Sentry.captureException(err, { tags: { route: 'national-overview' } });
     console.error('National overview error:', err);
     return NextResponse.json({ error: 'Failed to compute national overview' }, { status: 500 });
   }

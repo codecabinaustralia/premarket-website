@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '../../../firebase/adminApp';
+import { FieldValue } from 'firebase-admin/firestore';
 
 async function verifyAdmin(adminUid) {
   if (!adminUid) return false;
@@ -55,6 +56,7 @@ export async function GET(request) {
         propertyCount: propertyCounts[doc.id] || 0,
         createdAt: data.createdAt || null,
         apiAccess: data.apiAccess || null,
+        unsubscribed: data.unsubscribed || false,
       };
     });
 
@@ -86,7 +88,7 @@ export async function PATCH(request) {
     }
 
     // Only allow specific fields to be updated
-    const allowedFields = ['pro', 'superAdmin', 'isAgent', 'isBuyer'];
+    const allowedFields = ['pro', 'superAdmin', 'isAgent', 'isBuyer', 'marketReportOptIn', 'unsubscribed'];
     const safeUpdates = {};
     for (const key of allowedFields) {
       if (key in updates) {
@@ -96,6 +98,15 @@ export async function PATCH(request) {
 
     if (Object.keys(safeUpdates).length === 0) {
       return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
+    }
+
+    // Handle unsubscribed timestamp
+    if ('unsubscribed' in safeUpdates) {
+      if (safeUpdates.unsubscribed === true) {
+        safeUpdates.unsubscribedAt = new Date();
+      } else {
+        safeUpdates.unsubscribedAt = FieldValue.delete();
+      }
     }
 
     await adminDb.collection('users').doc(targetUid).update(safeUpdates);

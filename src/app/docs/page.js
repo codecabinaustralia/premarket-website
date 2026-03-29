@@ -32,6 +32,20 @@ import {
   AlertCircle,
   Zap,
   DollarSign,
+  Gauge,
+  ThermometerSun,
+  Scale,
+  Flame,
+  Timer,
+  ShieldCheck,
+  GitBranch,
+  ArrowLeftRight,
+  Receipt,
+  CreditCard,
+  RefreshCw,
+  Settings,
+  CalendarClock,
+  Contact2,
 } from 'lucide-react';
 
 /* ─── Sidebar Navigation Structure ─── */
@@ -70,6 +84,21 @@ const NAV_SECTIONS = [
     ],
   },
   {
+    group: 'Health Indicators',
+    items: [
+      { id: 'phi-overview', label: 'PHI Overview', icon: Activity },
+      { id: 'phi-mhi', label: 'Market Heat (MHI)', icon: Flame },
+      { id: 'phi-bdi', label: 'Buyer Demand (BDI)', icon: Gauge },
+      { id: 'phi-smi', label: 'Seller Motivation (SMI)', icon: ThermometerSun },
+      { id: 'phi-pvi', label: 'Price Validity (PVI)', icon: Scale },
+      { id: 'phi-evs', label: 'Engagement Velocity (EVS)', icon: Timer },
+      { id: 'phi-bqi', label: 'Buyer Quality (BQI)', icon: ShieldCheck },
+      { id: 'phi-fpi', label: 'Forward Pipeline (FPI)', icon: GitBranch },
+      { id: 'phi-sdb', label: 'Supply-Demand (SDB)', icon: ArrowLeftRight },
+      { id: 'data-confidence', label: 'Data Confidence', icon: ShieldCheck },
+    ],
+  },
+  {
     group: 'Market Intelligence',
     items: [
       { id: 'data-advantage', label: 'The Data Advantage', icon: Database },
@@ -79,11 +108,48 @@ const NAV_SECTIONS = [
       { id: 'code-examples', label: 'Code Examples', icon: Terminal },
     ],
   },
+  {
+    group: 'CRM & Contacts',
+    items: [
+      { id: 'crm-overview', label: 'CRM Overview', icon: Contact2 },
+      { id: 'contact-scoring', label: 'Contact Scoring', icon: Activity },
+      { id: 'crm-api', label: 'API: Contacts', icon: Code },
+    ],
+  },
+  {
+    group: 'Billing & Invoicing',
+    items: [
+      { id: 'invoicing-overview', label: 'Overview', icon: Receipt },
+      { id: 'invoicing-how-it-works', label: 'How Billing Works', icon: DollarSign },
+      { id: 'invoicing-runs', label: 'Invoice Runs', icon: FileText },
+      { id: 'invoicing-xero', label: 'Xero Integration', icon: CreditCard },
+      { id: 'invoicing-automation', label: 'Automation', icon: CalendarClock },
+      { id: 'invoicing-api', label: 'API Reference', icon: Code },
+    ],
+  },
 ];
 
 const ALL_IDS = NAV_SECTIONS.flatMap((s) => s.items.map((i) => i.id));
 
 const ENDPOINTS = [
+  {
+    method: 'GET',
+    path: '/api/v1/phi-scores',
+    description: 'All 8 PHI scores + confidence metadata for a location',
+    params: 'location, suburb, state, postcode, lat, lng, radius',
+  },
+  {
+    method: 'GET',
+    path: '/api/v1/property-valuation',
+    description: 'Per-property valuation analysis: overvalued/undervalued list sorted by deviation',
+    params: 'location, suburb, state, postcode, lat, lng, radius',
+  },
+  {
+    method: 'GET',
+    path: '/api/v1/heatmap-data',
+    description: 'GeoJSON FeatureCollection from market scores for Mapbox heatmap visualisation',
+    params: 'metric (bdi, smi, pvi, mhi, evs, bqi, fpi, sdb)',
+  },
   {
     method: 'GET',
     path: '/api/v1/buyer-score',
@@ -105,20 +171,32 @@ const ENDPOINTS = [
   {
     method: 'GET',
     path: '/api/v1/trending-areas',
-    description: 'Top trending areas ranked by buyer activity growth',
+    description: 'Top trending areas ranked by buyer activity growth, includes PHI scores per area',
     params: 'limit, country',
   },
   {
     method: 'GET',
     path: '/api/v1/historical-trends',
-    description: 'Buyer/seller score trends over past months',
+    description: 'Buyer/seller score and PHI trends over past months',
     params: 'location, suburb, state, postcode, lat, lng, radius, months',
   },
   {
     method: 'GET',
     path: '/api/v1/property-insights',
-    description: 'Per-property views, opinions, likes, price vs opinion gap',
+    description: 'Per-property views, opinions, likes, PVI score, and price vs opinion gap',
     params: 'location, suburb, state, postcode, lat, lng, radius',
+  },
+  {
+    method: 'GET',
+    path: '/api/v1/national-overview',
+    description: 'National market summary with aggregated PHI averages across all tracked suburbs',
+    params: 'none',
+  },
+  {
+    method: 'GET',
+    path: '/api/v1/contacts',
+    description: 'Paginated CRM contacts with buyer/seller scores',
+    params: 'type, search, limit, offset',
   },
 ];
 
@@ -692,7 +770,11 @@ function DocsContent({ isAdmin, isTokenAccess, linkToken, user }) {
               <button onClick={() => scrollTo('the-data-engine')} className="text-orange-600 hover:text-orange-700 underline">
                 data engine
               </button>
-              {' '}that powers it, how each stakeholder interacts with the platform, the product mechanics that drive value for all participants, and the Market Intelligence API for developers building on top of Premarket&apos;s data layer.
+              {' '}that powers it, the{' '}
+              <button onClick={() => scrollTo('phi-overview')} className="text-orange-600 hover:text-orange-700 underline">
+                8 Premarket Health Indicators (PHI)
+              </button>
+              {' '}that quantify market health in real time, how each stakeholder interacts with the platform, the product mechanics that drive value for all participants, and the Market Intelligence API for developers building on top of Premarket&apos;s data layer.
             </p>
 
             <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg mt-6">
@@ -956,13 +1038,20 @@ function DocsContent({ isAdmin, isTokenAccess, linkToken, user }) {
             </p>
 
             <h3 className="text-lg font-semibold text-slate-900 mb-3">What the engine produces</h3>
+            <p className="text-slate-600 leading-relaxed mb-4">
+              The data engine powers the{' '}
+              <button onClick={() => scrollTo('phi-overview')} className="text-orange-600 hover:text-orange-700 underline">
+                8 Premarket Health Indicators (PHI)
+              </button>
+              {' '}— a proprietary scoring framework that quantifies every dimension of market health:
+            </p>
             <div className="space-y-3 mb-8">
               {[
-                ['Per-property valuations', 'Median buyer price opinion, price distribution, opinion count, and confidence score — for individual properties, updated in real time.'],
-                ['Suburb-level demand signals', 'Aggregated buyer intent by location — which suburbs are heating up, which are cooling, and where demand is concentrated.'],
-                ['Trend data', 'How buyer sentiment and pricing opinions are shifting over time — weekly, monthly, and quarterly trends at every geographic level.'],
-                ['Price gap analysis', 'The gap between what sellers expect and what buyers would pay — the single most useful metric for price education.'],
-                ['Forward-looking market forecasts', 'Which properties are likely to come to market, what buyers would pay for them, and where demand exceeds supply — predictive intelligence that backward-looking data cannot provide.'],
+                ['Per-property valuations (PHI:PVI)', 'Median buyer price opinion, price distribution, opinion count, and confidence score — for individual properties, updated in real time. Properties flagged as overvalued, undervalued, or fairly priced.'],
+                ['Buyer demand signals (PHI:BDI, PHI:BQI)', 'Aggregated buyer intent by location — which suburbs are heating up, which are cooling, and where demand is concentrated. BQI separates serious, financially ready buyers from casual browsers.'],
+                ['Market heat and momentum (PHI:MHI, PHI:EVS)', 'The composite market activity score and the speed at which new listings attract engagement. Together they tell you not just how hot a market is, but whether it\'s accelerating or decelerating.'],
+                ['Supply-demand dynamics (PHI:SDB, PHI:FPI)', 'The real-time balance between buyer demand and available supply, plus the forward pipeline of properties preparing to list. SDB tells you who has leverage now; FPI tells you how that balance will shift.'],
+                ['Seller commitment (PHI:SMI)', 'How eager and committed sellers are to transact — from serious sellers with 30-day go-to-market goals to those testing the waters. A leading indicator of supply that no backward-looking data can capture.'],
               ].map(([title, desc], i) => (
                 <div key={i} className="flex gap-3">
                   <span className="flex-shrink-0 w-1.5 h-1.5 bg-orange-500 rounded-full mt-2" />
@@ -1545,6 +1634,636 @@ function DocsContent({ isAdmin, isTokenAccess, linkToken, user }) {
           <hr className="border-slate-200 my-12" />
 
           {/* ════════════════════════════════════════ */}
+          {/* PREMARKET HEALTH INDICATORS (PHI)        */}
+          {/* ════════════════════════════════════════ */}
+
+          <section id="phi-overview" className="scroll-mt-20">
+            <div className="rounded-xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8 sm:p-10 mb-10 relative overflow-hidden">
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-emerald-500/10 via-transparent to-transparent" />
+              <div className="relative">
+                <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-3">Health Indicators</p>
+                <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
+                  Premarket Health Indicators (PHI)
+                </h2>
+                <p className="text-slate-300 leading-relaxed max-w-2xl">
+                  8 proprietary metrics that measure the real-time health of any property market in Australia. Built on live buyer feedback, not historical sales data. Think Bloomberg terminal for real estate.
+                </p>
+              </div>
+            </div>
+
+            <p className="text-slate-600 leading-relaxed mb-4">
+              Every existing market indicator in real estate — median prices, days on market, clearance rates — is backward-looking. They tell you what already happened. By the time the data is published, the market has moved on. PHI scores are fundamentally different: they measure what&apos;s happening <span className="font-medium text-slate-900">right now</span> and what&apos;s <span className="font-medium text-slate-900">about to happen</span>, sourced directly from live buyer and seller behaviour on the Premarket platform.
+            </p>
+            <p className="text-slate-600 leading-relaxed mb-4">
+              Each PHI metric is scored 0&ndash;100 and computed per suburb, updated continuously as new data flows in. Together, the 8 scores paint a complete picture of market health that no other data provider can offer — because no other provider captures buyer intent at this level of granularity.
+            </p>
+
+            <h3 className="text-lg font-semibold text-slate-900 mb-4">The 8 Core Metrics</h3>
+
+            <div className="overflow-hidden rounded-lg border border-slate-200 mb-8">
+              <div className="divide-y divide-slate-200">
+                {[
+                  ['MHI', 'Market Heat Index', '0-100', 'Composite market activity and momentum — the single headline number'],
+                  ['BDI', 'Buyer Demand Index', '0-100', 'Real buyer demand from opinions, serious registrations, likes, and engagement'],
+                  ['SMI', 'Seller Motivation Index', '0-100', 'How eager and committed sellers are to transact'],
+                  ['PVI', 'Price Validity Index', '0-100', 'Whether properties are correctly priced vs what buyers would actually pay'],
+                  ['EVS', 'Engagement Velocity Score', '0-100', 'How fast properties attract interest after listing'],
+                  ['BQI', 'Buyer Quality Index', '0-100', 'Financial readiness and seriousness of the buyer pool'],
+                  ['FPI', 'Forward Pipeline Index', '0-100', 'Strength of upcoming supply — what\'s about to hit the market'],
+                  ['SDB', 'Supply-Demand Balance', '0-100', 'Demand vs supply ratio (50 = balanced, >50 = seller\'s market)'],
+                ].map(([code, name, range, desc], i) => (
+                  <div key={i} className="flex items-start gap-4 px-4 py-3">
+                    <code className="flex-shrink-0 w-10 text-sm font-bold font-mono text-orange-600 mt-0.5">{code}</code>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-sm font-medium text-slate-900">{name}</span>
+                        <span className="text-xs text-slate-400 font-mono">{range}</span>
+                      </div>
+                      <p className="text-xs text-slate-500">{desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <h3 className="text-lg font-semibold text-slate-900 mb-3">How to read PHI scores</h3>
+            <p className="text-slate-600 leading-relaxed mb-4">
+              PHI scores are displayed in the format <code className="bg-slate-100 text-slate-800 px-1.5 py-0.5 rounded text-sm font-mono">PHI:MHI 78</code>. Each score is a 0&ndash;100 scale where higher generally means more activity, except for SDB which uses 50 as the equilibrium point. A suburb with <code className="bg-slate-100 text-slate-800 px-1.5 py-0.5 rounded text-sm font-mono">PHI:MHI 82</code> and <code className="bg-slate-100 text-slate-800 px-1.5 py-0.5 rounded text-sm font-mono">PHI:SDB 68</code> is a hot market tilting toward sellers — high activity, more demand than supply.
+            </p>
+
+            <div className="grid sm:grid-cols-2 gap-4 mb-8">
+              <div className="rounded-lg border border-slate-200 p-5">
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Traditional indicators</p>
+                <div className="space-y-2.5">
+                  {[
+                    'Median price (months old)',
+                    'Days on market (after the fact)',
+                    'Clearance rates (weekend snapshot)',
+                    'Statistical estimates (modelled)',
+                    'No buyer intent data',
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-start gap-2.5">
+                      <X className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm text-slate-600">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-lg border-2 border-emerald-200 bg-emerald-50/30 p-5">
+                <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wider mb-3">PHI Scores</p>
+                <div className="space-y-2.5">
+                  {[
+                    'Real-time buyer demand (BDI)',
+                    'Live price validation (PVI)',
+                    'Forward supply pipeline (FPI)',
+                    'Engagement velocity (EVS)',
+                    'Supply-demand equilibrium (SDB)',
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-start gap-2.5">
+                      <Check className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm text-slate-700">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <h3 className="text-lg font-semibold text-slate-900 mb-3">Property lifecycle segmentation</h3>
+            <p className="text-slate-600 leading-relaxed mb-4">
+              PHI scores account for where each property sits in its lifecycle. A property that&apos;s already on the market counts differently from one that&apos;s still in the premarket pipeline. This segmentation is critical for accurate scoring — an on-market property contributes to current supply (SDB), while a premarket property signals future supply (FPI).
+            </p>
+
+            <div className="overflow-hidden rounded-lg border border-slate-200 mb-8">
+              <div className="divide-y divide-slate-200">
+                {[
+                  ['On-Market', 'Listed publicly', 'Current supply, SDB supply side, MHI heat'],
+                  ['Premarket', 'Visible but not listed', 'FPI pipeline, upcoming to market, SMI signals'],
+                  ['Off-Market', 'Private / inactive', 'FPI pipeline (lower weight), early seller signals'],
+                ].map(([status, criteria, counts], i) => (
+                  <div key={i} className="flex items-start gap-4 px-4 py-3">
+                    <span className="flex-shrink-0 w-24 text-sm font-medium text-slate-900">{status}</span>
+                    <span className="flex-shrink-0 w-36 text-xs text-slate-500">{criteria}</span>
+                    <p className="text-xs text-slate-600">{counts}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+              <p className="text-sm text-blue-800">
+                <span className="font-semibold">Live playground.</span> You can explore PHI scores for any suburb in Australia on the{' '}
+                <button onClick={() => scrollTo('phi-mhi')} className="underline hover:no-underline">
+                  interactive heatmap
+                </button>
+                {' '}in the dashboard, or query them programmatically via the{' '}
+                <button onClick={() => scrollTo('endpoints')} className="underline hover:no-underline">
+                  PHI Scores API endpoint
+                </button>.
+              </p>
+            </div>
+          </section>
+
+          <hr className="border-slate-200 my-12" />
+
+          {/* MHI */}
+          <section id="phi-mhi" className="scroll-mt-20">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="flex items-center justify-center w-10 h-10 rounded-lg bg-red-100 text-red-600">
+                <Flame className="w-5 h-5" />
+              </span>
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900">Market Heat Index (MHI)</h2>
+                <p className="text-sm text-slate-500 font-mono">PHI:MHI &middot; 0-100</p>
+              </div>
+            </div>
+
+            <p className="text-slate-600 leading-relaxed mb-4">
+              The headline number. MHI is a composite score that rolls up buyer demand, seller motivation, engagement velocity, and pricing accuracy into a single measure of how &quot;hot&quot; a market is right now. It&apos;s the first number you look at and the one that tells you whether a suburb is heating up, cooling down, or stable.
+            </p>
+
+            <h3 className="text-base font-semibold text-slate-900 mb-2">Why it matters</h3>
+            <p className="text-slate-600 leading-relaxed mb-4">
+              Agents need a single, clear signal to communicate market conditions to sellers and buyers. &quot;The MHI for Bondi is 82&quot; is instantly meaningful — it&apos;s a hot market. No need to explain five different data points. For investors and analysts, MHI is the screening metric — scan every suburb in Australia by MHI to find where the action is.
+            </p>
+
+            <h3 className="text-base font-semibold text-slate-900 mb-2">How it&apos;s calculated</h3>
+            <p className="text-slate-600 leading-relaxed mb-4">
+              MHI is a weighted composite of four other PHI scores:
+            </p>
+            <div className="rounded-lg border border-slate-200 p-4 mb-4">
+              <code className="text-sm font-mono text-slate-800">
+                MHI = BDI &times; 0.35 + SMI &times; 0.25 + EVS &times; 0.25 + PVI &times; 0.15
+              </code>
+            </div>
+            <p className="text-slate-600 leading-relaxed mb-6 text-sm">
+              Buyer demand is weighted highest because demand is the primary driver of market heat. Seller motivation and engagement velocity contribute equally, reflecting both supply-side commitment and the speed at which interest materialises. Price validity has the lowest weight — a market can be hot even if pricing is slightly off.
+            </p>
+
+            <div className="overflow-hidden rounded-lg border border-slate-200 mb-4">
+              <div className="divide-y divide-slate-200 text-sm">
+                <div className="flex items-center gap-4 px-4 py-2.5 bg-slate-50">
+                  <span className="w-20 font-medium text-slate-900">Score</span>
+                  <span className="flex-1 font-medium text-slate-900">Interpretation</span>
+                </div>
+                {[
+                  ['80-100', 'Very hot market — strong demand, motivated sellers, rapid engagement'],
+                  ['60-79', 'Active market — healthy activity across most dimensions'],
+                  ['40-59', 'Moderate — some activity but no strong momentum in either direction'],
+                  ['20-39', 'Cool — limited buyer activity or seller commitment'],
+                  ['0-19', 'Cold — very little market activity or data'],
+                ].map(([range, desc], i) => (
+                  <div key={i} className="flex items-center gap-4 px-4 py-2.5">
+                    <span className="w-20 font-mono text-slate-700">{range}</span>
+                    <span className="flex-1 text-slate-600">{desc}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <hr className="border-slate-200 my-12" />
+
+          {/* BDI */}
+          <section id="phi-bdi" className="scroll-mt-20">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100 text-blue-600">
+                <Gauge className="w-5 h-5" />
+              </span>
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900">Buyer Demand Index (BDI)</h2>
+                <p className="text-sm text-slate-500 font-mono">PHI:BDI &middot; 0-100</p>
+              </div>
+            </div>
+
+            <p className="text-slate-600 leading-relaxed mb-4">
+              BDI measures real buyer demand using direct signals from buyers themselves — not page views, not search trends, not modelled estimates. Every price opinion submitted, every serious buyer registration, every property saved is a tangible, measurable expression of demand.
+            </p>
+
+            <h3 className="text-base font-semibold text-slate-900 mb-2">Why it matters</h3>
+            <p className="text-slate-600 leading-relaxed mb-4">
+              Demand is the fundamental driver of property value. A suburb with high BDI has active, engaged buyers who are expressing interest and submitting price opinions. For sellers, high BDI means their property is likely to attract competitive interest. For agents, it&apos;s evidence to bring to the listing presentation. For investors, it&apos;s a leading indicator of price movement.
+            </p>
+
+            <h3 className="text-base font-semibold text-slate-900 mb-2">What feeds into BDI</h3>
+            <div className="space-y-2 mb-6">
+              {[
+                ['Price opinions (20%)', 'Total buyer price opinions submitted — the core demand signal. A buyer who submits a price opinion is actively evaluating the property.'],
+                ['Serious buyers (30%)', 'Buyers who have flagged themselves as serious or registered formal interest. Weighted highest because this is the strongest demand signal.'],
+                ['Property saves / likes (15%)', 'Buyers who saved a property to their shortlist. Weaker than a price opinion but still indicates active interest.'],
+                ['Seriousness distribution (20%)', 'The breakdown across seriousness levels: just browsing, interested, very interested, and ready to buy. A suburb full of ready-to-buy signals scores higher than one with casual browsers.'],
+                ['Buyer diversity (10%)', 'Mix of first home buyers vs investors. A diverse buyer pool indicates broader market appeal and more sustainable demand.'],
+                ['Engagement velocity (5%)', 'Opinions per property — a suburb where every listing gets multiple opinions shows concentrated demand.'],
+              ].map(([title, desc], i) => (
+                <div key={i} className="flex gap-3">
+                  <span className="flex-shrink-0 w-1.5 h-1.5 bg-blue-500 rounded-full mt-2" />
+                  <p className="text-slate-600 text-sm leading-relaxed">
+                    <span className="font-medium text-slate-900">{title}</span> {desc}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <hr className="border-slate-200 my-12" />
+
+          {/* SMI */}
+          <section id="phi-smi" className="scroll-mt-20">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="flex items-center justify-center w-10 h-10 rounded-lg bg-amber-100 text-amber-600">
+                <ThermometerSun className="w-5 h-5" />
+              </span>
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900">Seller Motivation Index (SMI)</h2>
+                <p className="text-sm text-slate-500 font-mono">PHI:SMI &middot; 0-100</p>
+              </div>
+            </div>
+
+            <p className="text-slate-600 leading-relaxed mb-4">
+              SMI measures how eager and committed sellers are to transact in a given area. A high SMI means sellers are actively preparing to list — they have go-to-market goals set, they&apos;ve indicated urgency, and they&apos;re moving through the pre-market pipeline toward a public listing.
+            </p>
+
+            <h3 className="text-base font-semibold text-slate-900 mb-2">Why it matters</h3>
+            <p className="text-slate-600 leading-relaxed mb-4">
+              Seller motivation is the supply-side counterpart to buyer demand. For buyer&apos;s agents, high SMI signals opportunities — motivated sellers are more likely to accept reasonable offers and move quickly. For listing agents, it indicates competitive pressure from other sellers in the area. For market analysts, rising SMI is a leading indicator of increased supply hitting the market.
+            </p>
+
+            <h3 className="text-base font-semibold text-slate-900 mb-2">What feeds into SMI</h3>
+            <div className="space-y-2 mb-6">
+              {[
+                ['Active visible properties (20%)', 'Properties that sellers have made visible on the platform — a commitment to testing the market.'],
+                ['Go-to-market within 30 days (25%)', 'Properties with a go-to-market goal in the next 30 days. This is the strongest SMI signal — the seller has a concrete timeline.'],
+                ['Go-to-market within 60 days (10%)', 'Broader pipeline of properties preparing to list in the next two months.'],
+                ['Seller eagerness (25%)', 'A three-tier eagerness rating: Very Serious (1.0 weight), Serious If Price Right (0.6), and Testing the Waters (0.2). The weighted sum captures the overall urgency of the seller pool.'],
+                ['Listing density (10%)', 'Total property count in the area — more properties means a more active local market.'],
+                ['On-market ratio (10%)', 'Proportion of properties already listed publicly. High on-market ratio means sellers in this area are converting from premarket to active listings.'],
+              ].map(([title, desc], i) => (
+                <div key={i} className="flex gap-3">
+                  <span className="flex-shrink-0 w-1.5 h-1.5 bg-amber-500 rounded-full mt-2" />
+                  <p className="text-slate-600 text-sm leading-relaxed">
+                    <span className="font-medium text-slate-900">{title}</span> {desc}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <hr className="border-slate-200 my-12" />
+
+          {/* PVI */}
+          <section id="phi-pvi" className="scroll-mt-20">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="flex items-center justify-center w-10 h-10 rounded-lg bg-purple-100 text-purple-600">
+                <Scale className="w-5 h-5" />
+              </span>
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900">Price Validity Index (PVI)</h2>
+                <p className="text-sm text-slate-500 font-mono">PHI:PVI &middot; 0-100</p>
+              </div>
+            </div>
+
+            <p className="text-slate-600 leading-relaxed mb-4">
+              PVI answers the fundamental question: <span className="font-medium text-slate-900">are properties in this area priced correctly?</span> For each property with buyer opinions, PVI compares the median buyer price opinion against the listing price. A deviation of more than 7% in either direction flags the property as overvalued or undervalued.
+            </p>
+
+            <h3 className="text-base font-semibold text-slate-900 mb-2">Why it matters</h3>
+            <p className="text-slate-600 leading-relaxed mb-4">
+              PVI is the metric that makes{' '}
+              <button onClick={() => scrollTo('price-education')} className="text-orange-600 hover:text-orange-700 underline">
+                price education
+              </button>
+              {' '}quantifiable. A suburb with PVI of 92 has properties that are largely priced in line with what buyers would pay — expectations are aligned with reality. A suburb with PVI of 45 has a significant pricing mismatch — either sellers are overpricing or the market hasn&apos;t adjusted to buyer sentiment. This is the metric agents use to show sellers, in hard numbers, whether their pricing is realistic.
+            </p>
+
+            <h3 className="text-base font-semibold text-slate-900 mb-2">How it works</h3>
+            <div className="space-y-2 mb-4">
+              {[
+                ['Per-property comparison', 'For each property, PVI calculates the median buyer price opinion and compares it to the listing price.'],
+                ['7% deviation threshold', 'If the median opinion is within 7% of the listing price, the property is classified as "fairly priced." Beyond that: overvalued or undervalued.'],
+                ['Area-level scoring', 'The suburb PVI score is the percentage of properties that are fairly priced (70% weight) combined with average deviation magnitude (30% weight). More fairly priced properties = higher PVI.'],
+                ['Confidence levels', 'Each property gets a confidence rating based on opinion count: Low (1-2 opinions), Medium (3-5), High (6+). More opinions = more reliable pricing signal.'],
+              ].map(([title, desc], i) => (
+                <div key={i} className="flex gap-3">
+                  <span className="flex-shrink-0 w-1.5 h-1.5 bg-purple-500 rounded-full mt-2" />
+                  <p className="text-slate-600 text-sm leading-relaxed">
+                    <span className="font-medium text-slate-900">{title}</span> {desc}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-purple-50 border-l-4 border-purple-400 p-4 rounded-r-lg mb-6">
+              <p className="text-sm text-purple-800">
+                <span className="font-semibold">Per-property PVI.</span> In addition to the suburb-level score, PVI generates individual property valuations showing exactly which properties are overvalued, undervalued, or fairly priced — available via the <code className="bg-purple-100 text-purple-700 px-1 py-0.5 rounded text-xs font-mono">/api/v1/property-valuation</code> endpoint.
+              </p>
+            </div>
+          </section>
+
+          <hr className="border-slate-200 my-12" />
+
+          {/* EVS */}
+          <section id="phi-evs" className="scroll-mt-20">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="flex items-center justify-center w-10 h-10 rounded-lg bg-cyan-100 text-cyan-600">
+                <Timer className="w-5 h-5" />
+              </span>
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900">Engagement Velocity Score (EVS)</h2>
+                <p className="text-sm text-slate-500 font-mono">PHI:EVS &middot; 0-100</p>
+              </div>
+            </div>
+
+            <p className="text-slate-600 leading-relaxed mb-4">
+              EVS measures how quickly properties attract meaningful buyer interest after being listed. A high EVS means properties in this suburb don&apos;t sit — they get opinions, saves, and engagement almost immediately. It&apos;s a velocity metric: not just how much interest, but how fast it arrives.
+            </p>
+
+            <h3 className="text-base font-semibold text-slate-900 mb-2">Why it matters</h3>
+            <p className="text-slate-600 leading-relaxed mb-4">
+              Speed of engagement is one of the most reliable predictors of sale outcome. A property that gets 5 opinions in its first 48 hours is in a fundamentally different market position than one that gets 5 opinions over 3 weeks. For sellers, high EVS means confidence that their property will attract rapid interest. For agents, it&apos;s a data point for campaign strategy — in high-EVS suburbs, campaigns generate results quickly.
+            </p>
+
+            <h3 className="text-base font-semibold text-slate-900 mb-2">What feeds into EVS</h3>
+            <div className="space-y-2 mb-6">
+              {[
+                ['Time to first opinion (40%)', 'Average days between a property being listed and receiving its first buyer price opinion. Lower is better — a score of 0 days means instant engagement, 7+ days means slow uptake.'],
+                ['Opinions per day (35%)', 'Average daily rate of buyer opinions across properties. 2+ opinions per day per property is the benchmark for maximum score.'],
+                ['Engagement depth (25%)', 'Proportion of properties that have received any form of engagement (opinions, likes, or tracked view sessions). A suburb where every listing gets attention scores higher.'],
+                ['Engagement quality (bonus)', 'When engagement tracking data is available: average view duration and opinion conversion rate from property page sessions. This provides a bonus of up to 10% on the EVS score.'],
+              ].map(([title, desc], i) => (
+                <div key={i} className="flex gap-3">
+                  <span className="flex-shrink-0 w-1.5 h-1.5 bg-cyan-500 rounded-full mt-2" />
+                  <p className="text-slate-600 text-sm leading-relaxed">
+                    <span className="font-medium text-slate-900">{title}</span> {desc}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <hr className="border-slate-200 my-12" />
+
+          {/* BQI */}
+          <section id="phi-bqi" className="scroll-mt-20">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="flex items-center justify-center w-10 h-10 rounded-lg bg-emerald-100 text-emerald-600">
+                <ShieldCheck className="w-5 h-5" />
+              </span>
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900">Buyer Quality Index (BQI)</h2>
+                <p className="text-sm text-slate-500 font-mono">PHI:BQI &middot; 0-100</p>
+              </div>
+            </div>
+
+            <p className="text-slate-600 leading-relaxed mb-4">
+              BQI goes beyond demand volume to measure the <span className="font-medium text-slate-900">quality</span> of the buyer pool. A suburb can have high BDI (lots of demand) but low BQI (mostly casual browsers). BQI distinguishes between a market full of serious, financially ready buyers and one with lots of tyre-kickers.
+            </p>
+
+            <h3 className="text-base font-semibold text-slate-900 mb-2">Why it matters</h3>
+            <p className="text-slate-600 leading-relaxed mb-4">
+              For sellers, buyer quality determines whether interest will convert to actual offers and settlement. High BDI with low BQI means lots of interest but potentially few real buyers. High BQI with moderate BDI means fewer buyers but they&apos;re serious — a more reliable path to sale. For agents, BQI is the metric that differentiates genuine buyer activity from noise.
+            </p>
+
+            <h3 className="text-base font-semibold text-slate-900 mb-2">What feeds into BQI</h3>
+            <div className="space-y-2 mb-6">
+              {[
+                ['Seriousness distribution (50%)', 'Weighted average across seriousness levels: Just Browsing (0.1), Interested (0.4), Very Interested (0.7), Ready to Buy (1.0). A suburb full of ready-to-buy signals scores significantly higher than one dominated by browsers.'],
+                ['Buyer type quality (30%)', 'Buyer profile composition: investors (0.8 weight), upgraders/downsizers (0.7), first home buyers (0.6). Different buyer types indicate different levels of financial readiness and transaction likelihood.'],
+                ['Financial readiness (20%)', 'Proportion of buyers who are both flagged as serious AND have submitted a concrete offer amount. This is the strongest quality signal — they&apos;re ready to transact.'],
+              ].map(([title, desc], i) => (
+                <div key={i} className="flex gap-3">
+                  <span className="flex-shrink-0 w-1.5 h-1.5 bg-emerald-500 rounded-full mt-2" />
+                  <p className="text-slate-600 text-sm leading-relaxed">
+                    <span className="font-medium text-slate-900">{title}</span> {desc}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <hr className="border-slate-200 my-12" />
+
+          {/* FPI */}
+          <section id="phi-fpi" className="scroll-mt-20">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="flex items-center justify-center w-10 h-10 rounded-lg bg-indigo-100 text-indigo-600">
+                <GitBranch className="w-5 h-5" />
+              </span>
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900">Forward Pipeline Index (FPI)</h2>
+                <p className="text-sm text-slate-500 font-mono">PHI:FPI &middot; 0-100</p>
+              </div>
+            </div>
+
+            <p className="text-slate-600 leading-relaxed mb-4">
+              FPI predicts what&apos;s coming next. It measures the strength of the upcoming supply pipeline — properties that are preparing to go to market but haven&apos;t listed yet. This is data that doesn&apos;t exist anywhere else: no portal, no data provider, and no public record captures pre-market supply signals.
+            </p>
+
+            <h3 className="text-base font-semibold text-slate-900 mb-2">Why it matters</h3>
+            <p className="text-slate-600 leading-relaxed mb-4">
+              FPI is a genuine leading indicator. A suburb with high BDI but low FPI means strong demand and limited incoming supply — prices are likely to remain firm or rise. High FPI with moderate demand means a wave of new listings is about to hit — buyers may get more choice and leverage. For investors, FPI is the supply-side signal that completes the demand picture from BDI.
+            </p>
+
+            <h3 className="text-base font-semibold text-slate-900 mb-2">What feeds into FPI</h3>
+            <div className="space-y-2 mb-4">
+              {[
+                ['Go-to-market within 30 days (35%)', 'Premarket and off-market properties with a go-to-market goal in the next month. The strongest pipeline signal — these sellers have committed to a timeline.'],
+                ['Go-to-market within 60 days (20%)', 'Broader pipeline of properties preparing to list in the next two months.'],
+                ['Go-to-market within 90 days (10%)', 'Early-stage pipeline — sellers who have set a goal but are further out.'],
+                ['Eager sellers in pipeline (20%)', 'Eagerness-weighted count of pipeline properties. Very Serious sellers (full weight) are more likely to follow through than Testing the Waters sellers (50% weight for off-market, lower eagerness weight).'],
+                ['New listing growth (15%)', 'Month-over-month growth in new pipeline entries. Rising growth means the pipeline is building — more properties are entering premarket. Declining growth means the pipeline is thinning.'],
+              ].map(([title, desc], i) => (
+                <div key={i} className="flex gap-3">
+                  <span className="flex-shrink-0 w-1.5 h-1.5 bg-indigo-500 rounded-full mt-2" />
+                  <p className="text-slate-600 text-sm leading-relaxed">
+                    <span className="font-medium text-slate-900">{title}</span> {desc}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-indigo-50 border-l-4 border-indigo-400 p-4 rounded-r-lg mb-6">
+              <p className="text-sm text-indigo-800">
+                <span className="font-semibold">Unique to Premarket.</span> FPI is the only forward-looking supply indicator in Australian real estate. Traditional data can tell you what&apos;s currently listed. Only Premarket can tell you what&apos;s about to be listed — because only Premarket captures seller intent before the property goes public.
+              </p>
+            </div>
+          </section>
+
+          <hr className="border-slate-200 my-12" />
+
+          {/* SDB */}
+          <section id="phi-sdb" className="scroll-mt-20">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="flex items-center justify-center w-10 h-10 rounded-lg bg-rose-100 text-rose-600">
+                <ArrowLeftRight className="w-5 h-5" />
+              </span>
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900">Supply-Demand Balance (SDB)</h2>
+                <p className="text-sm text-slate-500 font-mono">PHI:SDB &middot; 0-100 (50 = balanced)</p>
+              </div>
+            </div>
+
+            <p className="text-slate-600 leading-relaxed mb-4">
+              SDB is the equilibrium metric. Unlike other PHI scores where higher always means more, SDB uses 50 as the balance point. Above 50 = seller&apos;s market (demand exceeds supply). Below 50 = buyer&apos;s market (supply exceeds demand). It answers the simplest and most important question: who has leverage in this market?
+            </p>
+
+            <h3 className="text-base font-semibold text-slate-900 mb-2">Why it matters</h3>
+            <p className="text-slate-600 leading-relaxed mb-4">
+              SDB is the metric that determines negotiating dynamics. In a seller&apos;s market (SDB &gt; 55), buyers compete and prices tend to hold or rise. In a buyer&apos;s market (SDB &lt; 45), sellers compete and prices may soften. For agents, SDB contextualises every pricing conversation. For investors, it&apos;s the macro signal that drives timing decisions.
+            </p>
+
+            <h3 className="text-base font-semibold text-slate-900 mb-2">How it&apos;s calculated</h3>
+            <div className="space-y-2 mb-4">
+              {[
+                ['Supply', 'Count of on-market properties only. Premarket properties are excluded from supply because they&apos;re not yet competing for buyer attention in the open market.'],
+                ['Demand', 'Total buyer price opinions + property saves/likes across all properties (including premarket). Demand signals count regardless of listing status — buyers are expressing interest even for premarket properties.'],
+                ['Balance ratio', 'Demand signals per on-market property. A ratio of 5:1 (5 demand signals per listed property) is defined as balanced (score = 50). Higher ratio = seller&apos;s market. Lower ratio = buyer&apos;s market.'],
+              ].map(([title, desc], i) => (
+                <div key={i} className="flex gap-3">
+                  <span className="flex-shrink-0 w-1.5 h-1.5 bg-rose-500 rounded-full mt-2" />
+                  <p className="text-slate-600 text-sm leading-relaxed">
+                    <span className="font-medium text-slate-900">{title}</span> {desc}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div className="overflow-hidden rounded-lg border border-slate-200 mb-6">
+              <div className="divide-y divide-slate-200 text-sm">
+                <div className="flex items-center gap-4 px-4 py-2.5 bg-slate-50">
+                  <span className="w-20 font-medium text-slate-900">Score</span>
+                  <span className="flex-1 font-medium text-slate-900">Market condition</span>
+                </div>
+                {[
+                  ['70-100', "Strong seller's market — demand significantly exceeds supply"],
+                  ['56-69', "Seller's market — more demand than supply, prices likely to hold"],
+                  ['45-55', 'Balanced market — supply and demand roughly equal'],
+                  ['30-44', "Buyer's market — supply exceeds demand, buyers have leverage"],
+                  ['0-29', "Strong buyer's market — significant oversupply or very low demand"],
+                ].map(([range, desc], i) => (
+                  <div key={i} className="flex items-center gap-4 px-4 py-2.5">
+                    <span className="w-20 font-mono text-slate-700">{range}</span>
+                    <span className="flex-1 text-slate-600">{desc}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* ─── Data Confidence ─── */}
+          <section id="data-confidence" className="scroll-mt-20 mt-12">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="flex items-center justify-center w-10 h-10 rounded-lg bg-emerald-100 text-emerald-600">
+                <ShieldCheck className="w-5 h-5" />
+              </span>
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900">Data Confidence</h2>
+                <p className="text-sm text-slate-500 font-mono">confidence &middot; low / medium / high</p>
+              </div>
+            </div>
+
+            <p className="text-slate-600 leading-relaxed mb-4">
+              Every PHI API response includes a <code className="text-sm bg-slate-100 px-1.5 py-0.5 rounded font-mono">confidence</code> object that describes the quality and quantity of underlying data. A suburb with 50 opinions produces a score with very different reliability than one with 2 opinions &mdash; confidence tells you the difference.
+            </p>
+
+            <h3 className="text-base font-semibold text-slate-900 mb-2">Confidence levels</h3>
+            <div className="overflow-hidden rounded-lg border border-slate-200 mb-6">
+              <div className="divide-y divide-slate-200 text-sm">
+                <div className="flex items-center gap-4 px-4 py-2.5 bg-slate-50">
+                  <span className="w-24 font-medium text-slate-900">Level</span>
+                  <span className="w-20 font-medium text-slate-900">Score</span>
+                  <span className="flex-1 font-medium text-slate-900">Interpretation</span>
+                </div>
+                {[
+                  ['High', '60-100', 'Sufficient data for reliable scores. Act on these with confidence.'],
+                  ['Medium', '30-59', 'Some data available. Treat scores as directional indicators, not absolutes.'],
+                  ['Low', '0-29', 'Limited data. Scores are preliminary and should be caveated when presented to clients.'],
+                ].map(([level, range, desc], i) => (
+                  <div key={i} className="flex items-center gap-4 px-4 py-2.5">
+                    <span className="w-24 font-mono text-slate-700">{level}</span>
+                    <span className="w-20 font-mono text-slate-700">{range}</span>
+                    <span className="flex-1 text-slate-600">{desc}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <h3 className="text-base font-semibold text-slate-900 mb-2">Contributing factors</h3>
+            <div className="space-y-2 mb-4">
+              {[
+                ['Property count (20%)', '10+ properties in the search radius produces maximum contribution. Fewer properties means less data to base scores on.'],
+                ['Opinion count (30%)', '20+ buyer opinions reaches maximum weight. Opinions are the primary signal for BDI, PVI, and BQI scores.'],
+                ['Serious buyer count (15%)', '5+ serious (registered) buyers indicates meaningful demand signal validation.'],
+                ['Opinions per property (20%)', '3+ opinions per property means enough data points to reliably estimate price validity.'],
+                ['Data freshness (15%)', 'Percentage of opinions from the last 30 days. Stale data may not reflect current market conditions.'],
+              ].map(([title, desc], i) => (
+                <div key={i} className="flex gap-3">
+                  <span className="flex-shrink-0 w-1.5 h-1.5 bg-emerald-500 rounded-full mt-2" />
+                  <p className="text-slate-600 text-sm leading-relaxed">
+                    <span className="font-medium text-slate-900">{title}</span> {desc}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <h3 className="text-base font-semibold text-slate-900 mb-2">Warnings</h3>
+            <p className="text-slate-600 leading-relaxed mb-3">
+              The <code className="text-sm bg-slate-100 px-1.5 py-0.5 rounded font-mono">warnings</code> array in the confidence object provides human-readable caveats:
+            </p>
+            <div className="space-y-2 mb-4">
+              {[
+                'Fewer than 3 properties found',
+                'No buyer opinions recorded',
+                'Fewer than 5 opinions total',
+                'Most data older than 30 days',
+              ].map((w, i) => (
+                <div key={i} className="flex gap-3">
+                  <span className="flex-shrink-0 w-1.5 h-1.5 bg-amber-500 rounded-full mt-2" />
+                  <p className="text-slate-600 text-sm leading-relaxed">{w}</p>
+                </div>
+              ))}
+            </div>
+
+            <h3 className="text-base font-semibold text-slate-900 mb-2">API response example</h3>
+            <div className="rounded-lg overflow-hidden border border-slate-200 mb-4">
+              <pre className="px-4 py-4 text-sm font-mono text-slate-100 bg-slate-900 overflow-x-auto">{`{
+  "phi": { "bdi": 42, "smi": 35, ... },
+  "confidence": {
+    "level": "medium",
+    "score": 48,
+    "factors": {
+      "propertyCount": 7,
+      "opinionCount": 12,
+      "seriousBuyerCount": 3,
+      "avgOpinionsPerProperty": 1.71,
+      "recentOpinionPercent": 67
+    },
+    "warnings": [
+      "Only 7 properties found — scores may not be representative."
+    ]
+  }
+}`}</pre>
+            </div>
+
+            <h3 className="text-base font-semibold text-slate-900 mt-6 mb-2">Best practices</h3>
+            <div className="space-y-2 mb-4">
+              {[
+                ['Always check confidence before acting on scores', 'A PHI:BDI of 75 with high confidence is an actionable signal. The same score with low confidence is a hypothesis.'],
+                ['Surface warnings to end users', 'When building client-facing dashboards, display the confidence level alongside scores so users understand data reliability.'],
+                ['Use wider search radius for sparse areas', 'If confidence is low, increasing the radius parameter (e.g. 15km instead of 10km) will capture more properties and improve data quality.'],
+              ].map(([title, desc], i) => (
+                <div key={i} className="flex gap-3">
+                  <span className="flex-shrink-0 w-1.5 h-1.5 bg-emerald-500 rounded-full mt-2" />
+                  <p className="text-slate-600 text-sm leading-relaxed">
+                    <span className="font-medium text-slate-900">{title}</span> &mdash; {desc}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <hr className="border-slate-200 my-12" />
+
+          {/* ════════════════════════════════════════ */}
           {/* MARKET INTELLIGENCE                      */}
           {/* ════════════════════════════════════════ */}
 
@@ -1572,7 +2291,11 @@ function DocsContent({ isAdmin, isTokenAccess, linkToken, user }) {
               , traditional real estate data is built on historical transactions. A property sold six months ago for $1.2M. A suburb&apos;s median price moved 4% last quarter. These are useful reference points, but they describe a market that no longer exists. By the time the data is published, the conditions that produced it have already changed.
             </p>
             <p className="text-slate-600 leading-relaxed mb-6">
-              Premarket captures something fundamentally different: <span className="font-medium text-slate-900">forward-looking intent signals</span>. What buyers are actively searching for right now. What they&apos;re willing to pay today. Which properties are generating interest before they&apos;ve hit the market. Where demand is building, shifting, or cooling — in real time. This is the API layer built on top of the same buyer data that powers{' '}
+              Premarket captures something fundamentally different: <span className="font-medium text-slate-900">forward-looking intent signals</span>, quantified through the{' '}
+              <button onClick={() => scrollTo('phi-overview')} className="text-orange-600 hover:text-orange-700 underline">
+                8 PHI scores
+              </button>
+              {' '} — MHI, BDI, SMI, PVI, EVS, BQI, FPI, and SDB. What buyers are actively searching for right now (BDI). What they&apos;re willing to pay today (PVI). Which properties are generating interest before they&apos;ve hit the market (FPI). Where demand is building, shifting, or cooling — in real time (MHI, SDB). This is the API layer built on top of the same buyer data that powers{' '}
               <button onClick={() => scrollTo('price-education')} className="text-orange-600 hover:text-orange-700 underline">
                 price education
               </button>
@@ -1586,11 +2309,12 @@ function DocsContent({ isAdmin, isTokenAccess, linkToken, user }) {
 
             <div className="space-y-3 mb-8">
               {[
-                ['Buyer intent', 'Which locations and property types are attracting active buyer interest — measured by price opinions, saved properties, and registered interest, not just page views.'],
-                ['Seller intent', 'Which properties are being tested on the market through pre-market campaigns — a leading indicator of future listings that no portal or data provider can see.'],
-                ['Price discovery', 'Real-time price opinion distributions from qualified buyers, creating a crowdsourced valuation layer that updates continuously — not quarterly.'],
-                ['Demand trends', 'Buyer activity patterns across time, geography, property type, and price bracket — from country-level trends right down to individual streets.'],
-                ['Market forecasting', 'By combining buyer intent with seller intent, Premarket can accurately model which properties are likely to go to market, what buyers are willing to pay for them, and where demand is growing or contracting.'],
+                ['Buyer intent (PHI:BDI)', 'Which locations and property types are attracting active buyer interest — measured by price opinions, saved properties, and registered interest, not just page views. Quantified as the Buyer Demand Index.'],
+                ['Seller intent (PHI:SMI)', 'Which properties are being tested on the market through pre-market campaigns — a leading indicator of future listings that no portal or data provider can see. Quantified as the Seller Motivation Index.'],
+                ['Price discovery (PHI:PVI)', 'Real-time price opinion distributions from qualified buyers, creating a crowdsourced valuation layer that updates continuously — not quarterly. The Price Validity Index flags exactly which properties are overvalued or undervalued.'],
+                ['Engagement velocity (PHI:EVS)', 'How fast properties attract meaningful interest after listing — a velocity metric that predicts sale outcomes better than static demand counts alone.'],
+                ['Supply-demand dynamics (PHI:SDB)', 'The balance between on-market supply and buyer demand signals. SDB tells you who has leverage in a suburb right now — buyers or sellers.'],
+                ['Forward pipeline (PHI:FPI)', 'Which properties are about to hit the market, quantified by go-to-market timelines and seller eagerness. A genuine leading indicator of supply that no other data provider captures.'],
               ].map(([title, desc], i) => (
                 <div key={i} className="flex gap-3">
                   <span className="flex-shrink-0 w-1.5 h-1.5 bg-orange-500 rounded-full mt-2" />
@@ -1609,11 +2333,11 @@ function DocsContent({ isAdmin, isTokenAccess, linkToken, user }) {
             <div className="rounded-lg border border-slate-200 overflow-hidden mb-8">
               <div className="divide-y divide-slate-200">
                 {[
-                  ['Country', 'National buyer/seller intent trends, market momentum indicators'],
-                  ['State', 'State-level demand patterns, cross-state migration signals'],
-                  ['City / Region', 'Metro vs regional demand shifts, emerging growth corridors'],
-                  ['Suburb', 'Suburb-level buyer scores, seller scores, price opinion medians, trending indicators'],
-                  ['Street', 'Hyper-local demand signals, per-property engagement data, micro-market dynamics'],
+                  ['Country', 'National PHI averages (MHI, BDI, SMI, PVI, EVS, BQI, FPI, SDB), market momentum indicators'],
+                  ['State', 'State-level PHI scores, demand patterns, cross-state migration signals'],
+                  ['City / Region', 'Metro vs regional PHI trends, emerging growth corridors identified by MHI and BDI'],
+                  ['Suburb', 'Full 8-score PHI profile, price opinion medians, PVI per-property valuations, trending indicators'],
+                  ['Street', 'Hyper-local demand signals, per-property PVI scores, engagement data, micro-market dynamics'],
                 ].map(([level, desc], i) => (
                   <div key={i} className="flex items-start gap-4 px-4 py-3">
                     <span className="flex-shrink-0 w-20 text-sm font-medium text-slate-900">{level}</span>
@@ -1636,7 +2360,11 @@ function DocsContent({ isAdmin, isTokenAccess, linkToken, user }) {
           <section id="api-overview" className="scroll-mt-20">
             <h2 className="text-2xl font-bold text-slate-900 mb-4">API Overview</h2>
             <p className="text-slate-600 leading-relaxed mb-4">
-              The Market Intelligence API exposes Premarket&apos;s forward-looking data layer through a simple REST interface. Buyer intent scores, seller signals, market forecasts, trending areas, historical trends, and property-level engagement insights — all available programmatically.
+              The Market Intelligence API exposes Premarket&apos;s forward-looking data layer through a simple REST interface. All 8{' '}
+              <button onClick={() => scrollTo('phi-overview')} className="text-orange-600 hover:text-orange-700 underline">
+                PHI scores
+              </button>
+              {' '}(MHI, BDI, SMI, PVI, EVS, BQI, FPI, SDB), per-property valuations, heatmap data, market forecasts, trending areas, historical trends, and property-level engagement insights — all available programmatically.
             </p>
 
             <div className="overflow-hidden rounded-lg border border-slate-200 mb-6">
@@ -1720,7 +2448,7 @@ function DocsContent({ isAdmin, isTokenAccess, linkToken, user }) {
           <section id="endpoints" className="scroll-mt-20">
             <h2 className="text-2xl font-bold text-slate-900 mb-4">Endpoints</h2>
             <p className="text-slate-600 leading-relaxed mb-6">
-              Six endpoints covering buyer intent, seller signals, market forecasts, trending suburbs, historical trends, and property-level insights.
+              Core endpoints covering PHI scores, property valuations, heatmap visualisation data, buyer intent, seller signals, market forecasts, trending suburbs, historical trends, and property-level insights.
             </p>
 
             <div className="space-y-3">
@@ -1755,50 +2483,82 @@ function DocsContent({ isAdmin, isTokenAccess, linkToken, user }) {
               with your actual API key.
             </p>
 
-            {/* cURL */}
+            {/* cURL — PHI Scores */}
             <div className="rounded-lg overflow-hidden border border-slate-800 mb-4">
               <div className="flex items-center justify-between px-4 py-2 bg-slate-800 border-b border-slate-700">
-                <span className="text-xs font-medium text-slate-400">cURL</span>
+                <span className="text-xs font-medium text-slate-400">cURL — Get all PHI scores for a suburb</span>
               </div>
               <pre className="px-4 py-4 text-sm font-mono text-slate-100 bg-slate-900 overflow-x-auto">
 {`curl -H "x-api-key: YOUR_API_KEY" \\
-  "https://premarket.homes/api/v1/buyer-score?location=Bondi+Beach,+NSW"`}
+  "https://premarket.homes/api/v1/phi-scores?suburb=Bondi+Beach&state=NSW"
+
+# Response:
+# {
+#   "location": "Bondi Beach, NSW, Australia",
+#   "source": "cache",
+#   "phi": {
+#     "mhi": 78, "bdi": 82, "smi": 45, "pvi": 91,
+#     "evs": 67, "bqi": 73, "fpi": 34, "sdb": 68
+#   },
+#   "phiBreakdown": { ... }
+# }`}
               </pre>
             </div>
 
-            {/* JavaScript */}
+            {/* JavaScript — PHI Scores */}
             <div className="rounded-lg overflow-hidden border border-slate-800 mb-4">
               <div className="flex items-center justify-between px-4 py-2 bg-slate-800 border-b border-slate-700">
-                <span className="text-xs font-medium text-slate-400">JavaScript</span>
+                <span className="text-xs font-medium text-slate-400">JavaScript — PHI scores + property valuations</span>
               </div>
               <pre className="px-4 py-4 text-sm font-mono text-slate-100 bg-slate-900 overflow-x-auto">
-{`const response = await fetch(
-  'https://premarket.homes/api/v1/buyer-score?location=Bondi+Beach,+NSW',
-  {
-    headers: { 'x-api-key': 'YOUR_API_KEY' }
-  }
-);
-const data = await response.json();
-console.log(data.score); // 0-100
-console.log(data.location.resolvedPlace); // "Bondi Beach, NSW, Australia"`}
+{`// Get all 8 PHI scores for a location
+const phi = await fetch(
+  'https://premarket.homes/api/v1/phi-scores?location=Bondi+Beach,+NSW',
+  { headers: { 'x-api-key': 'YOUR_API_KEY' } }
+).then(r => r.json());
+
+console.log('Market Heat:', phi.phi.mhi);   // PHI:MHI 78
+console.log('Buyer Demand:', phi.phi.bdi);  // PHI:BDI 82
+console.log('Price Validity:', phi.phi.pvi); // PHI:PVI 91
+console.log('Supply-Demand:', phi.phi.sdb); // PHI:SDB 68
+
+// Get per-property valuation analysis
+const valuations = await fetch(
+  'https://premarket.homes/api/v1/property-valuation?location=Bondi+Beach,+NSW',
+  { headers: { 'x-api-key': 'YOUR_API_KEY' } }
+).then(r => r.json());
+
+// Lists overvalued and undervalued properties with deviation %
+valuations.properties.forEach(p => {
+  console.log(p.address, p.status, p.deviationPercent + '%');
+});`}
               </pre>
             </div>
 
-            {/* Python */}
+            {/* Python — PHI Scores */}
             <div className="rounded-lg overflow-hidden border border-slate-800 mb-4">
               <div className="flex items-center justify-between px-4 py-2 bg-slate-800 border-b border-slate-700">
-                <span className="text-xs font-medium text-slate-400">Python</span>
+                <span className="text-xs font-medium text-slate-400">Python — PHI scores</span>
               </div>
               <pre className="px-4 py-4 text-sm font-mono text-slate-100 bg-slate-900 overflow-x-auto">
 {`import requests
 
 response = requests.get(
-    'https://premarket.homes/api/v1/buyer-score',
-    params={'location': 'Bondi Beach, NSW'},
+    'https://premarket.homes/api/v1/phi-scores',
+    params={'suburb': 'Bondi Beach', 'state': 'NSW'},
     headers={'x-api-key': 'YOUR_API_KEY'}
 )
 data = response.json()
-print(f"Buyer Score: {data['score']}")`}
+
+phi = data['phi']
+print(f"PHI:MHI {phi['mhi']}")  # Market Heat Index
+print(f"PHI:BDI {phi['bdi']}")  # Buyer Demand Index
+print(f"PHI:SMI {phi['smi']}")  # Seller Motivation Index
+print(f"PHI:PVI {phi['pvi']}")  # Price Validity Index
+print(f"PHI:EVS {phi['evs']}")  # Engagement Velocity Score
+print(f"PHI:BQI {phi['bqi']}")  # Buyer Quality Index
+print(f"PHI:FPI {phi['fpi']}")  # Forward Pipeline Index
+print(f"PHI:SDB {phi['sdb']}")  # Supply-Demand Balance`}
               </pre>
             </div>
 
@@ -1814,6 +2574,495 @@ print(f"Buyer Score: {data['score']}")`}
                 Get API Access
                 <ChevronRight className="w-4 h-4" />
               </Link>
+            </div>
+          </section>
+
+          <hr className="border-slate-200 my-12" />
+
+          {/* ════════════════════════════════════════ */}
+          {/* CRM & CONTACTS                            */}
+          {/* ════════════════════════════════════════ */}
+
+          <section id="crm-overview" className="scroll-mt-20">
+            <div className="rounded-xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8 sm:p-10 mb-10 relative overflow-hidden">
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-purple-500/10 via-transparent to-transparent" />
+              <div className="relative">
+                <p className="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-3">CRM & Contacts</p>
+                <h2 className="text-3xl font-bold text-white mb-3">Unified Contact Model</h2>
+                <p className="text-slate-300 leading-relaxed max-w-2xl">
+                  The CRM aggregates buyer, seller, and agent data from across the platform into a single <code className="bg-slate-700 text-slate-200 px-1.5 py-0.5 rounded text-xs font-mono">contacts</code> collection. Each contact is identified by normalized email (or phone fallback), with computed buyer and seller scores that reveal intent signals like buyers becoming sellers.
+                </p>
+              </div>
+            </div>
+
+            <h3 className="text-lg font-semibold text-slate-900 mb-3">Key concepts</h3>
+            <div className="rounded-lg border border-slate-200 overflow-hidden mb-6">
+              <div className="divide-y divide-slate-200">
+                {[
+                  ['Contact Record', 'One document per normalized email in the contacts collection. Aggregates data from offers, properties, users, and likes.'],
+                  ['Role Flags', 'Each contact has isBuyer, isHomeowner, and isAgent booleans derived from their activity. A person can have multiple roles.'],
+                  ['Intent Label', 'Derived from scores: buyer (buyerScore ≥ 30), seller (sellerScore ≥ 30), both (both ≥ 30), or passive.'],
+                  ['Daily Recompute', 'A cron job at 1 AM UTC rebuilds all contacts from source collections and recomputes scores.'],
+                ].map(([term, desc], i) => (
+                  <div key={i} className="flex items-start gap-4 px-4 py-3">
+                    <span className="flex-shrink-0 w-32 text-sm font-medium text-slate-900">{term}</span>
+                    <p className="text-sm text-slate-600">{desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section id="contact-scoring" className="scroll-mt-20 mt-12">
+            <h2 className="text-2xl font-bold text-slate-900 mb-4">Contact Scoring</h2>
+            <p className="text-slate-600 mb-6">Each contact receives a buyer score and seller score (0-100), computed from weighted factors.</p>
+
+            <h3 className="text-lg font-semibold text-slate-900 mb-3">Buyer Score Formula</h3>
+            <div className="rounded-lg border border-slate-200 overflow-hidden mb-6">
+              <div className="divide-y divide-slate-200">
+                {[
+                  ['Price Opinions', '20%', 'Count of opinions submitted (capped at 20)'],
+                  ['Serious Registrations', '30%', 'Count of serious=true offers (capped at 5)'],
+                  ['Seriousness Level', '20%', 'Highest level: ready_to_buy=100, very_interested=75, interested=50, just_browsing=25'],
+                  ['Likes', '15%', 'Total property likes (capped at 10)'],
+                  ['Recency', '15%', 'Last activity: 7d=100, 30d=60, 90d=30, older=10'],
+                ].map(([factor, weight, desc], i) => (
+                  <div key={i} className="flex items-start gap-4 px-4 py-3">
+                    <span className="flex-shrink-0 w-40 text-sm font-medium text-slate-900">{factor}</span>
+                    <span className="flex-shrink-0 w-12 text-sm font-semibold text-blue-600">{weight}</span>
+                    <p className="text-sm text-slate-600">{desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <h3 className="text-lg font-semibold text-slate-900 mb-3">Seller Score Formula</h3>
+            <div className="rounded-lg border border-slate-200 overflow-hidden mb-6">
+              <div className="divide-y divide-slate-200">
+                {[
+                  ['Properties as Client', '30%', 'Count of owned properties (capped at 3)'],
+                  ['Eagerness', '30%', 'Average isEager: 0 (Very Serious)=100, 1 (Serious)=60, 2 (Testing)=20'],
+                  ['Go-to-Market ≤30d', '25%', 'Any property with gotoMarketGoal within 30 days'],
+                  ['Has Price', '15%', 'Any property with a price set'],
+                ].map(([factor, weight, desc], i) => (
+                  <div key={i} className="flex items-start gap-4 px-4 py-3">
+                    <span className="flex-shrink-0 w-40 text-sm font-medium text-slate-900">{factor}</span>
+                    <span className="flex-shrink-0 w-12 text-sm font-semibold text-orange-600">{weight}</span>
+                    <p className="text-sm text-slate-600">{desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section id="crm-api" className="scroll-mt-20 mt-12">
+            <h2 className="text-2xl font-bold text-slate-900 mb-4">API: Contacts</h2>
+            <div className="rounded-lg border border-slate-200 p-4 mb-4">
+              <div className="flex items-center gap-3 mb-2">
+                <span className="px-2 py-0.5 text-xs font-bold rounded bg-emerald-100 text-emerald-700 font-mono">GET</span>
+                <code className="text-sm font-mono text-slate-900">/api/v1/contacts</code>
+              </div>
+              <p className="text-sm text-slate-600 mb-3">Returns paginated CRM contacts with buyer/seller scores. Requires API key authentication.</p>
+              <h4 className="text-sm font-semibold text-slate-900 mb-2">Parameters</h4>
+              <div className="rounded-lg border border-slate-200 overflow-hidden">
+                <div className="divide-y divide-slate-200">
+                  {[
+                    ['type', 'string', 'Filter by role: agent, homeowner, or buyer'],
+                    ['search', 'string', 'Search by name or email (case-insensitive)'],
+                    ['limit', 'number', 'Results per page (default 100, max 500)'],
+                    ['offset', 'number', 'Pagination offset (default 0)'],
+                  ].map(([param, type, desc], i) => (
+                    <div key={i} className="flex items-start gap-4 px-4 py-2.5">
+                      <code className="flex-shrink-0 w-20 text-xs font-mono text-slate-900 bg-slate-100 px-1.5 py-0.5 rounded">{param}</code>
+                      <span className="flex-shrink-0 w-16 text-xs text-slate-400">{type}</span>
+                      <p className="text-sm text-slate-600">{desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <hr className="border-slate-200 my-12" />
+
+          {/* ════════════════════════════════════════ */}
+          {/* BILLING & INVOICING                      */}
+          {/* ════════════════════════════════════════ */}
+
+          <section id="invoicing-overview" className="scroll-mt-20">
+            <div className="rounded-xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8 sm:p-10 mb-10 relative overflow-hidden">
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-orange-500/10 via-transparent to-transparent" />
+              <div className="relative">
+                <p className="text-xs font-semibold text-orange-400 uppercase tracking-wider mb-3">Billing & Invoicing</p>
+                <h2 className="text-3xl font-bold text-white mb-3">Agency Invoicing System</h2>
+                <p className="text-slate-300 leading-relaxed max-w-2xl">
+                  Premarket charges agencies a per-listing fee for each property campaign created on the platform. The invoicing system handles the full lifecycle: generating monthly invoice runs, reviewing and editing drafts, sending invoices via Xero, tracking payment status, and providing revenue analytics.
+                </p>
+              </div>
+            </div>
+
+            <h3 className="text-lg font-semibold text-slate-900 mb-3">Key concepts</h3>
+            <div className="rounded-lg border border-slate-200 overflow-hidden mb-6">
+              <div className="divide-y divide-slate-200">
+                {[
+                  ['Invoice Run', 'A batch of invoices for a specific date range. Each run groups billable properties by agency and calculates NET (ex GST), GST, and Gross (inc GST) totals.'],
+                  ['Billing Unit', 'Agencies are identified by companyName on the agent\'s user profile. If no company name exists, the individual agent is billed directly.'],
+                  ['Dry Run', 'Every invoice run starts as a draft. You can review, remove properties or entire agencies, then approve before sending to Xero.'],
+                  ['Reconciliation', 'Once invoices are sent, payment status syncs back from Xero — either via manual sync or automated webhooks.'],
+                ].map(([term, desc], i) => (
+                  <div key={i} className="flex items-start gap-4 px-4 py-3">
+                    <span className="flex-shrink-0 w-32 text-sm font-medium text-slate-900">{term}</span>
+                    <p className="text-sm text-slate-600">{desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+              <p className="text-sm text-blue-800">
+                <span className="font-semibold">Admin only.</span> The invoicing system is accessible at{' '}
+                <code className="bg-blue-100 text-blue-900 px-1.5 py-0.5 rounded text-xs font-mono">/dashboard/admin/invoicing</code>{' '}
+                and requires superAdmin access. All API routes are guarded with admin verification.
+              </p>
+            </div>
+          </section>
+
+          <hr className="border-slate-200 my-12" />
+
+          <section id="invoicing-how-it-works" className="scroll-mt-20">
+            <h2 className="text-2xl font-bold text-slate-900 mb-4">How Billing Works</h2>
+            <p className="text-slate-600 leading-relaxed mb-6">
+              Each property campaign created on Premarket is a billable event. At the end of a billing period, the system aggregates all billable properties, groups them by agency, and generates an invoice for each.
+            </p>
+
+            <h3 className="text-lg font-semibold text-slate-900 mb-3">Pricing</h3>
+            <div className="rounded-lg border border-slate-200 overflow-hidden mb-6">
+              <div className="divide-y divide-slate-200">
+                {[
+                  ['Price per listing', '$200 (GST-inclusive by default)'],
+                  ['NET (ex GST)', '$181.82 per listing'],
+                  ['GST (10%)', '$18.18 per listing'],
+                  ['Payment terms', '14 days (configurable)'],
+                ].map(([label, value], i) => (
+                  <div key={i} className="flex items-center justify-between px-4 py-3">
+                    <span className="text-sm text-slate-600">{label}</span>
+                    <span className="text-sm font-medium text-slate-900 font-mono">{value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <p className="text-slate-500 text-sm mb-6">
+              All pricing values are configurable via the Settings tab. Changes apply to future invoice runs only.
+            </p>
+
+            <h3 className="text-lg font-semibold text-slate-900 mb-3">Agency grouping</h3>
+            <p className="text-slate-600 leading-relaxed mb-4">
+              Properties are grouped by the agent&apos;s <code className="bg-slate-100 text-slate-800 px-1.5 py-0.5 rounded text-xs font-mono">companyName</code> field on their user profile. All properties listed by agents at the same agency are consolidated into a single invoice. If an agent has no company name set, they are billed individually.
+            </p>
+
+            <h3 className="text-lg font-semibold text-slate-900 mb-3">What gets invoiced</h3>
+            <p className="text-slate-600 leading-relaxed mb-2">A property is included in an invoice run if all of the following are true:</p>
+            <ul className="list-disc list-inside text-slate-600 text-sm space-y-1 mb-6 ml-2">
+              <li>Created within the selected date range</li>
+              <li>Not archived and not marked inactive</li>
+              <li>Not already invoiced in a previous run (tracked via <code className="bg-slate-100 text-slate-800 px-1 py-0.5 rounded text-xs font-mono">invoicedRunIds</code>)</li>
+              <li>Agent is not in the excluded agents list</li>
+            </ul>
+
+            <h3 className="text-lg font-semibold text-slate-900 mb-3">GST handling</h3>
+            <p className="text-slate-600 leading-relaxed mb-6">
+              The system stores and displays three figures for every line item: <strong>NET</strong> (ex GST), <strong>GST</strong> amount, and <strong>Gross</strong> (inc GST). When invoices are sent to Xero, line items use the ex-GST unit amount with tax type <code className="bg-slate-100 text-slate-800 px-1.5 py-0.5 rounded text-xs font-mono">OUTPUT</code>, and Xero auto-calculates the 10% GST.
+            </p>
+          </section>
+
+          <hr className="border-slate-200 my-12" />
+
+          <section id="invoicing-runs" className="scroll-mt-20">
+            <h2 className="text-2xl font-bold text-slate-900 mb-4">Invoice Runs</h2>
+            <p className="text-slate-600 leading-relaxed mb-6">
+              An invoice run is the core unit of the invoicing workflow. Each run covers a specific date range and progresses through a series of statuses.
+            </p>
+
+            <h3 className="text-lg font-semibold text-slate-900 mb-3">Creating a run</h3>
+            <p className="text-slate-600 leading-relaxed mb-4">
+              Click <strong>New Invoice Run</strong> from the Invoice Runs tab. You&apos;ll be prompted to select a <strong>Date From</strong> and <strong>Date To</strong> — these default to the previous calendar month but can be set to any range. The system queries all billable properties within that range and generates a draft.
+            </p>
+
+            <h3 className="text-lg font-semibold text-slate-900 mb-3">Editing a draft</h3>
+            <p className="text-slate-600 leading-relaxed mb-4">
+              While a run is in <strong>draft</strong> status, you can remove individual properties or entire agencies from the run. This is useful for excluding test listings, internal properties, or agencies with special arrangements. Removing items automatically recalculates the run totals.
+            </p>
+            <ul className="list-disc list-inside text-slate-600 text-sm space-y-1 mb-6 ml-2">
+              <li><strong>Remove agency</strong> — deletes the entire agency line item and all its properties from the run</li>
+              <li><strong>Remove property</strong> — removes a single property from an agency; if all properties are removed, the agency item is deleted</li>
+            </ul>
+
+            <h3 className="text-lg font-semibold text-slate-900 mb-3">Run lifecycle</h3>
+            <div className="space-y-3 mb-6">
+              {[
+                { status: 'DRAFT', color: 'bg-slate-100 text-slate-600', desc: 'Initial state after creation. Can be edited, approved, or deleted.' },
+                { status: 'APPROVED', color: 'bg-blue-100 text-blue-700', desc: 'Locked for editing. Ready to send to Xero.' },
+                { status: 'SENDING', color: 'bg-yellow-100 text-yellow-700', desc: 'Invoices are being created and emailed via Xero.' },
+                { status: 'SENT', color: 'bg-amber-100 text-amber-700', desc: 'All invoices sent. Properties marked as invoiced. Sync available.' },
+                { status: 'PARTIAL', color: 'bg-orange-100 text-orange-700', desc: 'Some invoices sent, some failed. Review errors and retry.' },
+                { status: 'CANCELLED', color: 'bg-slate-100 text-slate-400', desc: 'Run was cancelled. No invoices sent.' },
+              ].map(({ status, color, desc }, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full flex-shrink-0 mt-0.5 ${color}`}>{status}</span>
+                  <p className="text-sm text-slate-600">{desc}</p>
+                </div>
+              ))}
+            </div>
+
+            <h3 className="text-lg font-semibold text-slate-900 mb-3">Run detail view</h3>
+            <p className="text-slate-600 leading-relaxed mb-4">
+              Clicking into a run shows a detailed breakdown with summary cards displaying: total properties, agencies, NET (ex GST), GST, and Gross (inc GST). Below that, an agency table shows per-agency breakdowns with expandable rows listing individual properties.
+            </p>
+
+            <h3 className="text-lg font-semibold text-slate-900 mb-3">Firestore schema</h3>
+            <div className="rounded-lg overflow-hidden border border-slate-800 mb-4">
+              <div className="px-4 py-2 bg-slate-800 border-b border-slate-700">
+                <span className="text-xs font-medium text-slate-400">invoiceRuns/&#123;runId&#125;</span>
+              </div>
+              <pre className="px-4 py-4 text-sm font-mono text-slate-100 bg-slate-900 overflow-x-auto">
+{`{
+  status,              // draft | approved | sending | sent | partial | cancelled
+  periodStart,         // Timestamp — start of billing period
+  periodEnd,           // Timestamp — end of billing period
+  createdAt,           // Timestamp
+  createdBy,           // adminUid or "cron"
+  pricePerListing,     // number (e.g. 200)
+  gstRate,             // number (e.g. 0.1)
+  totalProperties,     // number
+  totalAgencies,       // number
+  totalAmountEx,       // NET total (ex GST)
+  totalGst,            // GST total
+  totalAmountInc,      // Gross total (inc GST)
+  previousRunId,       // for growth comparison
+  errors[]             // any send errors
+}`}
+              </pre>
+            </div>
+            <div className="rounded-lg overflow-hidden border border-slate-800 mb-6">
+              <div className="px-4 py-2 bg-slate-800 border-b border-slate-700">
+                <span className="text-xs font-medium text-slate-400">invoiceRunItems/&#123;itemId&#125;</span>
+              </div>
+              <pre className="px-4 py-4 text-sm font-mono text-slate-100 bg-slate-900 overflow-x-auto">
+{`{
+  runId,               // reference to parent invoiceRun
+  agentUserId,         // the agent's user ID
+  agencyName,          // grouped company name
+  agentName,           // agent display name
+  agentEmail,          // for Xero contact creation
+  properties[],        // { propertyId, address, createdAt, price }
+  propertyCount,       // number of properties
+  pricePerListing,     // unit price at time of run
+  subtotalEx,          // NET (ex GST)
+  gstAmount,           // GST
+  totalInc,            // Gross (inc GST)
+  xeroInvoiceId,       // set after sending to Xero
+  xeroStatus,          // AUTHORISED | PAID | VOIDED
+  paidAt               // set when payment confirmed
+}`}
+              </pre>
+            </div>
+          </section>
+
+          <hr className="border-slate-200 my-12" />
+
+          <section id="invoicing-xero" className="scroll-mt-20">
+            <h2 className="text-2xl font-bold text-slate-900 mb-4">Xero Integration</h2>
+            <p className="text-slate-600 leading-relaxed mb-6">
+              Invoices are created and sent through Xero&apos;s accounting API. The integration handles OAuth authentication, contact management, invoice creation, email delivery, and payment reconciliation.
+            </p>
+
+            <h3 className="text-lg font-semibold text-slate-900 mb-3">Connecting Xero</h3>
+            <p className="text-slate-600 leading-relaxed mb-4">
+              Navigate to the <strong>Settings</strong> tab and click <strong>Connect Xero</strong>. This initiates an OAuth 2.0 flow that redirects to Xero for authorization. Once approved, tokens are stored securely in Firestore and automatically refreshed when they expire.
+            </p>
+            <p className="text-slate-600 leading-relaxed mb-6">
+              Required environment variables:
+            </p>
+            <div className="rounded-lg overflow-hidden border border-slate-800 mb-6">
+              <pre className="px-4 py-4 text-sm font-mono text-slate-100 bg-slate-900 overflow-x-auto">
+{`XERO_CLIENT_ID=your_client_id
+XERO_CLIENT_SECRET=your_client_secret
+XERO_REDIRECT_URI=https://premarket.homes/api/auth/xero/callback`}
+              </pre>
+            </div>
+
+            <h3 className="text-lg font-semibold text-slate-900 mb-3">Sending invoices</h3>
+            <p className="text-slate-600 leading-relaxed mb-2">
+              When you click <strong>Send to Xero</strong> on an approved run, the system processes each agency line item:
+            </p>
+            <ol className="list-decimal list-inside text-slate-600 text-sm space-y-1 mb-6 ml-2">
+              <li><strong>Find or create contact</strong> — searches Xero for a matching contact by agency name; creates one if not found</li>
+              <li><strong>Create invoice</strong> — creates an ACCREC invoice with one line per property, ex-GST unit amount, tax type OUTPUT</li>
+              <li><strong>Send email</strong> — triggers Xero&apos;s built-in invoice email to the contact</li>
+              <li><strong>Mark invoiced</strong> — adds the run ID to each property&apos;s <code className="bg-slate-100 text-slate-800 px-1 py-0.5 rounded text-xs font-mono">invoicedRunIds</code> array to prevent double-billing</li>
+            </ol>
+
+            <h3 className="text-lg font-semibold text-slate-900 mb-3">Payment reconciliation</h3>
+            <p className="text-slate-600 leading-relaxed mb-4">
+              Payment status syncs from Xero in two ways:
+            </p>
+            <ul className="list-disc list-inside text-slate-600 text-sm space-y-1 mb-6 ml-2">
+              <li><strong>Manual sync</strong> — click <strong>Sync from Xero</strong> on a sent run to batch-fetch current statuses</li>
+              <li><strong>Webhook</strong> — Xero sends webhook events when invoice status changes; the existing webhook handler at{' '}
+                <code className="bg-slate-100 text-slate-800 px-1 py-0.5 rounded text-xs font-mono">/api/webhooks/xero</code>{' '}
+                automatically updates both user invoices and invoiceRunItems</li>
+            </ul>
+
+            <h3 className="text-lg font-semibold text-slate-900 mb-3">Token management</h3>
+            <p className="text-slate-600 leading-relaxed mb-6">
+              Xero access tokens expire after 30 minutes. The service layer automatically refreshes tokens on 401 responses and before expiry. Tokens are stored in the{' '}
+              <code className="bg-slate-100 text-slate-800 px-1.5 py-0.5 rounded text-xs font-mono">settings/xeroTokens</code>{' '}
+              Firestore document with access_token, refresh_token, expires_at, and tenant_id.
+            </p>
+          </section>
+
+          <hr className="border-slate-200 my-12" />
+
+          <section id="invoicing-automation" className="scroll-mt-20">
+            <h2 className="text-2xl font-bold text-slate-900 mb-4">Automation</h2>
+            <p className="text-slate-600 leading-relaxed mb-6">
+              The invoicing system includes a daily cron job that can automatically generate draft invoice runs on a configured day each month.
+            </p>
+
+            <h3 className="text-lg font-semibold text-slate-900 mb-3">Monthly cron job</h3>
+            <p className="text-slate-600 leading-relaxed mb-4">
+              The cron runs daily at 4am UTC via{' '}
+              <code className="bg-slate-100 text-slate-800 px-1.5 py-0.5 rounded text-xs font-mono">/api/cron/invoice-dry-run</code>.
+              On the configured day of the month, it:
+            </p>
+            <ol className="list-decimal list-inside text-slate-600 text-sm space-y-1 mb-6 ml-2">
+              <li>Checks if <code className="bg-slate-100 text-slate-800 px-1 py-0.5 rounded text-xs font-mono">cronEnabled</code> is true in settings</li>
+              <li>Checks if today matches the configured <code className="bg-slate-100 text-slate-800 px-1 py-0.5 rounded text-xs font-mono">cronDay</code> (1–28)</li>
+              <li>Verifies no run already exists for the previous month</li>
+              <li>Creates a draft run for the previous calendar month</li>
+              <li>Sends a notification email to all superAdmin users with a summary and link to review</li>
+            </ol>
+
+            <h3 className="text-lg font-semibold text-slate-900 mb-3">Configuration</h3>
+            <p className="text-slate-600 leading-relaxed mb-4">
+              Automation is configured in the <strong>Settings</strong> tab:
+            </p>
+            <div className="rounded-lg border border-slate-200 overflow-hidden mb-6">
+              <div className="divide-y divide-slate-200">
+                {[
+                  ['Auto-generate', 'Toggle on/off. When enabled, the cron creates a draft run automatically.'],
+                  ['Day of month', 'Which day (1–28) the cron should trigger. Default: 1st.'],
+                  ['Notification', 'SuperAdmins receive an email with property count, agency count, and total amount.'],
+                ].map(([label, desc], i) => (
+                  <div key={i} className="flex items-start gap-4 px-4 py-3">
+                    <span className="flex-shrink-0 w-32 text-sm font-medium text-slate-900">{label}</span>
+                    <p className="text-sm text-slate-600">{desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-lg">
+              <p className="text-sm text-amber-800">
+                <span className="font-semibold">Draft only.</span> The cron only creates draft runs — it never automatically sends invoices to Xero. A superAdmin must review, optionally edit, approve, and send manually.
+              </p>
+            </div>
+          </section>
+
+          <hr className="border-slate-200 my-12" />
+
+          <section id="invoicing-api" className="scroll-mt-20">
+            <h2 className="text-2xl font-bold text-slate-900 mb-4">Invoicing API Reference</h2>
+            <p className="text-slate-600 leading-relaxed mb-6">
+              All invoicing API routes require admin authentication via the <code className="bg-slate-100 text-slate-800 px-1.5 py-0.5 rounded text-xs font-mono">adminUid</code> parameter. The cron endpoint uses Bearer token auth with <code className="bg-slate-100 text-slate-800 px-1.5 py-0.5 rounded text-xs font-mono">CRON_SECRET</code>.
+            </p>
+
+            <div className="space-y-3 mb-6">
+              {[
+                { method: 'GET', path: '/api/admin/invoicing/settings', desc: 'Get invoicing settings (price, GST rate, cron config, Xero connection status)' },
+                { method: 'PUT', path: '/api/admin/invoicing/settings', desc: 'Update invoicing settings' },
+                { method: 'GET', path: '/api/admin/invoicing/runs', desc: 'List all invoice runs (sorted by createdAt desc, limit 50)' },
+                { method: 'POST', path: '/api/admin/invoicing/runs', desc: 'Create a new dry run. Body: { adminUid, dateFrom?, dateTo? }' },
+                { method: 'GET', path: '/api/admin/invoicing/runs/[runId]', desc: 'Get run detail with all agency line items' },
+                { method: 'PATCH', path: '/api/admin/invoicing/runs/[runId]', desc: 'Run actions: approve, cancel, removeItems, removeProperties' },
+                { method: 'DELETE', path: '/api/admin/invoicing/runs/[runId]', desc: 'Delete a draft run and all its items' },
+                { method: 'POST', path: '/api/admin/invoicing/runs/[runId]/send', desc: 'Send all invoices in a run to Xero' },
+                { method: 'POST', path: '/api/admin/invoicing/runs/[runId]/sync', desc: 'Sync payment statuses from Xero' },
+                { method: 'GET', path: '/api/admin/invoicing/analytics', desc: 'Monthly revenue aggregates and forecast. Params: months (default 12)' },
+                { method: 'GET', path: '/api/auth/xero', desc: 'Initiate Xero OAuth flow (redirects to Xero)' },
+                { method: 'GET', path: '/api/auth/xero/callback', desc: 'OAuth callback — exchanges code for tokens' },
+                { method: 'GET', path: '/api/cron/invoice-dry-run', desc: 'Daily cron — creates draft run on configured day (Bearer auth)' },
+              ].map(({ method, path, desc }, i) => (
+                <div key={i} className="rounded-lg border border-slate-200 px-4 py-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded ${
+                      method === 'GET' ? 'bg-emerald-100 text-emerald-700'
+                        : method === 'POST' ? 'bg-blue-100 text-blue-700'
+                        : method === 'PUT' ? 'bg-amber-100 text-amber-700'
+                        : method === 'PATCH' ? 'bg-purple-100 text-purple-700'
+                        : 'bg-red-100 text-red-700'
+                    }`}>{method}</span>
+                    <code className="text-sm font-mono text-slate-800">{path}</code>
+                  </div>
+                  <p className="text-xs text-slate-500">{desc}</p>
+                </div>
+              ))}
+            </div>
+
+            <h3 className="text-lg font-semibold text-slate-900 mb-3">PATCH actions</h3>
+            <p className="text-slate-600 leading-relaxed mb-4">
+              The <code className="bg-slate-100 text-slate-800 px-1.5 py-0.5 rounded text-xs font-mono">PATCH /runs/[runId]</code> endpoint supports multiple actions via the request body:
+            </p>
+            <div className="rounded-lg overflow-hidden border border-slate-800 mb-4">
+              <div className="px-4 py-2 bg-slate-800 border-b border-slate-700">
+                <span className="text-xs font-medium text-slate-400">Approve a draft run</span>
+              </div>
+              <pre className="px-4 py-4 text-sm font-mono text-slate-100 bg-slate-900 overflow-x-auto">
+{`{ "adminUid": "...", "action": "approve" }`}
+              </pre>
+            </div>
+            <div className="rounded-lg overflow-hidden border border-slate-800 mb-4">
+              <div className="px-4 py-2 bg-slate-800 border-b border-slate-700">
+                <span className="text-xs font-medium text-slate-400">Remove entire agencies from a draft</span>
+              </div>
+              <pre className="px-4 py-4 text-sm font-mono text-slate-100 bg-slate-900 overflow-x-auto">
+{`{ "adminUid": "...", "action": "removeItems", "itemIds": ["item1", "item2"] }`}
+              </pre>
+            </div>
+            <div className="rounded-lg overflow-hidden border border-slate-800 mb-4">
+              <div className="px-4 py-2 bg-slate-800 border-b border-slate-700">
+                <span className="text-xs font-medium text-slate-400">Remove specific properties from an agency</span>
+              </div>
+              <pre className="px-4 py-4 text-sm font-mono text-slate-100 bg-slate-900 overflow-x-auto">
+{`{ "adminUid": "...", "action": "removeProperties", "itemId": "item1", "propertyIds": ["prop1", "prop2"] }`}
+              </pre>
+            </div>
+            <div className="rounded-lg overflow-hidden border border-slate-800 mb-6">
+              <div className="px-4 py-2 bg-slate-800 border-b border-slate-700">
+                <span className="text-xs font-medium text-slate-400">Cancel a run</span>
+              </div>
+              <pre className="px-4 py-4 text-sm font-mono text-slate-100 bg-slate-900 overflow-x-auto">
+{`{ "adminUid": "...", "action": "cancel" }`}
+              </pre>
+            </div>
+
+            <h3 className="text-lg font-semibold text-slate-900 mb-3">Settings schema</h3>
+            <div className="rounded-lg overflow-hidden border border-slate-800 mb-6">
+              <div className="px-4 py-2 bg-slate-800 border-b border-slate-700">
+                <span className="text-xs font-medium text-slate-400">settings/invoicing</span>
+              </div>
+              <pre className="px-4 py-4 text-sm font-mono text-slate-100 bg-slate-900 overflow-x-auto">
+{`{
+  "pricePerListing": 200,       // GST-inclusive price per listing
+  "gstRate": 0.10,              // GST rate (10%)
+  "paymentTermsDays": 14,       // invoice due date offset
+  "invoicePrefix": "PM-",       // prefix for Xero invoice references
+  "xeroAccountCode": "200",     // Xero revenue account code
+  "cronDay": 1,                 // day of month for auto dry run
+  "cronEnabled": false,          // enable/disable monthly automation
+  "excludeAgentIds": []          // agent user IDs to exclude from billing
+}`}
+              </pre>
             </div>
           </section>
 

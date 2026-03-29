@@ -77,3 +77,23 @@ body {
 
   height: 100%;
 }
+
+/* Scrollbar hide utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Mapbox popup override for dark theme */
+.phi-popup .mapboxgl-popup-content {
+  background: transparent !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  border-radius: 6px;
+}
+.phi-popup .mapboxgl-popup-tip {
+  border-top-color: #1e293b !important;
+}

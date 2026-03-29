@@ -37,6 +37,10 @@ import {
   Loader2,
   FileText,
   GripVertical,
+  Clock,
+  User,
+  Mail,
+  Phone,
 } from 'lucide-react';
 import { onSnapshot, query, where } from 'firebase/firestore';
 import AgentSelector from '../../components/AgentSelector';
@@ -49,10 +53,14 @@ const STEPS = {
   DETAILS: 4,
   IMAGES: 5,
   TITLE: 6,
-  TERMS: 7,
+  EAGERNESS: 7,
+  CLIENT_INFO: 8,
+  TERMS: 9,
 };
 
-const homeTypes = ['House', 'Apartment', 'Villa', 'Townhouse', 'Acreage'];
+const eagernessOptions = ['Very serious', 'Serious if the price is right', 'Just testing the waters'];
+
+const homeTypes = ['House', 'Apartment', 'Villa', 'Townhouse', 'Acreage', 'Duplex'];
 const homeFeatures = [
   'Pool', 'Granny Flat', 'Solar', 'Air Conditioning',
   'Outdoor Entertainment Area', 'Garage / Secure Parking',
@@ -90,6 +98,10 @@ export default function AddPropertyPage() {
   const [description, setDescription] = useState('');
   const [images, setImages] = useState([]);
   const [video, setVideo] = useState(null);
+  const [eagerness, setEagerness] = useState(null);
+  const [clientName, setClientName] = useState('');
+  const [clientEmail, setClientEmail] = useState('');
+  const [clientPhone, setClientPhone] = useState('');
 
   // Terms state
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -421,6 +433,14 @@ export default function AddPropertyPage() {
     if (step === STEPS.TITLE && !title.trim()) {
       newErrors.step = 'Please enter a title for the listing.';
     }
+    if (step === STEPS.EAGERNESS && eagerness === null) {
+      newErrors.step = 'Please select a sales timeline.';
+    }
+    if (step === STEPS.CLIENT_INFO) {
+      if (!clientName.trim() || !clientEmail.trim() || !clientPhone.trim()) {
+        newErrors.step = 'Please fill in all client information fields.';
+      }
+    }
     if (step === STEPS.TERMS && !termsAccepted) {
       newErrors.step = 'Please accept the terms and conditions to continue.';
     }
@@ -560,7 +580,10 @@ export default function AddPropertyPage() {
         visibility: false,
         acceptingOffers: true,
         campaignId: 'FqMZd0mWlNlSBl66s7BN',
-        isEager: 80,
+        isEager: eagerness,
+        clientName: clientName.trim() || null,
+        clientEmail: clientEmail.trim() || null,
+        clientPhone: clientPhone.trim() || null,
         propertyType: type,
         listingStatus,
         wantsPremiumListing: false,
@@ -1186,7 +1209,84 @@ export default function AddPropertyPage() {
               )}
             </AnimatePresence>
 
-            {/* Step 7: Terms & Conditions */}
+            {/* Step 7: Sales Timeline */}
+            {step === STEPS.EAGERNESS && (
+              <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200">
+                <div className="flex items-center gap-3 mb-2">
+                  <Clock className="w-6 h-6 text-orange-500" />
+                  <h2 className="text-2xl font-bold text-slate-900">Sales Timeline</h2>
+                </div>
+                <p className="text-slate-500 mb-6">How eager are you to sell?</p>
+
+                <div className="grid grid-cols-1 gap-3">
+                  {eagernessOptions.map((option, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setEagerness(idx)}
+                      className={`px-6 py-4 rounded-xl text-lg font-medium transition-all border text-left ${
+                        eagerness === idx
+                          ? 'bg-gradient-to-r from-[#e48900] to-[#c64500] text-white border-orange-500 shadow-lg'
+                          : 'bg-white text-slate-700 border-slate-200 hover:border-orange-300 hover:shadow-md'
+                      }`}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Step 8: Client Information */}
+            {step === STEPS.CLIENT_INFO && (
+              <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200">
+                <h2 className="text-2xl font-bold text-slate-900 mb-2">Client Information</h2>
+                <p className="text-slate-500 mb-6">Enter the property owner's contact details.</p>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Client Name</label>
+                    <div className="relative">
+                      <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                      <input
+                        type="text"
+                        placeholder="John Smith"
+                        value={clientName}
+                        onChange={(e) => setClientName(e.target.value)}
+                        className="w-full pl-12 pr-4 py-4 rounded-xl border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none transition-all text-slate-900 text-lg"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Client Email</label>
+                    <div className="relative">
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                      <input
+                        type="email"
+                        placeholder="john@example.com"
+                        value={clientEmail}
+                        onChange={(e) => setClientEmail(e.target.value)}
+                        className="w-full pl-12 pr-4 py-4 rounded-xl border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none transition-all text-slate-900 text-lg"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Client Phone</label>
+                    <div className="relative">
+                      <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                      <input
+                        type="tel"
+                        placeholder="0400 000 000"
+                        value={clientPhone}
+                        onChange={(e) => setClientPhone(e.target.value)}
+                        className="w-full pl-12 pr-4 py-4 rounded-xl border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none transition-all text-slate-900 text-lg"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Step 9: Terms & Conditions */}
             {step === STEPS.TERMS && (
               <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200">
                 <div className="flex items-center gap-3 mb-2">

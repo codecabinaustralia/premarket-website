@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
 import { validateApiKey } from '../middleware';
 import {
   parseLocationParams,
@@ -7,6 +8,7 @@ import {
   getLikesForProperties,
   calculateBuyerScore,
 } from '../helpers';
+import { computeConfidence } from '../phiScoring';
 import { getCachedScore } from '../scoreComputation';
 
 export async function GET(request) {
@@ -32,6 +34,7 @@ export async function GET(request) {
           location: { lat, lng, radius, ...(resolvedPlace && { resolvedPlace }) },
           propertiesAnalyzed: cached.propertyCount,
           breakdown: cached.buyerScoreBreakdown,
+          confidence: cached.confidence || null,
           cached: true,
         });
       }
@@ -47,14 +50,17 @@ export async function GET(request) {
     ]);
 
     const result = calculateBuyerScore(properties, offers, likes);
+    const confidence = computeConfidence(properties, offers, likes);
 
     return NextResponse.json({
       score: result.score,
       location: { lat, lng, radius, ...(resolvedPlace && { resolvedPlace }) },
       propertiesAnalyzed: properties.length,
       breakdown: result.breakdown,
+      confidence,
     });
   } catch (err) {
+    Sentry.captureException(err, { tags: { route: 'buyer-score' } });
     console.error('Buyer score error:', err);
     return NextResponse.json({ error: 'Failed to calculate buyer score' }, { status: 500 });
   }

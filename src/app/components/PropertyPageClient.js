@@ -9,6 +9,7 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 import AgentFooter from '../components/AgentFooter';
 import Nav from '../components/Nav';
+import { usePropertyEngagement } from '../hooks/usePropertyEngagement';
 
 // Generate a session ID for tracking price opinions
 const getSessionId = () => {
@@ -80,6 +81,14 @@ export default function PropertyPageClient() {
 
   // Sticky price bar visibility
   const [showStickyPrice, setShowStickyPrice] = useState(false);
+
+  // Engagement tracking (view duration, scroll depth, photos, shares, opinions)
+  const {
+    trackPhotoView,
+    trackShare,
+    trackOpinionStart,
+    trackOpinionComplete,
+  } = usePropertyEngagement(propertyId);
 
   const trackEvent = (eventName, eventParams = {}) => {
     if (typeof window !== 'undefined' && window.dataLayer) {
@@ -301,6 +310,7 @@ export default function PropertyPageClient() {
   };
 
   const savePriceOpinion = async () => {
+    trackOpinionStart();
     try {
       const sessionId = getSessionId();
       
@@ -336,6 +346,7 @@ export default function PropertyPageClient() {
         });
       }
 
+      trackOpinionComplete();
       // Show the modal
       setShowPriceOpinionModal(true);
     } catch (error) {
@@ -470,6 +481,7 @@ export default function PropertyPageClient() {
   const openLightbox = (index) => {
     setCurrentImageIndex(index);
     setLightboxOpen(true);
+    trackPhotoView();
   };
 
   const closeLightbox = () => {
@@ -478,10 +490,12 @@ export default function PropertyPageClient() {
 
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % imageUrls.length);
+    trackPhotoView();
   };
 
   const prevImage = () => {
     setCurrentImageIndex((prev) => (prev - 1 + imageUrls.length) % imageUrls.length);
+    trackPhotoView();
   };
 
   const handleQualificationSubmit = async () => {

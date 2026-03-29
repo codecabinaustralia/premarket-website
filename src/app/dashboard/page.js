@@ -24,12 +24,9 @@ import {
   Bed,
   Bath,
   Car,
-  Code,
   Shield,
-  Sparkles,
   BookOpen,
   Video,
-  Plug,
   Pencil,
   Archive,
   CheckCircle,
@@ -39,7 +36,6 @@ import {
   Users,
   Trash2,
   ExternalLink,
-  FileText,
   Camera,
   Building2,
   Loader2,
@@ -86,16 +82,8 @@ function Sidebar({ active, onNavigate, onSignOut, sidebarOpen, setSidebarOpen, u
     { id: 'user-manual', label: 'User Manual', icon: BookOpen, href: '/dashboard/user-manual' },
     { id: 'agents', label: 'Team', icon: Users, href: '/dashboard/agents' },
     { id: 'settings', label: 'Settings', icon: Settings, href: '/dashboard/settings' },
-    ...(userData?.apiAccess?.status === 'approved'
-      ? [{ id: 'playground', label: 'Playground', icon: Sparkles, href: '/dashboard/playground' }]
-      : []),
     ...(userData?.superAdmin === true
-      ? [
-          { id: 'integrations', label: 'Integrations', icon: Plug, href: '/dashboard/integrations' },
-          { id: 'developers', label: 'Developers', icon: Code, href: '/dashboard/developers' },
-          { id: 'docs', label: 'Docs', icon: FileText, href: '/docs' },
-          { id: 'admin', label: 'Admin', icon: Shield, href: '/dashboard/admin' },
-        ]
+      ? [{ id: 'admin', label: 'Admin', icon: Shield, href: '/dashboard/admin' }]
       : []),
   ];
 

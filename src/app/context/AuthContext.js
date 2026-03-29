@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
+import * as Sentry from '@sentry/nextjs';
 import { auth, db } from '../firebase/clientApp';
 
 const AuthContext = createContext();
@@ -16,6 +17,7 @@ export function AuthProvider({ children }) {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         setUser(firebaseUser);
+        Sentry.setUser({ id: firebaseUser.uid, email: firebaseUser.email });
         try {
           const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
           if (userDoc.exists()) {
@@ -27,6 +29,7 @@ export function AuthProvider({ children }) {
       } else {
         setUser(null);
         setUserData(null);
+        Sentry.setUser(null);
       }
       setLoading(false);
     });

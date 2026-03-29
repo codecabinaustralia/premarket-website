@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
 import { validateApiKey } from '../middleware';
 import {
   parseLocationParams,
@@ -39,6 +40,7 @@ export async function GET(request) {
             buyerScore: t.buyerScore,
             sellerScore: t.sellerScore,
             propertyCount: t.propertyCount,
+            confidence: t.confidence || null,
           })),
           cached: true,
         });
@@ -99,6 +101,7 @@ export async function GET(request) {
       trends,
     });
   } catch (err) {
+    Sentry.captureException(err, { tags: { route: 'historical-trends' } });
     console.error('Historical trends error:', err);
     return NextResponse.json({ error: 'Failed to generate historical trends' }, { status: 500 });
   }

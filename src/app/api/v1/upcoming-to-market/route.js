@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
 import { validateApiKey } from '../middleware';
 import { adminDb } from '../../../firebase/adminApp';
 
@@ -106,6 +107,8 @@ export async function GET(request) {
     const upcoming = [];
     for (const p of properties) {
       if (p.archived) continue;
+      // Exclude on-market properties - they're already listed, not "upcoming"
+      if (p.listingStatus === 'on-market') continue;
 
       const offers = offersByProperty[p.id] || [];
       const opinions = offers.filter((o) => o.type === 'opinion');
@@ -125,7 +128,10 @@ export async function GET(request) {
       if (hasSeriousBuyers) likelihood += 30 + Math.min(seriousBuyers.length * 5, 20);
       if (hasOpinions) likelihood += 10 + Math.min(opinions.length * 2, 10);
       if (p.visibility) likelihood += 10;
-      if ((p.isEager || 0) >= 70) likelihood += 10;
+      // isEager: new format 0=Very serious, 1=Serious if price right, 2=Testing
+      // Legacy format: 0-100 where >=70 is eager
+      const eager = p.isEager;
+      if (eager != null && (eager <= 2 ? eager <= 1 : eager >= 70)) likelihood += 10;
       if (p.stats?.views > 10) likelihood += 5;
 
       if (likelihood === 0) continue;
@@ -143,7 +149,7 @@ export async function GET(request) {
           seriousBuyers: seriousBuyers.length,
           totalOpinions: opinions.length,
           isPublic: p.visibility === true,
-          isEager: (p.isEager || 0) >= 70,
+          isEager: p.isEager != null && (p.isEager <= 2 ? p.isEager <= 1 : p.isEager >= 70),
           views: p.stats?.views || 0,
         },
       });
@@ -188,6 +194,7 @@ export async function GET(request) {
       topProperties: upcoming.slice(0, 20),
     });
   } catch (err) {
+    Sentry.captureException(err, { tags: { route: 'upcoming-to-market' } });
     console.error('Upcoming to market error:', err);
     return NextResponse.json({ error: 'Failed to compute upcoming listings' }, { status: 500 });
   }

@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
 import { validateApiKey } from '../middleware';
 import {
   parseLocationParams,
   getPropertiesInRadius,
+  getOffersForProperties,
+  getLikesForProperties,
   calculateSellerScore,
 } from '../helpers';
+import { computeConfidence } from '../phiScoring';
 import { getCachedScore } from '../scoreComputation';
 
 export async function GET(request) {
@@ -30,6 +34,7 @@ export async function GET(request) {
           location: { lat, lng, radius, ...(resolvedPlace && { resolvedPlace }) },
           propertiesAnalyzed: cached.propertyCount,
           breakdown: cached.sellerScoreBreakdown,
+          confidence: cached.confidence || null,
           cached: true,
         });
       }
@@ -37,15 +42,23 @@ export async function GET(request) {
 
     // Fallback to real-time computation
     const properties = await getPropertiesInRadius(lat, lng, radius);
+    const propertyIds = properties.map((p) => p.id);
+    const [offers, likes] = await Promise.all([
+      getOffersForProperties(propertyIds),
+      getLikesForProperties(propertyIds),
+    ]);
     const result = calculateSellerScore(properties);
+    const confidence = computeConfidence(properties, offers, likes);
 
     return NextResponse.json({
       score: result.score,
       location: { lat, lng, radius, ...(resolvedPlace && { resolvedPlace }) },
       propertiesAnalyzed: properties.length,
       breakdown: result.breakdown,
+      confidence,
     });
   } catch (err) {
+    Sentry.captureException(err, { tags: { route: 'seller-score' } });
     console.error('Seller score error:', err);
     return NextResponse.json({ error: 'Failed to calculate seller score' }, { status: 500 });
   }

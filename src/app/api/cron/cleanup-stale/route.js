@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
 import {
   getStaleCachedScores,
   computeSuburbScores,
@@ -28,6 +29,7 @@ export async function GET(request) {
           failed++;
         }
       } catch (err) {
+        Sentry.captureException(err, { tags: { route: 'cleanup-stale', suburbKey: s.key } });
         console.error(`Failed to recompute stale scores for ${s.key}:`, err);
         failed++;
       }
@@ -40,6 +42,7 @@ export async function GET(request) {
       failed,
     });
   } catch (err) {
+    Sentry.captureException(err, { tags: { route: 'cleanup-stale' } });
     console.error('Cleanup stale cron error:', err);
     return NextResponse.json({ error: 'Failed to cleanup stale scores' }, { status: 500 });
   }

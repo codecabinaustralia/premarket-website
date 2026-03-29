@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
 import { validateApiKey } from '../v1/middleware';
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
@@ -16,7 +17,7 @@ const LOCATION_PROPERTIES = {
   postcode: { type: 'string', description: 'Postcode — optional if location is provided' },
   lat: { type: 'number', description: 'Latitude — optional, overrides geocoding' },
   lng: { type: 'number', description: 'Longitude — optional, overrides geocoding' },
-  radius: { type: 'number', description: 'Search radius in km (default 5)' },
+  radius: { type: 'number', description: 'Search radius in km (default 10)' },
 };
 
 const TOOLS = [
@@ -97,6 +98,98 @@ const TOOLS = [
       properties: {},
     },
   },
+  {
+    name: 'get_phi_scores',
+    description:
+      'Get all 8 PHI (Premarket Health Indicators) scores for a location. Returns: BDI (Buyer Demand Index), SMI (Seller Motivation Index), PVI (Price Validity Index), MHI (Market Heat Index), EVS (Engagement Velocity Score), BQI (Buyer Quality Index), FPI (Forward Pipeline Index), SDB (Supply-Demand Balance). Each score is 0-100.',
+    input_schema: {
+      type: 'object',
+      properties: LOCATION_PROPERTIES,
+    },
+  },
+  {
+    name: 'get_property_valuation',
+    description:
+      'Get per-property valuation analysis for a location. Shows which properties are overvalued, undervalued, or fairly priced based on buyer opinions vs listing prices. Sorted by price deviation.',
+    input_schema: {
+      type: 'object',
+      properties: LOCATION_PROPERTIES,
+    },
+  },
+  {
+    name: 'get_pipeline_forecast',
+    description:
+      'Get state-level pipeline forecast: how many properties are going to market in the next 30 days, grouped by state and suburb. Includes median prices, demand ratios, and confidence levels. Optionally filter by state.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        state: { type: 'string', description: 'Filter by state abbreviation (e.g. "NSW", "VIC"). Omit for national view.' },
+      },
+    },
+  },
+  {
+    name: 'get_price_corrections',
+    description:
+      'Get properties most likely to drop their price. Shows overvalued properties where buyers consistently value below asking, sorted by severity. Includes price drop likelihood score and signals.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        state: { type: 'string', description: 'Filter by state abbreviation' },
+        limit: { type: 'number', description: 'Max results (default 30, max 100)' },
+        threshold: { type: 'number', description: 'Minimum deviation % to include (default -10, e.g. -15 for only severe)' },
+      },
+    },
+  },
+  {
+    name: 'get_market_corrections',
+    description:
+      'Get suburbs showing market correction signals — overheated areas where prices may fall. Combines SDB, FPI, PVI, demand momentum, and seller pressure signals into a correction risk score.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        limit: { type: 'number', description: 'Max results (default 20, max 50)' },
+      },
+    },
+  },
+  {
+    name: 'get_buyer_competition',
+    description:
+      'Get buyer competition report for a location. Shows how competitive it is to buy in an area: competition score, level (extreme/high/moderate/low), signals, and actionable recommendation.',
+    input_schema: {
+      type: 'object',
+      properties: LOCATION_PROPERTIES,
+    },
+  },
+  {
+    name: 'get_seller_timing',
+    description:
+      'Get seller timing report for a location. Recommends whether now is a good time to list: timing score, recommendation (list_now/favorable/neutral/wait), positive signals, and risks.',
+    input_schema: {
+      type: 'object',
+      properties: LOCATION_PROPERTIES,
+    },
+  },
+  {
+    name: 'get_investment_hotspots',
+    description:
+      'Get top investment opportunity areas. Finds suburbs with rising demand, buyer-friendly conditions, or undervalued properties. Supports strategy filter: "value", "growth", "yield", or "balanced" (default).',
+    input_schema: {
+      type: 'object',
+      properties: {
+        limit: { type: 'number', description: 'Max results (default 20, max 50)' },
+        strategy: { type: 'string', description: 'Investment strategy: "value", "growth", "yield", or "balanced" (default)' },
+      },
+    },
+  },
+  {
+    name: 'get_market_intelligence',
+    description:
+      'Get the full weekly market intelligence brief. National summary with market direction, top 5 heating/cooling suburbs, pipeline forecast by state, correction risks, pricing insights, and confidence metrics. This is the most comprehensive report available.',
+    input_schema: {
+      type: 'object',
+      properties: {},
+    },
+  },
 ];
 
 const TOOL_TO_ENDPOINT = {
@@ -108,6 +201,15 @@ const TOOL_TO_ENDPOINT = {
   get_property_insights: 'property-insights',
   get_national_overview: 'national-overview',
   get_upcoming_to_market: 'upcoming-to-market',
+  get_phi_scores: 'phi-scores',
+  get_property_valuation: 'property-valuation',
+  get_pipeline_forecast: 'pipeline-forecast',
+  get_price_corrections: 'price-corrections',
+  get_market_corrections: 'market-corrections',
+  get_buyer_competition: 'buyer-competition',
+  get_seller_timing: 'seller-timing',
+  get_investment_hotspots: 'investment-hotspots',
+  get_market_intelligence: 'market-intelligence',
 };
 
 const SYSTEM_PROMPT = `You are Premarket's market intelligence assistant. You help users explore Australian property market data using the Premarket API.
@@ -120,40 +222,71 @@ You have access to tools that query real property data:
 - Historical trends: how scores have changed over time
 - Property insights: per-property engagement metrics
 - National overview: Australia-wide aggregated market stats
-- Upcoming to market: properties likely to sell or go to market soon, grouped by state/suburb
+- Upcoming to market: properties likely to sell or go to market soon
+- PHI scores: all 8 Premarket Health Indicators for a location
+- Property valuation: which properties are overvalued/undervalued
+- Pipeline forecast: how many properties going to market by state (next 30 days)
+- Price corrections: properties most likely to drop their price
+- Market corrections: suburbs showing overheating/correction signals
+- Buyer competition: how competitive it is to buy in an area
+- Seller timing: whether now is a good time to list in an area
+- Investment hotspots: top opportunity areas for investors (value/growth/yield strategies)
+- Market intelligence brief: comprehensive weekly market roll-up
+
+PHI (PREMARKET HEALTH INDICATORS):
+PHI is our proprietary market intelligence framework with 8 metrics (all 0-100):
+- PHI:BDI (Buyer Demand Index) — Real buyer demand from opinions, registrations, likes
+- PHI:SMI (Seller Motivation Index) — How eager sellers are to transact
+- PHI:PVI (Price Validity Index) — Whether properties are correctly priced (100=perfect pricing)
+- PHI:MHI (Market Heat Index) — Composite market activity and momentum
+- PHI:EVS (Engagement Velocity Score) — How fast properties attract interest
+- PHI:BQI (Buyer Quality Index) — Financial readiness of the buyer pool
+- PHI:FPI (Forward Pipeline Index) — Strength of upcoming supply
+- PHI:SDB (Supply-Demand Balance) — >50 = seller's market, <50 = buyer's market, 50 = balanced
+
+When discussing PHI scores, use the format "PHI:BDI 78" for individual metrics.
+Use get_phi_scores for comprehensive area analysis, get_property_valuation for pricing analysis.
+
+FORECAST REPORTS:
+- Use get_pipeline_forecast when asked "how many properties are coming to market in [state]?" or about upcoming supply
+- Use get_price_corrections when asked about overpriced properties, likely price drops, or which listings will reduce
+- Use get_market_corrections when asked about overheated markets, bubbles, correction risks, or which areas will cool
+- Use get_buyer_competition when asked "how competitive is it to buy in [area]?" or about buyer demand vs supply
+- Use get_seller_timing when asked "should I sell now?" or "when is the best time to list in [area]?"
+- Use get_investment_hotspots when asked "where should I invest?" or about opportunity areas — use the strategy param to match their goal
+- Use get_market_intelligence for broad questions like "what's happening in the market?" or "give me the full picture"
+These reports are Premarket's competitive edge over CoreLogic — they are forward-looking predictions based on real buyer behavior, not backward-looking sales data.
 
 BUYER SENTIMENT INTERPRETATION:
-When asked about "buyer sentiment" or "buyer mood", use the buyer score tool. Interpret the breakdown:
-- Score 0-20: Very Low sentiment — minimal buyer interest, market is cold
-- Score 21-40: Low sentiment — some interest but buyers are cautious
-- Score 41-60: Moderate sentiment — healthy buyer interest, balanced market
-- Score 61-80: High sentiment — strong buyer demand, competitive market
-- Score 81-100: Very High sentiment — intense buyer demand, hot market
-Key breakdown signals:
-- High seriousBuyers ratio = confident, committed buyers (bullish sentiment)
-- High passiveBuyers with low serious = window shoppers (cautious sentiment)
-- High seriousnessScore = buyers are actively ready to transact
-- High diversityRatio = broad market appeal (healthy sentiment)
-- High fhbCount = first-home buyer driven demand
-- High investorCount = investment-driven demand
+When asked about "buyer sentiment" or "buyer mood", use the buyer score or PHI tools. Interpret:
+- Score 0-20: Very Low — minimal buyer interest, market is cold
+- Score 21-40: Low — some interest but buyers are cautious
+- Score 41-60: Moderate — healthy buyer interest, balanced market
+- Score 61-80: High — strong buyer demand, competitive market
+- Score 81-100: Very High — intense buyer demand, hot market
 
 SELLER SENTIMENT INTERPRETATION:
-When asked about "seller sentiment" or "seller mood", use the seller score tool. Interpret the breakdown:
 - High eagerSellers = sellers are motivated, possibly under pressure
 - High goingToMarket30 = surge in upcoming supply
 - High activeProperties = established seller confidence
-- Low scores overall = sellers are holding, waiting for better conditions
+
+PVI INTERPRETATION:
+- PVI > 80: Area is well-priced — buyers and sellers broadly agree on values
+- PVI 50-80: Some pricing misalignment — review individual properties
+- PVI < 50: Significant mispricing — many properties overvalued or undervalued
+
+DATA CONFIDENCE:
+All PHI responses include a "confidence" field with level (low/medium/high), score (0-100), and warnings.
+- High (60+): Sufficient data — scores are reliable.
+- Medium (30-59): Some data — treat as directional.
+- Low (<30): Limited data — always caveat when presenting.
+When confidence is low, mention the limitation. Example: "Note: this area has limited data (3 properties, 2 opinions), so scores are preliminary."
 
 IMPORTANT — Location handling:
-When users mention ANY location (suburb, city, address, postcode, region), pass it as the "location" parameter exactly as they said it. The server will geocode it automatically via Mapbox.
-Examples:
-- "Bondi" → location: "Bondi, NSW, Australia"
-- "Sydney CBD" → location: "Sydney CBD, NSW"
-- "Melbourne inner east" → location: "Melbourne inner east, VIC"
-- "2026" → location: "2026, Australia"
+When users mention ANY location, pass it as the "location" parameter exactly as they said it. The server will geocode it automatically via Mapbox.
 Do NOT try to split locations into separate suburb/state/postcode fields — just use the "location" parameter.
 
-Present data in a clear, conversational way. Highlight key insights. Use numbers and percentages when relevant. If a score is low, explain what that means practically. If data is sparse, mention that results may be limited.
+Present data in a clear, conversational way. Highlight key insights. Use numbers and percentages. If data is sparse, mention that results may be limited.
 
 When the API response includes a "resolvedPlace" field, mention it so the user can confirm the right location was matched.`;
 
@@ -205,8 +338,8 @@ export async function POST(request) {
           'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-5-20250929',
-          max_tokens: 1024,
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 2048,
           system: SYSTEM_PROMPT,
           tools: TOOLS,
           messages: currentMessages,
@@ -228,35 +361,35 @@ export async function POST(request) {
         // Add assistant message with tool use
         currentMessages.push({ role: 'assistant', content: claudeData.content });
 
-        // Execute each tool call and build results
-        const toolResults = [];
-        for (const toolUse of toolUseBlocks) {
-          const endpoint = TOOL_TO_ENDPOINT[toolUse.name];
-          if (!endpoint) {
-            toolResults.push({
-              type: 'tool_result',
-              tool_use_id: toolUse.id,
-              content: JSON.stringify({ error: 'Unknown tool' }),
-            });
-            continue;
-          }
+        // Execute all tool calls in parallel
+        const toolResults = await Promise.all(
+          toolUseBlocks.map(async (toolUse) => {
+            const endpoint = TOOL_TO_ENDPOINT[toolUse.name];
+            if (!endpoint) {
+              return {
+                type: 'tool_result',
+                tool_use_id: toolUse.id,
+                content: JSON.stringify({ error: 'Unknown tool' }),
+              };
+            }
 
-          try {
-            const result = await callPremarketApi(endpoint, toolUse.input, userApiKey);
-            toolResults.push({
-              type: 'tool_result',
-              tool_use_id: toolUse.id,
-              content: JSON.stringify(result),
-            });
-          } catch (err) {
-            toolResults.push({
-              type: 'tool_result',
-              tool_use_id: toolUse.id,
-              content: JSON.stringify({ error: 'API call failed' }),
-              is_error: true,
-            });
-          }
-        }
+            try {
+              const result = await callPremarketApi(endpoint, toolUse.input, userApiKey);
+              return {
+                type: 'tool_result',
+                tool_use_id: toolUse.id,
+                content: JSON.stringify(result),
+              };
+            } catch (err) {
+              return {
+                type: 'tool_result',
+                tool_use_id: toolUse.id,
+                content: JSON.stringify({ error: 'API call failed' }),
+                is_error: true,
+              };
+            }
+          })
+        );
 
         currentMessages.push({ role: 'user', content: toolResults });
       } else {
@@ -278,6 +411,7 @@ export async function POST(request) {
 
     return NextResponse.json({ reply: text });
   } catch (err) {
+    Sentry.captureException(err, { tags: { route: 'chat' } });
     console.error('Chat error:', err);
     return NextResponse.json({ error: 'Chat failed' }, { status: 500 });
   }

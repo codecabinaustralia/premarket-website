@@ -309,7 +309,7 @@ export function mapListingToProperty(listing, userId) {
     visibility: false, // Start as draft - agent explicitly enables
     acceptingOffers: false,
     offPlan: false,
-    isEager: 50,
+    isEager: 1,
     wantsPremiumListing: false,
 
     // Integration reference

@@ -1,4 +1,5 @@
 import { adminDb } from '../../firebase/adminApp';
+import { NORMALIZATION } from './phiScoring';
 
 // ─── Geocoding ──────────────────────────────────────────────────────────────
 
@@ -142,6 +143,54 @@ export async function getLikesForProperties(propertyIds) {
   return results;
 }
 
+/**
+ * Fetch propertyEngagement records for given property IDs.
+ */
+export async function getEngagementForProperties(propertyIds) {
+  if (!propertyIds.length) return [];
+
+  const results = [];
+  const batches = [];
+  for (let i = 0; i < propertyIds.length; i += 30) {
+    batches.push(propertyIds.slice(i, i + 30));
+  }
+
+  for (const batch of batches) {
+    const snapshot = await adminDb
+      .collection('propertyEngagement')
+      .where('propertyId', 'in', batch)
+      .get();
+    results.push(...snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+  }
+  return results;
+}
+
+// ─── Eagerness Helpers ──────────────────────────────────────────────────────
+
+/**
+ * Check if a property's seller is eager to sell.
+ * Handles both new format (0=Very serious, 1=Serious if price right, 2=Testing)
+ * and legacy format (0-100 scale where >=70 = eager).
+ */
+export function isEagerSeller(p) {
+  const val = p.isEager;
+  if (val == null) return false;
+  if (val <= 2) return val === 0; // New format: 0 = "Very serious"
+  return val >= 70;               // Legacy format
+}
+
+/**
+ * Get a 0-1 eagerness weight for a property.
+ * New format: 0=1.0 (Very serious), 1=0.6 (Serious if price right), 2=0.2 (Testing)
+ * Legacy format: normalized from 0-100 scale.
+ */
+export function getEagernessWeight(p) {
+  const val = p.isEager;
+  if (val == null) return 0;
+  if (val <= 2) return [1.0, 0.6, 0.2][val];
+  return val / 100; // Legacy normalize
+}
+
 // ─── Score Algorithms ───────────────────────────────────────────────────────
 
 /**
@@ -163,8 +212,8 @@ export function calculateBuyerScore(properties, offers, likes) {
   const totalSerious = seriousBuyers.length;
   const totalLikes = likes.length;
 
-  // Seriousness level weights
-  const levelWeights = { low: 1, medium: 2, high: 3, 'very high': 4 };
+  // Seriousness level weights (matches Flutter app values)
+  const levelWeights = { just_browsing: 1, interested: 2, very_interested: 3, ready_to_buy: 4 };
   const seriousnessScore = opinions.reduce((sum, o) => {
     const level = (o.seriousnessLevel || '').toLowerCase();
     return sum + (levelWeights[level] || 1);
@@ -178,11 +227,7 @@ export function calculateBuyerScore(properties, offers, likes) {
     ? 1 - Math.abs(fhbCount - investorCount) / totalTyped
     : 0;
 
-  // Platform-wide max estimates for normalization
-  const MAX_OPINIONS = 50;
-  const MAX_SERIOUS = 20;
-  const MAX_LIKES = 100;
-  const MAX_SERIOUSNESS = 200;
+  const { MAX_OPINIONS, MAX_SERIOUS, MAX_LIKES, MAX_SERIOUSNESS } = NORMALIZATION;
 
   // Normalize each signal 0–1
   const normOpinions = Math.min(totalOpinions / MAX_OPINIONS, 1);
@@ -222,7 +267,7 @@ export function calculateBuyerScore(properties, offers, likes) {
  * Signals:
  * - Count of active properties
  * - Properties with gotoMarketGoal within 30/60/90 days
- * - Properties with isEager >= 70
+ * - Seller eagerness (weighted: 0=Very serious, 1=Serious, 2=Testing)
  * - Listing density
  */
 export function calculateSellerScore(properties) {
@@ -247,18 +292,16 @@ export function calculateSellerScore(properties) {
     return goal && goal > now && goal <= now + 90 * DAY_MS;
   });
 
-  const eagerProperties = properties.filter((p) => (p.isEager || 0) >= 70);
+  // Weighted eagerness: sum of all eagerness weights (handles both new 0/1/2 and legacy 0-100)
+  const eagernessSum = properties.reduce((sum, p) => sum + getEagernessWeight(p), 0);
+  const eagerCount = properties.filter((p) => isEagerSeller(p)).length;
 
-  // Normalization maxes
-  const MAX_ACTIVE = 30;
-  const MAX_GTM = 15;
-  const MAX_EAGER = 10;
-
+  const { MAX_ACTIVE, MAX_GTM, MAX_EAGER, MAX_OPINIONS } = NORMALIZATION;
   const normActive = Math.min(activeProperties.length / MAX_ACTIVE, 1);
   const normGtm30 = Math.min(goingToMarket30.length / MAX_GTM, 1);
   const normGtm60 = Math.min(goingToMarket60.length / MAX_GTM, 1);
-  const normEager = Math.min(eagerProperties.length / MAX_EAGER, 1);
-  const normDensity = Math.min(properties.length / 50, 1);
+  const normEager = Math.min(eagernessSum / MAX_EAGER, 1);
+  const normDensity = Math.min(properties.length / MAX_OPINIONS, 1);
 
   const weights = { active: 0.25, gtm30: 0.3, gtm60: 0.1, eager: 0.2, density: 0.15 };
   const raw =
@@ -278,7 +321,8 @@ export function calculateSellerScore(properties) {
       goingToMarket30: goingToMarket30.length,
       goingToMarket60: goingToMarket60.length,
       goingToMarket90: goingToMarket90.length,
-      eagerSellers: eagerProperties.length,
+      eagerSellers: eagerCount,
+      eagernessWeightedScore: Math.round(eagernessSum * 100) / 100,
     },
   };
 }
@@ -325,7 +369,7 @@ export async function parseLocationParams(request) {
 
   let lat = parseFloat(searchParams.get('lat'));
   let lng = parseFloat(searchParams.get('lng'));
-  const radius = parseFloat(searchParams.get('radius')) || 5;
+  const radius = parseFloat(searchParams.get('radius')) || 10;
   const location = searchParams.get('location');
   const suburb = searchParams.get('suburb');
   const state = searchParams.get('state');

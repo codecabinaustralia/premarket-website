@@ -288,7 +288,7 @@ export function mapRexListingToProperty(listing, userId) {
     visibility: false,
     acceptingOffers: false,
     offPlan: false,
-    isEager: 50,
+    isEager: 1,
     wantsPremiumListing: false,
 
     source: 'rex',

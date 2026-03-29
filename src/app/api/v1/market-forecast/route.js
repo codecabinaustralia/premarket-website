@@ -1,12 +1,15 @@
 import { NextResponse } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
 import { validateApiKey } from '../middleware';
 import {
   parseLocationParams,
   getPropertiesInRadius,
   getOffersForProperties,
+  getLikesForProperties,
   median,
   formatPrice,
 } from '../helpers';
+import { computeConfidence } from '../phiScoring';
 import { getCachedScore } from '../scoreComputation';
 
 export async function GET(request) {
@@ -45,6 +48,7 @@ export async function GET(request) {
                     ? 'balanced'
                     : 'low',
           },
+          confidence: cached.confidence || null,
           cached: true,
         });
       }
@@ -67,7 +71,10 @@ export async function GET(request) {
     const medianPrice = median(prices);
 
     const propertyIds = properties.map((p) => p.id);
-    const offers = await getOffersForProperties(propertyIds);
+    const [offers, likes] = await Promise.all([
+      getOffersForProperties(propertyIds),
+      getLikesForProperties(propertyIds),
+    ]);
     const opinions = offers.filter((o) => o.type === 'opinion');
 
     let demandRatio = null;
@@ -88,6 +95,8 @@ export async function GET(request) {
       }
     }
 
+    const confidence = computeConfidence(properties, offers, likes);
+
     return NextResponse.json({
       location: { lat, lng, radius, ...(resolvedPlace && { resolvedPlace }) },
       propertiesAnalyzed: properties.length,
@@ -105,8 +114,10 @@ export async function GET(request) {
                 ? 'balanced'
                 : 'low',
       },
+      confidence,
     });
   } catch (err) {
+    Sentry.captureException(err, { tags: { route: 'market-forecast' } });
     console.error('Market forecast error:', err);
     return NextResponse.json({ error: 'Failed to generate market forecast' }, { status: 500 });
   }

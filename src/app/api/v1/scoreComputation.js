@@ -4,11 +4,13 @@ import {
   getPropertiesInRadius,
   getOffersForProperties,
   getLikesForProperties,
+  getEngagementForProperties,
   calculateBuyerScore,
   calculateSellerScore,
   median,
   formatPrice,
 } from './helpers';
+import { computeAllPHI, getWeights, clearWeightsCache, computeConfidence } from './phiScoring';
 
 /**
  * Slugify a suburb name for use as a Firestore document ID.
@@ -167,9 +169,10 @@ export async function computeSuburbScores(suburb, state, lat, lng, { maxAgeDays 
   if (!properties.length) return null;
 
   const propertyIds = properties.map((p) => p.id);
-  const [offers, likes] = await Promise.all([
+  const [offers, likes, engagement] = await Promise.all([
     getOffersForProperties(propertyIds),
     getLikesForProperties(propertyIds),
+    getEngagementForProperties(propertyIds),
   ]);
 
   const buyerResult = calculateBuyerScore(properties, offers, likes);
@@ -207,6 +210,16 @@ export async function computeSuburbScores(suburb, state, lat, lng, { maxAgeDays 
     }
   }
 
+  // Compute PHI scores
+  const weights = await getWeights(adminDb);
+  const { phi, phiBreakdown, propertyPVI } = computeAllPHI(properties, offers, likes, engagement, weights);
+
+  // Compute confidence metadata
+  const confidence = computeConfidence(properties, offers, likes);
+
+  // Write per-property scores
+  await writePropertyScores(propertyPVI, properties, offers, likes);
+
   return {
     buyerScore: buyerResult.score,
     buyerScoreBreakdown: buyerResult.breakdown,
@@ -218,6 +231,9 @@ export async function computeSuburbScores(suburb, state, lat, lng, { maxAgeDays 
       demandRatio,
     },
     propertyCount: properties.length,
+    phi,
+    phiBreakdown,
+    confidence,
   };
 }
 
@@ -226,19 +242,30 @@ export async function computeSuburbScores(suburb, state, lat, lng, { maxAgeDays 
  */
 export async function writeScoreToFirestore(key, suburb, state, postcode, lat, lng, scores) {
   const { FieldValue } = await import('firebase-admin/firestore');
-  await adminDb.collection('marketScores').doc(key).set(
-    {
-      suburb,
-      state,
-      postcode,
-      lat,
-      lng,
-      ...scores,
-      computedAt: FieldValue.serverTimestamp(),
-      stale: false,
-    },
-    { merge: true }
-  );
+  const doc = {
+    suburb,
+    state,
+    postcode,
+    lat,
+    lng,
+    buyerScore: scores.buyerScore,
+    buyerScoreBreakdown: scores.buyerScoreBreakdown,
+    sellerScore: scores.sellerScore,
+    sellerScoreBreakdown: scores.sellerScoreBreakdown,
+    forecastNext30: scores.forecastNext30,
+    propertyCount: scores.propertyCount,
+    computedAt: FieldValue.serverTimestamp(),
+    stale: false,
+  };
+  // Include PHI scores if computed
+  if (scores.phi) {
+    doc.phi = scores.phi;
+    doc.phiBreakdown = scores.phiBreakdown;
+  }
+  if (scores.confidence) {
+    doc.confidence = scores.confidence;
+  }
+  await adminDb.collection('marketScores').doc(key).set(doc, { merge: true });
 }
 
 /**
@@ -246,18 +273,89 @@ export async function writeScoreToFirestore(key, suburb, state, postcode, lat, l
  */
 export async function writeTrendToFirestore(key, suburb, state, monthKey, scores) {
   const { FieldValue } = await import('firebase-admin/firestore');
-  await adminDb.collection('marketTrends').doc(key).set(
-    {
-      suburb,
-      state,
-      monthKey,
-      buyerScore: scores.buyerScore,
-      sellerScore: scores.sellerScore,
-      propertyCount: scores.propertyCount,
-      computedAt: FieldValue.serverTimestamp(),
-    },
-    { merge: true }
-  );
+  const doc = {
+    suburb,
+    state,
+    monthKey,
+    buyerScore: scores.buyerScore,
+    sellerScore: scores.sellerScore,
+    propertyCount: scores.propertyCount,
+    computedAt: FieldValue.serverTimestamp(),
+  };
+  if (scores.phi) {
+    doc.phi = scores.phi;
+  }
+  if (scores.confidence) {
+    doc.confidence = scores.confidence;
+  }
+  await adminDb.collection('marketTrends').doc(key).set(doc, { merge: true });
+}
+
+/**
+ * Write per-property scores to propertyScores collection.
+ */
+async function writePropertyScores(propertyPVI, properties, offers, likes) {
+  if (!propertyPVI.length) return;
+
+  const { FieldValue } = await import('firebase-admin/firestore');
+  const now = Date.now();
+  const DAY_MS = 86400000;
+
+  // Build opinions-by-property index
+  const opinions = offers.filter((o) => o.type === 'opinion');
+  const opinionsByProp = {};
+  for (const o of opinions) {
+    if (!opinionsByProp[o.propertyId]) opinionsByProp[o.propertyId] = [];
+    opinionsByProp[o.propertyId].push(o);
+  }
+
+  const likesByProp = {};
+  for (const l of likes) {
+    if (!likesByProp[l.propertyId]) likesByProp[l.propertyId] = [];
+    likesByProp[l.propertyId].push(l);
+  }
+
+  // Write in batches
+  const batches = [];
+  for (let i = 0; i < propertyPVI.length; i += 500) {
+    const batch = adminDb.batch();
+    const chunk = propertyPVI.slice(i, i + 500);
+
+    for (const pv of chunk) {
+      const propOpinions = opinionsByProp[pv.propertyId] || [];
+      const propLikes = likesByProp[pv.propertyId] || [];
+      const seriousBuyerCount = propOpinions.filter((o) => o.serious === true).length;
+
+      // Find the property for age calculation
+      const prop = properties.find((p) => p.id === pv.propertyId);
+      const created = prop ? toTimestamp(prop.createdAt) : null;
+      const ageDays = created ? Math.max(1, (now - created) / DAY_MS) : 1;
+      const opinionsPerDay = propOpinions.length / ageDays;
+
+      const ref = adminDb.collection('propertyScores').doc(pv.propertyId);
+      batch.set(ref, {
+        pvi: {
+          score: pv.status === 'fair' ? 100 : pv.status === 'overvalued' ? Math.max(0, 100 + pv.deviationPercent) : Math.max(0, 100 - pv.deviationPercent),
+          medianOpinion: pv.medianOpinion,
+          opinionToListingRatio: pv.listingPrice > 0 ? Math.round((pv.medianOpinion / pv.listingPrice) * 100) / 100 : null,
+          status: pv.status,
+          deviationPercent: pv.deviationPercent,
+          confidenceLevel: pv.confidenceLevel,
+        },
+        engagement: {
+          totalOpinions: propOpinions.length,
+          seriousBuyerCount,
+          totalLikes: propLikes.length,
+          opinionsPerDay: Math.round(opinionsPerDay * 100) / 100,
+        },
+        computedAt: FieldValue.serverTimestamp(),
+      }, { merge: true });
+    }
+
+    batches.push(batch.commit());
+  }
+
+  await Promise.all(batches);
 }
 
 /**

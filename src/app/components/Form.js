@@ -45,7 +45,7 @@ export default function PropertyFormModal() {
     const [password, setPassword] = useState('');
     const [errors, setErrors] = useState({});
 
-    const homeTypes = ['House', 'Apartment', 'Villa', 'Townhouse', 'Acreage'];
+    const homeTypes = ['House', 'Apartment', 'Villa', 'Townhouse', 'Acreage', 'Duplex'];
     const homeFeatures = [
         'Pool', 'Granny Flat', 'Solar', 'Air Conditioning',
         'Outdoor Entertainment Area', 'Garage / Secure Parking',
@@ -223,7 +223,7 @@ export default function PropertyFormModal() {
                 title,
                 active: false,
                 userId: user.uid,
-                isEager: 80,
+                isEager: 0,
                 propertyType: type,
                 wantsPremiumListing: false,
                 vendorUploaded: true,
