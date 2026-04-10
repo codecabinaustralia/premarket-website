@@ -200,7 +200,7 @@ function HeroSection() {
             transition={{ duration: 0.7, delay: 0.35 }}
             className="text-lg sm:text-xl text-slate-500 max-w-2xl mx-auto leading-relaxed"
           >
-            Browse properties before they hit the market. Tell agents what you&apos;d
+            Browse properties and tell agents what you&apos;d
             actually pay. Anonymous, zero obligation, no sign-up required.
           </motion.p>
         </div>
@@ -378,6 +378,7 @@ function HeroSection() {
 function FeaturedProperties() {
   const [properties, setProperties] = useState([]);
   const [agents, setAgents] = useState({});
+  const [agentDocs, setAgentDocs] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -423,6 +424,25 @@ function FeaturedProperties() {
           })
         );
         setAgents(agentData);
+
+        // Fetch agent docs for properties with agentId
+        const agentIds = [...new Set(docs.map(p => p.agentId).filter(Boolean))];
+        if (agentIds.length > 0) {
+          const agentDocsMap = {};
+          await Promise.all(
+            agentIds.map(async (agentId) => {
+              try {
+                const agentDoc = await getDoc(doc(db, 'agents', agentId));
+                if (agentDoc.exists()) {
+                  agentDocsMap[agentId] = agentDoc.data();
+                }
+              } catch (err) {
+                console.error('Error fetching agent doc:', agentId, err);
+              }
+            })
+          );
+          setAgentDocs(agentDocsMap);
+        }
       } catch (error) {
         console.error('Error fetching properties:', error);
       } finally {
@@ -453,7 +473,7 @@ function FeaturedProperties() {
             custom={0.1}
             className="text-lg text-slate-500 max-w-2xl mx-auto"
           >
-            Explore properties before they hit the market. Share your price opinion and register interest.
+            Explore properties and share your price opinion. Register interest on the ones you love.
           </motion.p>
         </motion.div>
 
@@ -555,52 +575,63 @@ function FeaturedProperties() {
                     )}
                   </div>
 
-                  {property.userId && agents[property.userId] && (
-                    <div className="pt-3 border-t border-slate-100">
-                      <div className="flex items-center gap-2.5">
-                        <div className="flex-shrink-0">
-                          {agents[property.userId].avatar ? (
-                            <Image
-                              src={agents[property.userId].avatar}
-                              alt={`${agents[property.userId].firstName || 'Agent'}`}
-                              width={36}
-                              height={36}
-                              className="rounded-lg object-cover w-9 h-9"
-                              unoptimized
-                            />
-                          ) : (
-                            <div className="w-9 h-9 bg-slate-200 rounded-lg flex items-center justify-center">
-                              <svg className="w-4 h-4 text-slate-400" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                              </svg>
+                  {property.userId && agents[property.userId] && (() => {
+                    const accountAgent = agents[property.userId];
+                    const assignedAgent = property.agentId && agentDocs[property.agentId];
+                    // Prefer denormalized fields, then agent doc, then account owner
+                    const displayName = property.agentName
+                      ? property.agentName
+                      : assignedAgent
+                        ? assignedAgent.name
+                        : [accountAgent.firstName, accountAgent.lastName].filter(Boolean).join(' ');
+                    const displayAvatar = property.agentAvatar || assignedAgent?.avatar || accountAgent.avatar;
+                    return (
+                      <div className="pt-3 border-t border-slate-100">
+                        <div className="flex items-center gap-2.5">
+                          <div className="flex-shrink-0">
+                            {displayAvatar ? (
+                              <Image
+                                src={displayAvatar}
+                                alt={displayName || 'Agent'}
+                                width={36}
+                                height={36}
+                                className="rounded-lg object-cover w-9 h-9"
+                                unoptimized
+                              />
+                            ) : (
+                              <div className="w-9 h-9 bg-slate-200 rounded-lg flex items-center justify-center">
+                                <svg className="w-4 h-4 text-slate-400" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                                </svg>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-semibold text-slate-800 truncate">
+                              {displayName}
+                            </p>
+                            {accountAgent.companyName && (
+                              <p className="text-[11px] text-slate-500 truncate font-medium">
+                                {accountAgent.companyName}
+                              </p>
+                            )}
+                          </div>
+                          {accountAgent.logoUrl && (
+                            <div className="flex-shrink-0">
+                              <Image
+                                src={accountAgent.logoUrl}
+                                alt="Agency"
+                                width={32}
+                                height={32}
+                                className="w-8 h-8 rounded-lg object-contain bg-white border border-slate-100"
+                                unoptimized
+                              />
                             </div>
                           )}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold text-slate-800 truncate">
-                            {agents[property.userId].firstName} {agents[property.userId].lastName}
-                          </p>
-                          {agents[property.userId].companyName && (
-                            <p className="text-[11px] text-slate-500 truncate font-medium">
-                              {agents[property.userId].companyName}
-                            </p>
-                          )}
-                        </div>
-                        {agents[property.userId].logoUrl && (
-                          <div className="flex-shrink-0">
-                            <Image
-                              src={agents[property.userId].logoUrl}
-                              alt="Agency"
-                              width={32}
-                              height={32}
-                              className="w-8 h-8 rounded-lg object-contain bg-white border border-slate-100"
-                              unoptimized
-                            />
-                          </div>
-                        )}
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
                 </div>
               </motion.a>
             ))}
@@ -638,7 +669,7 @@ function HowItWorks() {
     {
       number: '01',
       title: 'Browse Properties',
-      desc: 'Explore pre-market listings from verified agents before they hit the major portals.',
+      desc: 'Explore listings from verified agents \u2014 pre-market or already live.',
       gradient: 'from-[#e48900] to-[#c64500]',
       icon: (
         <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1022,7 +1053,7 @@ function FinalCTA() {
             custom={0}
             className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 mb-6"
           >
-            Start Browsing Pre-Market Properties
+            Start Browsing Properties
           </motion.h2>
 
           <motion.p
@@ -1030,7 +1061,7 @@ function FinalCTA() {
             custom={0.1}
             className="text-lg text-slate-500 max-w-2xl mx-auto mb-10"
           >
-            Discover properties before they go live. Share your opinion and help shape fair pricing.
+            Discover properties and share your opinion. Help shape fair pricing with real feedback.
           </motion.p>
 
           <motion.div

@@ -32,14 +32,14 @@ const antons = Anton({
 export const metadata = {
   metadataBase: new URL('https://premarket.homes'),
   title: {
-    default: "Premarket - See It Before Everyone Else",
+    default: "Premarket - Validate Property Prices with Real Buyer Feedback",
     template: "%s | Premarket"
   },
-  description: "Properties you won't find anywhere else. Browse exclusive pre-market listings, share your price opinion, and get ahead of the market.",
+  description: "Premarket lets agents and homeowners validate property prices with real buyer feedback\u2014before or during a live listing\u2014so you attract stronger interest, build trust, and sell with confidence.",
   applicationName: 'Premarket',
   authors: [{ name: 'Premarket' }],
   generator: 'Next.js',
-  keywords: ['premarket', 'off-market properties', 'pre-market listings', 'australia property', 'test the market', 'exclusive property listings', 'real estate australia'],
+  keywords: ['premarket', 'property price validation', 'buyer feedback', 'australia property', 'real estate listings', 'property listings', 'real estate australia'],
   referrer: 'origin-when-cross-origin',
   creator: 'Premarket',
   publisher: 'Premarket',
@@ -53,8 +53,8 @@ export const metadata = {
     apple: '/apple.png',
   },
   openGraph: {
-    title: "Premarket - See It Before Everyone Else",
-    description: "Properties you won't find anywhere else. Browse exclusive pre-market listings, share your price opinion, and get ahead of the market.",
+    title: "Premarket - Validate Property Prices with Real Buyer Feedback",
+    description: "Premarket lets agents and homeowners validate property prices with real buyer feedback\u2014before or during a live listing\u2014so you attract stronger interest, build trust, and sell with confidence.",
     url: 'https://premarket.homes',
     siteName: 'Premarket',
     images: [
@@ -70,8 +70,8 @@ export const metadata = {
   },
   twitter: {
     card: 'summary',
-    title: "Premarket - See It Before Everyone Else",
-    description: "Properties you won't find anywhere else. Browse exclusive pre-market listings, share your price opinion, and get ahead of the market.",
+    title: "Premarket - Validate Property Prices with Real Buyer Feedback",
+    description: "Premarket lets agents and homeowners validate property prices with real buyer feedback\u2014before or during a live listing\u2014so you attract stronger interest, build trust, and sell with confidence.",
     images: ['https://premarketvideos.b-cdn.net/assets/logo.png'],
   },
 };

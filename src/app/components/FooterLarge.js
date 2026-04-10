@@ -19,7 +19,7 @@ export default function Footer() {
               unoptimized
             />
             <p className="text-slate-400 text-sm max-w-xs">
-              Discover exclusive pre-market properties before they hit the market.
+              Validate property prices with real buyer feedback \u2014 before or during a live listing.
             </p>
           </div>
 

@@ -6,7 +6,7 @@ export default function SchemaOrganization() {
     "alternateName": "Premarket Homes",
     "url": "https://premarket.homes",
     "logo": "https://premarketvideos.b-cdn.net/assets/logo.png",
-    "description": "Australia's leading off-market property platform connecting homeowners, buyers, and real estate agents through pre-market listings and property market testing.",
+    "description": "Premarket lets agents and homeowners validate property prices with real buyer feedback \u2014 before or during a live listing \u2014 so you attract stronger interest, build trust, and sell with confidence.",
     "address": {
       "@type": "PostalAddress",
       "addressCountry": "AU",

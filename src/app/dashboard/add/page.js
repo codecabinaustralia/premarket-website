@@ -42,6 +42,7 @@ import {
   User,
   Mail,
   Phone,
+  Shield,
 } from 'lucide-react';
 import { onSnapshot, query, where } from 'firebase/firestore';
 import AgentSelector from '../../components/AgentSelector';
@@ -61,7 +62,7 @@ const STEPS = {
 
 const eagernessOptions = ['Very serious', 'Serious if the price is right', 'Just testing the waters'];
 
-const homeTypes = ['House', 'Apartment', 'Villa', 'Townhouse', 'Acreage', 'Duplex'];
+const homeTypes = ['House', 'Apartment', 'Villa', 'Townhouse', 'Acreage', 'Duplex', 'Land'];
 const homeFeatures = [
   'Pool', 'Granny Flat', 'Solar', 'Air Conditioning',
   'Outdoor Entertainment Area', 'Garage / Secure Parking',
@@ -593,6 +594,8 @@ export default function AddPropertyPage() {
         agentManaged: true,
         userId: user.uid,
         agentId: selectedAgentId || null,
+        agentName: selectedAgentId ? (teamAgents.find(a => a.id === selectedAgentId)?.name || null) : null,
+        agentAvatar: selectedAgentId ? (teamAgents.find(a => a.id === selectedAgentId)?.avatar || null) : null,
         stats: { views: 0 },
         termsAcceptedAt: serverTimestamp(),
       };
@@ -907,8 +910,8 @@ export default function AddPropertyPage() {
                   </div>
                   <p className="text-xs text-slate-400 mt-2">
                     {listingStatus === 'premarket'
-                      ? 'This property is not yet publicly listed — collect buyer opinions before going to market.'
-                      : 'This property is currently listed on the market.'}
+                      ? 'This property is not yet publicly listed \u2014 collect buyer opinions to validate pricing.'
+                      : 'This property is currently listed on the market \u2014 collect buyer opinions alongside your campaign.'}
                   </p>
                 </div>
               </div>
@@ -1183,14 +1186,12 @@ export default function AddPropertyPage() {
                   </div>
 
                   {/* Agent Selector */}
-                  {teamAgents.length > 0 && (
-                    <AgentSelector
-                      agents={teamAgents}
-                      selectedAgentId={selectedAgentId}
-                      onSelect={setSelectedAgentId}
-                      onAddNew={() => setShowAgentModal(true)}
-                    />
-                  )}
+                  <AgentSelector
+                    agents={teamAgents}
+                    selectedAgentId={selectedAgentId}
+                    onSelect={setSelectedAgentId}
+                    onAddNew={() => setShowAgentModal(true)}
+                  />
                 </div>
               </div>
             )}
@@ -1282,6 +1283,15 @@ export default function AddPropertyPage() {
                         className="w-full pl-12 pr-4 py-4 rounded-xl border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none transition-all text-slate-900 text-lg"
                       />
                     </div>
+                  </div>
+                </div>
+                <div className="mt-6 flex items-start gap-3 bg-slate-50 border border-slate-200 rounded-xl p-4">
+                  <Shield className="w-5 h-5 text-slate-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-slate-700">Your client&apos;s privacy is protected</p>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Your client will not receive any communication from Premarket at any stage. We use this information solely for compliance purposes and to personalise the reports we generate for you.
+                    </p>
                   </div>
                 </div>
               </div>

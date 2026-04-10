@@ -6,8 +6,6 @@ import { useAuth } from '../../context/AuthContext';
 import { authFetch } from '../../utils/authFetch';
 import { db } from '../../firebase/clientApp';
 import { doc, updateDoc } from 'firebase/firestore';
-import { sendPasswordResetEmail } from 'firebase/auth';
-import { auth } from '../../firebase/clientApp';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -163,7 +161,12 @@ export default function SettingsPage() {
   const handlePasswordReset = async () => {
     setResetSending(true);
     try {
-      await sendPasswordResetEmail(auth, user.email);
+      const res = await authFetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: user.email }),
+      });
+      if (!res.ok) throw new Error('Request failed');
       setResetSent(true);
       setTimeout(() => setResetSent(false), 5000);
     } catch (err) {

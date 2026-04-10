@@ -34,7 +34,7 @@ export default function UsersTab({ user }) {
   }, [user.uid]);
 
   const filteredUsers = useMemo(() => {
-    let result = users;
+    let result = [...users];
 
     // Apply filter
     if (filter === 'agents') result = result.filter((u) => u.isAgent);
@@ -52,6 +52,13 @@ export default function UsersTab({ user }) {
           u.email?.toLowerCase().includes(q)
       );
     }
+
+    // Sort newest first
+    result.sort((a, b) => {
+      const aTime = a.createdAt?._seconds ?? a.createdAt?.seconds ?? 0;
+      const bTime = b.createdAt?._seconds ?? b.createdAt?.seconds ?? 0;
+      return bTime - aTime;
+    });
 
     return result;
   }, [users, search, filter]);

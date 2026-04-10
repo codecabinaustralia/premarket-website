@@ -1,6 +1,7 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import * as Sentry from '@sentry/nextjs';
@@ -37,15 +38,18 @@ export function AuthProvider({ children }) {
     return () => unsubscribe();
   }, []);
 
-  const signOut = async () => {
+  const router = useRouter();
+
+  const signOut = useCallback(async () => {
     try {
       await firebaseSignOut(auth);
       setUser(null);
       setUserData(null);
+      router.push('/');
     } catch (err) {
       console.error('Error signing out:', err);
     }
-  };
+  }, [router]);
 
   return (
     <AuthContext.Provider value={{ user, userData, setUserData, loading, signOut }}>

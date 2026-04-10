@@ -266,4 +266,33 @@ export async function sendPropertyFollowUpEmail(userEmail, userFirstName, proper
   });
 }
 
+/**
+ * Branded password reset email.
+ */
+export async function sendPasswordResetEmailTemplate(userEmail, userFirstName, resetLink) {
+  const bodyHTML = `
+    ${greeting(userFirstName)}
+    ${p('We received a request to reset the password for your Premarket account.')}
+    ${p('Click the button below to choose a new password:')}
+    ${ctaButton('Reset Password', resetLink)}
+    ${infoBox(`
+      <p style="margin:0; font-size:13px; color:#64748b; line-height:1.5;">
+        This link will expire in <strong>1 hour</strong>. If you didn't request a password reset, you can safely ignore this email — your password won't be changed.
+      </p>
+    `)}
+    ${signature()}
+  `;
+
+  return sendEmail({
+    to: userEmail,
+    subject: 'Reset your Premarket password',
+    html: wrapEmail({
+      previewText: 'Reset your Premarket password',
+      bodyHTML,
+      recipientEmail: userEmail,
+      reason: "You're receiving this because a password reset was requested for your account.",
+    }),
+  });
+}
+
 export { getResend as resend };

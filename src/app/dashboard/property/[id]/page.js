@@ -986,7 +986,7 @@ function ImageEditModal({ imageUrl, imageIndex, propertyId, userId, allImages, o
 
 // --- Main Report Page ---
 export default function PropertyReportPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, userData, loading: authLoading } = useAuth();
   const router = useRouter();
   const params = useParams();
   const propertyId = params.id;
@@ -1033,7 +1033,7 @@ export default function PropertyReportPage() {
         if (propertySnap.exists()) {
           const propData = { id: propertySnap.id, ...propertySnap.data() };
           // Verify ownership
-          if (propData.userId !== user.uid) {
+          if (propData.userId !== user.uid && !userData?.superAdmin) {
             router.push('/dashboard');
             return;
           }

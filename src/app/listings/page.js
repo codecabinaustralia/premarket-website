@@ -415,7 +415,7 @@ function ListingsContent() {
 
     if (propertyType) {
       filtered = filtered.filter(p => {
-        const typeMap = { 1: 'House', 2: 'Apartment', 3: 'Villa', 4: 'Townhouse', 5: 'Acreage' };
+        const typeMap = { 1: 'House', 2: 'Apartment', 3: 'Villa', 4: 'Townhouse', 5: 'Acreage', 6: 'Duplex' };
         const pType = typeMap[p.propertyType] || p.propertyJob?.property_data?.property_type;
         return pType?.toLowerCase() === propertyType.toLowerCase();
       });
@@ -496,7 +496,7 @@ function ListingsContent() {
                   <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
                 </svg>
               </li>
-              <li className="text-white font-medium">Pre-Market Listings</li>
+              <li className="text-white font-medium">Property Listings</li>
             </ol>
           </nav>
 
@@ -626,7 +626,7 @@ function ListingsContent() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="mt-4 text-center"
             >
-              <span className="text-slate-400 text-sm mr-2">Popular:</span>
+              <span className="text-slate-400 text-sm mr-2">Suburbs:</span>
               {displayedSuburbs.map((suburb) => (
                 <button
                   key={suburb}
@@ -875,7 +875,7 @@ function ListingsContent() {
                         </svg>
                         <span className="truncate">
                           {property.showSuburbOnly
-                            ? (getSuburb(property) || 'Suburb unavailable')
+                            ? (property.address || getSuburb(property) || 'Suburb unavailable')
                             : (property.formattedAddress || property.address || 'Address unavailable')}
                         </span>
                         {property._distance != null && property._distance !== Infinity && (
@@ -908,10 +908,13 @@ function ListingsContent() {
                       {property.userId && agents[property.userId] && (() => {
                         const accountAgent = agents[property.userId];
                         const assignedAgent = property.agentId && agentDocs[property.agentId];
-                        const displayName = assignedAgent
-                          ? assignedAgent.name
-                          : [accountAgent.firstName, accountAgent.lastName].filter(Boolean).join(' ');
-                        const displayAvatar = assignedAgent?.avatar || accountAgent.avatar;
+                        // Prefer denormalized fields, then agent doc, then account owner
+                        const displayName = property.agentName
+                          ? property.agentName
+                          : assignedAgent
+                            ? assignedAgent.name
+                            : [accountAgent.firstName, accountAgent.lastName].filter(Boolean).join(' ');
+                        const displayAvatar = property.agentAvatar || assignedAgent?.avatar || accountAgent.avatar;
                         return (
                           <div className="pt-3 border-t border-slate-100">
                             <div className="flex items-center gap-2.5">
@@ -1048,9 +1051,9 @@ function ListingsContent() {
 
             {/* CTA Card */}
             <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-6 border border-orange-200">
-              <h3 className="font-bold text-slate-900 text-lg mb-2">Get Notified First</h3>
+              <h3 className="font-bold text-slate-900 text-lg mb-2">Get Notified</h3>
               <p className="text-slate-600 text-sm mb-4">
-                Create a free account and be the first to know when new pre-market properties become available.
+                Create a free account and be the first to know when new properties become available.
               </p>
               <a
                 href="/join"

@@ -21,6 +21,7 @@ async function getProperty(propertyId) {
     return {
       title: fields.title?.stringValue || 'Property',
       address: fields.address?.stringValue || '',
+      formattedAddress: fields.formattedAddress?.stringValue || '',
       description: fields.description?.stringValue || '',
       imageUrls: fields.imageUrls?.arrayValue?.values?.map(v => v.stringValue) || [],
       showSuburbOnly: fields.showSuburbOnly?.booleanValue || false,
@@ -42,23 +43,23 @@ export async function generateMetadata({ searchParams }) {
   if (!property) {
     return {
       title: 'Property | Premarket',
-      description: 'View this exclusive pre-market property on Premarket.',
+      description: 'View this property on Premarket \u2014 validate prices with real buyer feedback.',
     };
   }
 
   const displayAddress = property.showSuburbOnly
-    ? (property.address?.split(',')[1]?.trim() || property.location?.suburb || 'Australia')
-    : property.address;
+    ? (property.address || property.location?.suburb || 'Australia')
+    : (property.formattedAddress || property.address);
 
   const title = property.title || 'Pre-Market Property';
-  const description = property.description?.slice(0, 160) || `Exclusive pre-market property in ${displayAddress}. View before it goes public.`;
+  const description = property.description?.slice(0, 160) || `Property in ${displayAddress} on Premarket. See real buyer price opinions and validate the price with genuine feedback.`;
   const heroImage = property.imageUrls?.[0] || 'https://premarketvideos.b-cdn.net/assets/logo.png';
 
   return {
     title: `${title} | Premarket`,
     description,
     openGraph: {
-      title: `${title} - Pre-Market Listing`,
+      title: `${title} | Premarket`,
       description,
       images: [
         {
@@ -73,7 +74,7 @@ export async function generateMetadata({ searchParams }) {
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${title} - Pre-Market Listing`,
+      title: `${title} | Premarket`,
       description,
       images: [heroImage],
     },

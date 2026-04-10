@@ -6,12 +6,12 @@ import SchemaOrganization from './components/SchemaOrganization';
 import SchemaWebsite from './components/SchemaWebsite';
 
 export const metadata = {
-  title: "Premarket - What Would You Pay? | Pre-Market Properties with Real Buyer Price Opinions",
-  description: "Browse pre-market properties and share what you'd pay. See real buyer price opinions — not algorithms, not estimates. Free to browse, zero obligation. Verified agents across Australia.",
-  keywords: "pre-market properties, buyer price opinions, what would you pay, property listings australia, real estate listings, premarket homes, property prices, real estate australia",
+  title: "Premarket - Validate Property Prices with Real Buyer Feedback",
+  description: "Premarket lets agents and homeowners validate property prices with real buyer feedback\u2014before or during a live listing\u2014so you attract stronger interest, build trust, and sell with confidence.",
+  keywords: "property price validation, buyer price opinions, real estate listings, property listings australia, premarket homes, property prices, real estate australia, buyer feedback",
   openGraph: {
-    title: "What Would You Pay? | Pre-Market Properties with Real Buyer Opinions",
-    description: "Browse pre-market properties and share what you'd pay. Real buyer price opinions, not algorithm estimates. Free to browse.",
+    title: "Premarket - Validate Property Prices with Real Buyer Feedback",
+    description: "Premarket lets agents and homeowners validate property prices with real buyer feedback\u2014before or during a live listing\u2014so you attract stronger interest, build trust, and sell with confidence.",
     url: 'https://premarket.homes',
     siteName: 'Premarket',
     images: [
@@ -27,8 +27,8 @@ export const metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'What Would You Pay? | Pre-Market Properties on Premarket',
-    description: 'Browse pre-market properties and share what you\'d pay. Real buyer opinions, not algorithms. Free, transparent, zero obligation.',
+    title: 'Premarket - Validate Property Prices with Real Buyer Feedback',
+    description: 'Premarket lets agents and homeowners validate property prices with real buyer feedback\u2014before or during a live listing\u2014so you attract stronger interest, build trust, and sell with confidence.',
     images: ['https://premarket.homes/assets/twitter-image-agents.jpg'],
   },
   alternates: {
@@ -63,7 +63,7 @@ const buyerFAQs = [
   },
   {
     question: "How is Premarket different from other property sites?",
-    answer: "Traditional property sites show listings with asking prices set by agents. Premarket shows pre-market properties before they go live on major portals, with real buyer price data instead of algorithmic estimates. You see what buyers actually think a property is worth, not what an algorithm predicts."
+    answer: "Traditional property sites show listings with asking prices set by agents. Premarket shows properties with real buyer price data instead of algorithmic estimates — whether they're pre-market or already listed. You see what buyers actually think a property is worth, not what an algorithm predicts."
   }
 ];
 

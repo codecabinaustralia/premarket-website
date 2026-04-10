@@ -37,7 +37,7 @@ export default function Hero() {
               <div className="flex justify-center lg:justify-start mb-6">
                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-50 to-orange-50 rounded-full border border-amber-200 shadow-lg">
                   <span className="text-xs sm:text-sm font-bold text-amber-700">
-                    <span>Properties before they hit the market</span>
+                    <span>Real buyer feedback on real properties</span>
                   </span>
                 </div>
               </div>
@@ -48,7 +48,7 @@ export default function Hero() {
               </h1>
 
               <h2 className="text-2xl sm:text-3xl lg:text-4xl xl:text-2xl leading-snug interMedium text-white mb-6 drop-shadow-lg">
-                Access Exclusive Pre-Market Listings Before They Go Public
+                Validate Property Prices with Real Buyer Feedback
               </h2>
 
               {/* Subheading with Gradient */}
@@ -57,7 +57,7 @@ export default function Hero() {
                   className="text-base sm:text-lg lg:text-xl font-medium leading-relaxed text-white drop-shadow-lg"
 
                 >
-                  Discover off-market properties across Sydney, Melbourne, Brisbane and all of Australia before they go public. Express your interest and get first access when properties officially list.
+                  Browse properties across Sydney, Melbourne, Brisbane and all of Australia. Share your price opinion, express your interest, and help agents and homeowners sell with confidence.
                 </p>
               </div>
 
@@ -223,7 +223,7 @@ export default function Hero() {
                 Home Owner Goes To Market
               </h3>
               <p className="text-gray-600 leading-relaxed">
-                Get in lightening fast, before the property hits major websites or starts doing open homes.
+                Be first in line with a registered interest \u2014 agents contact serious buyers directly.
               </p>
             </div>
           </div>

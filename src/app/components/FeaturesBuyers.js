@@ -7,7 +7,7 @@ const stages = [
   {
     tag: "For Buyers",
     title: "Access Exclusive Properties",
-    text: "Discover properties not found anywhere else. Get first access to homes before they go public. See what's available before the competition.",
+    text: "Discover properties not found anywhere else. Browse pre-market and on-market listings with real buyer price data.",
     benefits: [
       "Browse exclusive off-market properties first",
       "No competition from other platforms",
@@ -20,7 +20,7 @@ const stages = [
   {
     tag: "For Buyers",
     title: "Share Your Price Opinion",
-    text: "Give your price opinions on properties you like and register your interest on properties you love. Let sellers know what you're willing to pay before the market rush.",
+    text: "Give your price opinions on properties you like and register your interest on properties you love. Let sellers know what you're willing to pay.",
     benefits: [
       "Express genuine interest without commitment",
       "Share what you'd actually pay for a property",
@@ -36,7 +36,7 @@ const stages = [
     text: "Be first in line when properties go to market. Get notified the moment sellers decide to list, giving you the ultimate advantage over other buyers.",
     benefits: [
       "First to know when properties officially list",
-      "Early access before public marketing begins",
+      "Early access to properties seeking buyer feedback",
       "Skip the crowds at open homes",
       "Negotiate from a position of strength"
     ],

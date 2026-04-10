@@ -108,7 +108,13 @@ function Sidebar({ active, onNavigate, onSignOut, sidebarOpen, setSidebarOpen, u
           )}
           <div className="min-w-0">
             <p className="text-xs text-slate-500">Welcome back,</p>
-            <p className="text-slate-900 font-semibold truncate">{userName}</p>
+            {userData?.companyName ? (
+              <p className="text-slate-900 font-semibold truncate">{userData.companyName}</p>
+            ) : (
+              <Link href="/dashboard/settings" className="text-orange-500 hover:text-orange-600 text-sm font-semibold">
+                Add Agency Details
+              </Link>
+            )}
           </div>
         </div>
       </div>
@@ -842,7 +848,9 @@ function DashboardPage() {
               <p className="text-sm text-slate-500 mt-1">
                 {activeTab === 'archived'
                   ? `${archivedProperties.length} ${archivedProperties.length === 1 ? 'property' : 'properties'}`
-                  : `Welcome back, ${userData?.firstName || 'Agent'}`}
+                  : userData?.companyName
+                    ? `Welcome back, ${userData.companyName}`
+                    : <span>Welcome back! <Link href="/dashboard/settings" className="text-orange-500 hover:text-orange-600 font-semibold">Add Agency Details</Link></span>}
               </p>
             </div>
             <Link

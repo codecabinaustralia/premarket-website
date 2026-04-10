@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase/clientApp';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -63,19 +63,16 @@ export default function LoginPage() {
     setResetLoading(true);
 
     try {
-      await sendPasswordResetEmail(auth, resetEmail);
+      const res = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: resetEmail }),
+      });
+      if (!res.ok) throw new Error('Request failed');
       setResetSent(true);
     } catch (err) {
       console.error('Reset error:', err);
-      if (err.code === 'auth/user-not-found') {
-        setResetError('No account found with this email address');
-      } else if (err.code === 'auth/invalid-email') {
-        setResetError('Please enter a valid email address');
-      } else if (err.code === 'auth/too-many-requests') {
-        setResetError('Too many attempts. Please try again later.');
-      } else {
-        setResetError('Something went wrong. Please try again.');
-      }
+      setResetError('Something went wrong. Please try again.');
     } finally {
       setResetLoading(false);
     }
