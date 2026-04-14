@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { authFetch } from '../utils/authFetch';
+import { isBuyerOnly } from '../utils/roles';
 import { db } from '../firebase/clientApp';
 import { collection, query, where, getDocs, doc, updateDoc, onSnapshot, orderBy } from 'firebase/firestore';
 import { formatPrice, formatDate } from '../utils/formatters';
@@ -681,9 +682,16 @@ function DashboardPage() {
   // Redirect if not logged in
   useEffect(() => {
     if (!loading && !user) {
-      router.push('/join');
+      router.push('/login');
     }
   }, [user, loading, router]);
+
+  // Buyers belong on /buyer-dashboard, not the agent dashboard
+  useEffect(() => {
+    if (!loading && userData && isBuyerOnly(userData)) {
+      router.replace('/buyer-dashboard');
+    }
+  }, [loading, userData, router]);
 
   // Real-time properties listener
   useEffect(() => {
@@ -734,7 +742,7 @@ function DashboardPage() {
 
   const handleSignOut = async () => {
     await signOut();
-    router.push('/join');
+    router.push('/');
   };
 
   const toggleVisibility = async (property) => {

@@ -7,6 +7,7 @@ import { doc, setDoc, Timestamp } from 'firebase/firestore';
 import { auth, db } from '../firebase/clientApp';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import Link from 'next/link';
 
 export default function AgentSignup() {
   const router = useRouter();
@@ -298,6 +299,13 @@ export default function AgentSignup() {
             </a>
           </p>
         </div>
+
+        <p className="text-center text-sm text-slate-400 mt-6">
+          Looking to buy a home?{' '}
+          <Link href="/signup" className="text-orange-400 hover:text-orange-300 font-medium">
+            Create a buyer account →
+          </Link>
+        </p>
       </motion.div>
     </div>
   );

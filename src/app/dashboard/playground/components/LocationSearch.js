@@ -14,6 +14,14 @@ const TYPE_CONFIG = {
   country: { label: 'Country', icon: Globe, color: 'bg-slate-500/20 text-slate-400' },
 };
 
+const TYPE_CONFIG_LIGHT = {
+  address: { label: 'Street', icon: Building2, color: 'bg-violet-100 text-violet-700' },
+  locality: { label: 'Suburb', icon: MapPin, color: 'bg-orange-100 text-orange-700' },
+  place: { label: 'City', icon: Map, color: 'bg-blue-100 text-blue-700' },
+  region: { label: 'State', icon: Globe, color: 'bg-emerald-100 text-emerald-700' },
+  country: { label: 'Country', icon: Globe, color: 'bg-slate-200 text-slate-700' },
+};
+
 function extractSuburbState(feature) {
   const context = feature.context || [];
   let suburb = null;
@@ -43,7 +51,8 @@ function extractSuburbState(feature) {
   return { suburb, state };
 }
 
-export default function LocationSearch({ onLocationSelect, searchRadius, onRadiusChange }) {
+export default function LocationSearch({ onLocationSelect, searchRadius, onRadiusChange, variant = 'dark' }) {
+  const isLight = variant === 'light';
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -130,10 +139,20 @@ export default function LocationSearch({ onLocationSelect, searchRadius, onRadiu
   };
 
   return (
-    <div className="bg-slate-800/50 rounded-lg border border-slate-700/50 p-3">
+    <div
+      className={
+        isLight
+          ? 'bg-white rounded-xl border border-slate-200 p-3'
+          : 'bg-slate-800/50 rounded-lg border border-slate-700/50 p-3'
+      }
+    >
       <div className="flex flex-col sm:flex-row gap-2">
         <div className="flex-1 relative" ref={containerRef}>
-          <Search className="w-3.5 h-3.5 text-slate-600 absolute left-2.5 top-1/2 -translate-y-1/2 z-10" />
+          <Search
+            className={`w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 z-10 ${
+              isLight ? 'text-slate-400' : 'text-slate-600'
+            }`}
+          />
           <input
             ref={inputRef}
             type="text"
@@ -148,7 +167,11 @@ export default function LocationSearch({ onLocationSelect, searchRadius, onRadiu
             onFocus={() => suggestions.length > 0 && setShowDropdown(true)}
             onKeyDown={handleKeyDown}
             placeholder="Search street, suburb, city, or state..."
-            className="w-full pl-8 pr-2.5 py-2 rounded-md border border-slate-700 bg-slate-800 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-orange-500/50 focus:border-orange-500/50"
+            className={
+              isLight
+                ? 'w-full pl-8 pr-2.5 py-2.5 rounded-lg border border-slate-200 bg-white text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500'
+                : 'w-full pl-8 pr-2.5 py-2 rounded-md border border-slate-700 bg-slate-800 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-orange-500/50 focus:border-orange-500/50'
+            }
           />
 
           {/* Autocomplete dropdown */}
@@ -159,11 +182,16 @@ export default function LocationSearch({ onLocationSelect, searchRadius, onRadiu
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -4 }}
                 transition={{ duration: 0.15 }}
-                className="absolute top-full left-0 right-0 mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-xl overflow-hidden z-50"
+                className={
+                  isLight
+                    ? 'absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-xl overflow-hidden z-50'
+                    : 'absolute top-full left-0 right-0 mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-xl overflow-hidden z-50'
+                }
               >
                 {suggestions.map((feature, i) => {
                   const placeType = feature.place_type?.[0] || 'locality';
-                  const config = TYPE_CONFIG[placeType] || TYPE_CONFIG.locality;
+                  const config = (isLight ? TYPE_CONFIG_LIGHT : TYPE_CONFIG)[placeType] ||
+                    (isLight ? TYPE_CONFIG_LIGHT : TYPE_CONFIG).locality;
                   const Icon = config.icon;
 
                   return (
@@ -173,20 +201,44 @@ export default function LocationSearch({ onLocationSelect, searchRadius, onRadiu
                       onClick={() => selectSuggestion(feature)}
                       onMouseEnter={() => setHighlightIndex(i)}
                       className={`w-full px-3 py-2.5 text-left flex items-start gap-2.5 transition-colors ${
-                        i === highlightIndex ? 'bg-slate-700/70' : 'hover:bg-slate-700/40'
-                      } ${i !== suggestions.length - 1 ? 'border-b border-slate-700/50' : ''}`}
+                        isLight
+                          ? i === highlightIndex
+                            ? 'bg-orange-50'
+                            : 'hover:bg-slate-50'
+                          : i === highlightIndex
+                          ? 'bg-slate-700/70'
+                          : 'hover:bg-slate-700/40'
+                      } ${
+                        i !== suggestions.length - 1
+                          ? isLight
+                            ? 'border-b border-slate-100'
+                            : 'border-b border-slate-700/50'
+                          : ''
+                      }`}
                     >
-                      <Icon className="w-3.5 h-3.5 text-slate-500 flex-shrink-0 mt-0.5" />
+                      <Icon
+                        className={`w-3.5 h-3.5 flex-shrink-0 mt-0.5 ${
+                          isLight ? 'text-slate-400' : 'text-slate-500'
+                        }`}
+                      />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-medium text-slate-200 truncate">
+                          <span
+                            className={`text-xs font-medium truncate ${
+                              isLight ? 'text-slate-900' : 'text-slate-200'
+                            }`}
+                          >
                             {feature.text}
                           </span>
                           <span className={`text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded ${config.color}`}>
                             {config.label}
                           </span>
                         </div>
-                        <div className="text-[10px] text-slate-500 truncate mt-0.5">
+                        <div
+                          className={`text-[10px] truncate mt-0.5 ${
+                            isLight ? 'text-slate-500' : 'text-slate-500'
+                          }`}
+                        >
                           {feature.place_name}
                         </div>
                       </div>
@@ -202,7 +254,11 @@ export default function LocationSearch({ onLocationSelect, searchRadius, onRadiu
           <select
             value={searchRadius}
             onChange={(e) => onRadiusChange(Number(e.target.value))}
-            className="text-[10px] font-mono border border-slate-700 bg-slate-800 text-slate-400 rounded-md px-1.5 py-2 focus:outline-none focus:ring-1 focus:ring-orange-500/50"
+            className={
+              isLight
+                ? 'text-xs font-mono border border-slate-200 bg-white text-slate-700 rounded-lg px-2 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500'
+                : 'text-[10px] font-mono border border-slate-700 bg-slate-800 text-slate-400 rounded-md px-1.5 py-2 focus:outline-none focus:ring-1 focus:ring-orange-500/50'
+            }
           >
             <option value={2}>2km</option>
             <option value={5}>5km</option>

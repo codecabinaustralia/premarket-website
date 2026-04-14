@@ -3,6 +3,7 @@
 import { Suspense, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
+import { isBuyerOnly } from '../../utils/roles';
 import { ToastProvider } from './components/ToastProvider';
 import { AdminSidebar, MobileTopBarSpacer } from './components/AdminSidebar';
 
@@ -12,7 +13,11 @@ function AdminShell({ children }) {
 
   useEffect(() => {
     if (!loading && !user) {
-      router.push('/join');
+      router.push('/login');
+      return;
+    }
+    if (!loading && userData && isBuyerOnly(userData)) {
+      router.push('/buyer-dashboard');
       return;
     }
     if (!loading && userData && userData.superAdmin !== true) {

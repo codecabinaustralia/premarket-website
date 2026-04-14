@@ -4,12 +4,15 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
+import { useRequireAgent } from '../../hooks/useRequireAgent';
 import { db } from '../../firebase/clientApp';
 import { collection, query, where, getDocs, doc, deleteDoc, updateDoc, writeBatch } from 'firebase/firestore';
-import { ArrowLeft, Plus, Pencil, Trash2, User, Users, Loader2 } from 'lucide-react';
+import { ArrowLeft, Plus, Pencil, Trash2, User, Users, Loader2, MessageCircle } from 'lucide-react';
 import AgentModal from '../../components/AgentModal';
+import { formatDisplayPhone } from '../../utils/phone';
 
 export default function AgentsPage() {
+  useRequireAgent();
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [agents, setAgents] = useState([]);
@@ -161,6 +164,12 @@ export default function AgentsPage() {
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-slate-900 truncate">{agent.name}</p>
+                    {agent.smsPhone && (
+                      <div className="flex items-center gap-1.5 mt-1 text-xs text-slate-500">
+                        <MessageCircle className={`w-3 h-3 flex-shrink-0 ${agent.smsEnabled ? 'text-orange-500' : 'text-slate-300'}`} />
+                        <span className="truncate">{formatDisplayPhone(agent.smsPhone)}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2 mt-4 pt-4 border-t border-slate-100">

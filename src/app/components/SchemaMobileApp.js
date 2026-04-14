@@ -15,7 +15,7 @@ export default function SchemaMobileApp() {
       "price": "0",
       "priceCurrency": "AUD"
     },
-    "description": "Find exclusive off-market properties across Australia or test your property's market value before selling. Free for homeowners and buyers.",
+    "description": "Find off-market, pre-market and on-market properties across Australia or test your property's market value before selling. Free for homeowners and buyers.",
     "downloadUrl": "https://apps.apple.com/au/app/premarket-homes/id6742205449",
     "installUrl": "https://play.google.com/store/apps/details?id=com.premarkethomes.app&hl=en",
     "countriesSupported": "Australia"

@@ -6,6 +6,13 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { db } from '../firebase/clientApp';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import {
+  LiveTicker,
+  HeroFloatingDecor,
+  GradientMesh,
+  PulseBadge,
+  GlowButton,
+} from './marketing/WowFactor';
 
 function ShimmerImage({ src, alt, ...props }) {
   const [loaded, setLoaded] = useState(false);
@@ -164,10 +171,13 @@ function HeroSection() {
 
   return (
     <section className="relative overflow-hidden bg-white">
+      {/* Animated gradient mesh — slow, GPU-only */}
+      <GradientMesh />
       {/* Subtle warm gradient wash */}
-      <div className="absolute inset-0 bg-gradient-to-b from-orange-50/40 via-white to-white" />
-      <div className="absolute top-0 right-0 w-[800px] h-[600px] bg-gradient-to-bl from-orange-100/30 to-transparent rounded-full blur-3xl" />
-      <div className="absolute bottom-0 left-0 w-[600px] h-[400px] bg-gradient-to-tr from-slate-100/50 to-transparent rounded-full blur-3xl" />
+      <div className="absolute inset-0 bg-gradient-to-b from-orange-50/30 via-white/40 to-white" />
+
+      {/* Floating product cards (lg+ only) */}
+      <HeroFloatingDecor />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-20 lg:pt-28 pb-20 sm:pb-24 lg:pb-32 relative z-10">
 
@@ -179,10 +189,7 @@ function HeroSection() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="mb-6"
           >
-            <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-orange-50 border border-orange-200/60 rounded-full text-[13px] text-[#c64500] font-semibold tracking-wide">
-              <span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse" />
-              Your opinion shapes the market
-            </span>
+            <PulseBadge>Your opinion shapes the market</PulseBadge>
           </motion.div>
 
           <motion.h1
@@ -1067,20 +1074,13 @@ function FinalCTA() {
           <motion.div
             variants={fadeUp}
             custom={0.2}
-            className="flex flex-col sm:flex-row gap-4 justify-center mb-10"
+            className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-10"
           >
+            <GlowButton href="/listings">Browse Properties</GlowButton>
             <Link
-              href="/listings"
-              className="inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-[#e48900] to-[#c64500] text-white font-bold text-lg rounded-xl shadow-lg hover:shadow-orange-500/30 transition-all"
-            >
-              Browse Properties
-              <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-              </svg>
-            </Link>
-            <Link
-              href="/join"
-              className="inline-flex items-center justify-center px-8 py-4 border-2 border-slate-200 text-slate-700 font-bold text-lg rounded-xl hover:bg-slate-50 transition-all"
+              // buyer CTA → /signup
+              href="/signup"
+              className="inline-flex items-center justify-center px-8 py-4 border-2 border-slate-200 text-slate-700 font-bold text-base rounded-full hover:bg-slate-50 hover:border-slate-300 transition-all"
             >
               Create Free Account
             </Link>
@@ -1113,6 +1113,7 @@ function FinalCTA() {
 export default function PublicHomepage() {
   return (
     <>
+      <LiveTicker />
       <HeroSection />
       <FeaturedProperties />
       <HowItWorks />

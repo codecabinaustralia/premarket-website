@@ -180,7 +180,7 @@ export default function Hero() {
                 List Your Property Free on Premarket
               </h3>
               <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
-                Australian homeowners can create a free off-market listing in minutes and test what buyers think your property is worth—no agent required.
+                Australian homeowners can create a free pre-market listing in minutes and test what buyers think your property is worth—no agent required.
               </p>
             </div>
 

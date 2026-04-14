@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../../../context/AuthContext';
+import { useRequireAgent } from '../../../hooks/useRequireAgent';
 import { authFetch } from '../../../utils/authFetch';
 import { db } from '../../../firebase/clientApp';
 import {
@@ -986,6 +987,7 @@ function ImageEditModal({ imageUrl, imageIndex, propertyId, userId, allImages, o
 
 // --- Main Report Page ---
 export default function PropertyReportPage() {
+  useRequireAgent();
   const { user, userData, loading: authLoading } = useAuth();
   const router = useRouter();
   const params = useParams();

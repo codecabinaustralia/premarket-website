@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
+import { useRequireAgent } from '../../hooks/useRequireAgent';
 import { authFetch } from '../../utils/authFetch';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../firebase/clientApp';
@@ -69,6 +70,7 @@ const ENDPOINTS = [
 ];
 
 export default function DevelopersPage() {
+  useRequireAgent();
   const { user, userData, loading } = useAuth();
   const router = useRouter();
   const [apiAccess, setApiAccess] = useState(null);

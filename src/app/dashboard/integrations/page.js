@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
+import { useRequireAgent } from '../../hooks/useRequireAgent';
 import { authFetch } from '../../utils/authFetch';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../firebase/clientApp';
@@ -463,6 +464,7 @@ function CrmCard({ name, logo, description, status, onConnect, comingSoon }) {
 
 // --- Main Page ---
 export default function IntegrationsPage() {
+  useRequireAgent();
   const { user, userData, loading } = useAuth();
   const router = useRouter();
 

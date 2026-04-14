@@ -63,7 +63,7 @@ function buildPriceDistribution(opinions, bucketCount = 5) {
   return buckets;
 }
 
-async function buildReport(propertyId) {
+export async function buildReport(propertyId) {
   const propertySnap = await adminDb.collection('properties').doc(propertyId).get();
   if (!propertySnap.exists) throw new Error('Property not found');
   const property = { id: propertySnap.id, ...propertySnap.data() };

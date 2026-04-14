@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../../../context/AuthContext';
+import { useRequireAgent } from '../../../hooks/useRequireAgent';
 import { authFetch } from '../../../utils/authFetch';
 import { db, storage } from '../../../firebase/clientApp';
 import { useJsApiLoader, Autocomplete } from '@react-google-maps/api';
@@ -67,6 +68,7 @@ const homeFeatures = [
 const GMAPS_LIBRARIES = ['places'];
 
 export default function EditPropertyPage() {
+  useRequireAgent();
   const { user, userData, loading: authLoading } = useAuth();
   const router = useRouter();
   const params = useParams();

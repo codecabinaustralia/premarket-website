@@ -7,14 +7,25 @@ import { useSearchParams } from 'next/navigation';
 import { db } from '../firebase/clientApp';
 import { collection, query, where, orderBy, getDocs, doc, getDoc } from 'firebase/firestore';
 import Nav from '../components/Nav';
-import AgentFooter from '../components/AgentFooter';
+import FooterLarge from '../components/FooterLarge';
+import LikeButton from '../components/LikeButton';
+import BrandMark from '../components/BrandMark';
+import { SkeletonCard, Spinner } from '../components/marketing/Loading';
+import { LiveTicker } from '../components/marketing/WowFactor';
+import { Sparkles, ShieldCheck, Heart, MessageSquare } from 'lucide-react';
 
 function ShimmerImage({ src, alt, ...props }) {
   const [loaded, setLoaded] = useState(false);
   return (
     <>
       {!loaded && (
-        <div className="absolute inset-0 bg-slate-200 animate-pulse" />
+        <div className="absolute inset-0 bg-slate-100 overflow-hidden">
+          <div className="absolute inset-0 -translate-x-full animate-skeleton bg-gradient-to-r from-transparent via-white/60 to-transparent" />
+          <style jsx>{`
+            @keyframes skeleton { 100% { transform: translateX(100%); } }
+            .animate-skeleton { animation: skeleton 1.6s ease-in-out infinite; }
+          `}</style>
+        </div>
       )}
       <Image
         src={src}
@@ -66,45 +77,25 @@ const PRICE_RANGES = [
 // Animated education cards data
 const BUYER_EDUCATION = [
   {
-    icon: (
-      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-      </svg>
-    ),
+    Icon: MessageSquare,
     title: "Price Opinions Wanted",
     description: "Agents are looking for real buyer feedback. Share what you think these properties are worth.",
-    color: "from-orange-500 to-amber-500"
   },
   {
-    icon: (
-      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
+    Icon: ShieldCheck,
     title: "Real Properties",
     description: "Every property is listed by a verified agent looking for genuine buyer price opinions.",
-    color: "from-emerald-500 to-teal-500"
   },
   {
-    icon: (
-      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-      </svg>
-    ),
+    Icon: Heart,
     title: "Register Interest",
     description: "Share your price opinion and register interest to stay updated on properties you like.",
-    color: "from-violet-500 to-purple-500"
   },
   {
-    icon: (
-      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
+    Icon: Sparkles,
     title: "Zero Obligation",
     description: "Share your price opinion freely. No commitments, no pressure, no sales calls.",
-    color: "from-blue-500 to-cyan-500"
-  }
+  },
 ];
 
 // Extract lat/lng from various location formats (plain object, GeoPoint, nested geopoint)
@@ -473,45 +464,57 @@ function ListingsContent() {
   const displayedSuburbs = showAllSuburbs ? suburbs : suburbs.slice(0, 5);
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-white">
       <Nav />
+      <LiveTicker />
 
-      {/* Hero Section with Full-Width Gradient */}
-      <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-hidden">
-        {/* Background gradient decorations */}
-        <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-orange-500 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500 rounded-full blur-3xl" />
+      {/* Hero Section — light themed with image accent */}
+      <div className="relative bg-gradient-to-b from-orange-50/60 via-white to-white overflow-hidden border-b border-slate-100">
+        {/* Soft brand accent washes */}
+        <div className="absolute -top-32 -right-32 w-[520px] h-[520px] bg-gradient-to-br from-orange-200/40 to-amber-200/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-40 -left-40 w-[420px] h-[420px] bg-gradient-to-tr from-orange-100/40 to-amber-100/10 rounded-full blur-3xl pointer-events-none" />
+        {/* BrandMark watermark */}
+        <div className="absolute top-12 right-10 hidden lg:block opacity-[0.06] pointer-events-none">
+          <BrandMark size={220} />
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 py-8 lg:py-12 relative z-10">
+        <div className="max-w-7xl mx-auto px-4 pt-10 pb-10 lg:pt-16 lg:pb-14 relative z-10">
           {/* Breadcrumbs */}
-          <nav className="mb-4">
-            <ol className="flex items-center gap-2 text-sm text-slate-400">
+          <nav className="mb-6">
+            <ol className="flex items-center gap-2 text-sm text-slate-500">
               <li>
-                <a href="/" className="hover:text-white transition-colors">Home</a>
+                <a href="/" className="hover:text-[#c64500] transition-colors">Home</a>
               </li>
               <li>
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-4 h-4 text-slate-300" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
                 </svg>
               </li>
-              <li className="text-white font-medium">Property Listings</li>
+              <li className="text-slate-900 font-semibold">Property Listings</li>
             </ol>
           </nav>
 
-          {/* Title */}
+          {/* Eyebrow + Title */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="text-center mb-6"
+            className="text-center mb-8 max-w-3xl mx-auto"
           >
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-3">
-              Browse <span className="bg-gradient-to-r from-orange-400 to-orange-300 bg-clip-text text-transparent">Premarket</span> Properties
+            <div className="inline-flex items-center gap-2.5 mb-5">
+              <BrandMark size={14} />
+              <span className="text-[11px] font-bold text-[#c64500] uppercase tracking-[0.18em]">
+                Browse properties
+              </span>
+            </div>
+            <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-bold tracking-tight text-slate-900 leading-[1.04]">
+              Real homes.{' '}
+              <span className="bg-gradient-to-r from-[#e48900] to-[#c64500] bg-clip-text text-transparent">
+                Real buyer evidence.
+              </span>
             </h1>
-            <p className="text-lg text-slate-300 max-w-2xl mx-auto">
-              Share your price opinion on properties and register your interest.
+            <p className="mt-5 text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
+              Share your price opinion on Australian properties and register your interest with the agents who matter.
             </p>
           </motion.div>
 
@@ -523,7 +526,7 @@ function ListingsContent() {
             onSubmit={handleSearch}
             className="max-w-3xl mx-auto"
           >
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-col sm:flex-row gap-3 p-2 bg-white border border-slate-200 rounded-2xl shadow-[0_24px_60px_-30px_rgba(15,23,42,0.18)]">
               <div className="flex-1 relative" ref={searchInputRef}>
                 <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -543,7 +546,7 @@ function ListingsContent() {
                     }
                   }}
                   onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-                  className="w-full pl-12 pr-4 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-transparent rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#e48900] focus:ring-2 focus:ring-orange-500/20 transition-all"
                 />
 
                 {/* Autocomplete Suggestions Dropdown */}
@@ -593,8 +596,8 @@ function ListingsContent() {
               <select
                 value={radius}
                 onChange={(e) => setRadius(e.target.value)}
-                className="px-4 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent appearance-none cursor-pointer min-w-[120px]"
-                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center' }}
+                className="px-4 py-3.5 bg-slate-50 border border-transparent rounded-xl text-slate-700 font-medium focus:outline-none focus:bg-white focus:border-[#e48900] focus:ring-2 focus:ring-orange-500/20 appearance-none cursor-pointer min-w-[140px] transition-all"
+                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center' }}
               >
                 {RADIUS_OPTIONS.map(opt => (
                   <option key={opt.value} value={opt.value} className="text-slate-900">{opt.label}</option>
@@ -603,14 +606,11 @@ function ListingsContent() {
               <button
                 type="submit"
                 disabled={searching}
-                className="px-8 py-4 bg-gradient-to-r from-[#e48900] to-[#c64500] text-white font-bold rounded-xl hover:shadow-lg hover:shadow-orange-500/30 transition-all disabled:opacity-70 flex items-center gap-2"
+                className="px-8 py-3.5 bg-[#e48900] text-white text-sm font-semibold rounded-xl hover:bg-[#c64500] active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {searching ? (
                   <>
-                    <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
+                    <Spinner size={14} strokeColor="white" />
                     Searching
                   </>
                 ) : 'Search'}
@@ -624,17 +624,17 @@ function ListingsContent() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="mt-4 text-center"
+              className="mt-6 text-center"
             >
-              <span className="text-slate-400 text-sm mr-2">Suburbs:</span>
+              <span className="text-slate-500 text-xs font-semibold uppercase tracking-wider mr-3">Popular suburbs</span>
               {displayedSuburbs.map((suburb) => (
                 <button
                   key={suburb}
                   onClick={() => setSelectedSuburb(selectedSuburb === suburb ? '' : suburb)}
-                  className={`inline-block px-3 py-1 mr-2 mb-2 text-sm rounded-full transition-all ${
+                  className={`inline-block px-3.5 py-1.5 mr-2 mb-2 text-xs font-semibold rounded-full transition-all ${
                     selectedSuburb === suburb
-                      ? 'bg-orange-500 text-white'
-                      : 'bg-white/10 text-slate-300 hover:bg-white/20'
+                      ? 'bg-[#e48900] text-white shadow-[0_4px_12px_-4px_rgba(228,137,0,0.5)]'
+                      : 'bg-white border border-slate-200 text-slate-700 hover:border-[#e48900] hover:text-[#c64500]'
                   }`}
                 >
                   {suburb}
@@ -643,7 +643,7 @@ function ListingsContent() {
               {suburbs.length > 5 && (
                 <button
                   onClick={() => setShowAllSuburbs(!showAllSuburbs)}
-                  className="text-orange-400 hover:text-orange-300 text-sm font-medium"
+                  className="text-[#c64500] hover:text-[#e48900] text-xs font-bold underline-offset-4 hover:underline"
                 >
                   {showAllSuburbs ? 'Show less' : `+${suburbs.length - 5} more`}
                 </button>
@@ -787,21 +787,21 @@ function ListingsContent() {
           {/* Property Grid - 2/3 */}
           <div className="lg:w-2/3">
             {loading ? (
-              <div className="flex items-center justify-center py-20">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-orange-500"></div>
+              <div className="grid sm:grid-cols-2 gap-5">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <SkeletonCard key={i} />
+                ))}
               </div>
             ) : filteredProperties.length === 0 ? (
               <div className="text-center py-20 bg-white rounded-2xl border border-slate-200">
-                <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <svg className="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
+                <div className="inline-flex mb-6">
+                  <BrandMark size={40} loading />
                 </div>
                 <h3 className="text-xl font-bold text-slate-900 mb-2">No properties found</h3>
                 <p className="text-slate-600 mb-6">Try adjusting your filters or search criteria</p>
                 <button
                   onClick={clearFilters}
-                  className="px-6 py-3 bg-gradient-to-r from-[#e48900] to-[#c64500] text-white font-bold rounded-xl"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#e48900] text-white text-sm font-semibold rounded-full hover:bg-[#c64500] active:scale-[0.98] transition-all"
                 >
                   Clear all filters
                 </button>
@@ -833,11 +833,14 @@ function ListingsContent() {
                           </svg>
                         </div>
                       )}
+                      <div className="absolute top-3 right-3 z-10">
+                        <LikeButton propertyId={property.id} size="sm" variant="overlay" />
+                      </div>
                       <div className="absolute top-3 left-3 flex items-center gap-2">
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold shadow-lg ${
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold shadow-[0_4px_12px_-4px_rgba(0,0,0,0.25)] ${
                           property.listingStatus === 'on-market'
                             ? 'bg-emerald-600 text-white'
-                            : 'bg-gradient-to-r from-[#e48900] to-[#c64500] text-white'
+                            : 'bg-[#e48900] text-white'
                         }`}>
                           {property.listingStatus === 'on-market' ? 'On Market' : 'Pre-Market'}
                         </span>
@@ -972,11 +975,12 @@ function ListingsContent() {
           {/* Sidebar - 1/3 */}
           <div className="lg:w-1/3 space-y-6">
             {/* Animated Education Cards */}
-            <div className="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden">
-              <div className="p-5 border-b border-slate-100">
-                <h3 className="font-bold text-slate-900 text-lg">What is Pre-Market?</h3>
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-[0_1px_0_rgba(15,23,42,0.04)] overflow-hidden">
+              <div className="p-5 border-b border-slate-100 flex items-center gap-2.5">
+                <BrandMark size={14} />
+                <h3 className="font-bold text-slate-900 text-base tracking-tight">What is Pre-Market?</h3>
               </div>
-              <div className="p-5">
+              <div className="p-6">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={activeEducationCard}
@@ -986,23 +990,27 @@ function ListingsContent() {
                     transition={{ duration: 0.3 }}
                     className="mb-4"
                   >
-                    <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${BUYER_EDUCATION[activeEducationCard].color} flex items-center justify-center text-white mb-4`}>
-                      {BUYER_EDUCATION[activeEducationCard].icon}
-                    </div>
-                    <h4 className="font-bold text-slate-900 mb-2">{BUYER_EDUCATION[activeEducationCard].title}</h4>
+                    {(() => {
+                      const Icon = BUYER_EDUCATION[activeEducationCard].Icon;
+                      return (
+                        <Icon className="w-7 h-7 text-[#e48900] mb-5" strokeWidth={1.75} />
+                      );
+                    })()}
+                    <h4 className="font-bold text-slate-900 mb-2 text-lg tracking-tight">{BUYER_EDUCATION[activeEducationCard].title}</h4>
                     <p className="text-slate-600 text-sm leading-relaxed">{BUYER_EDUCATION[activeEducationCard].description}</p>
                   </motion.div>
                 </AnimatePresence>
 
                 {/* Dots indicator */}
-                <div className="flex justify-center gap-2 mt-4">
+                <div className="flex justify-center gap-2 mt-6">
                   {BUYER_EDUCATION.map((_, index) => (
                     <button
                       key={index}
                       onClick={() => setActiveEducationCard(index)}
-                      className={`w-2 h-2 rounded-full transition-all ${
-                        index === activeEducationCard ? 'w-6 bg-orange-500' : 'bg-slate-300'
+                      className={`h-1.5 rounded-full transition-all ${
+                        index === activeEducationCard ? 'w-6 bg-[#e48900]' : 'w-1.5 bg-slate-200'
                       }`}
+                      aria-label={`Show card ${index + 1}`}
                     />
                   ))}
                 </div>
@@ -1010,56 +1018,44 @@ function ListingsContent() {
             </div>
 
             {/* Why Homeowners Use Premarket */}
-            <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-6 text-white relative overflow-hidden">
-              <div className="absolute inset-0 opacity-20">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500 rounded-full blur-2xl" />
-                <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-500 rounded-full blur-2xl" />
+            <div className="relative bg-white rounded-2xl p-6 border border-slate-200 shadow-[0_1px_0_rgba(15,23,42,0.04)] overflow-hidden">
+              <div className="absolute -top-10 -right-10 opacity-[0.06] pointer-events-none">
+                <BrandMark size={140} />
               </div>
               <div className="relative z-10">
-                <h3 className="font-bold text-lg mb-3">Why Homeowners Use Premarket</h3>
-                <ul className="space-y-3 text-sm text-slate-300">
-                  <li className="flex items-start gap-2">
-                    <svg className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    <span>Collect real buyer price opinions</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <svg className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    <span>Find serious buyers without open homes</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <svg className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    <span>Gauge real buyer price expectations</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <svg className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    <span>Sell faster with qualified leads</span>
-                  </li>
+                <p className="text-[11px] font-bold text-[#c64500] uppercase tracking-[0.18em] mb-3">For homeowners</p>
+                <h3 className="font-bold text-slate-900 text-lg mb-4 tracking-tight">Why Homeowners Use Premarket</h3>
+                <ul className="space-y-3 text-sm text-slate-700">
+                  {[
+                    'Collect real buyer price opinions',
+                    'Find serious buyers without open homes',
+                    'Gauge real buyer price expectations',
+                    'Sell faster with qualified leads',
+                  ].map((item) => (
+                    <li key={item} className="flex items-start gap-2.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#e48900] flex-shrink-0 mt-2" />
+                      <span className="leading-relaxed">{item}</span>
+                    </li>
+                  ))}
                 </ul>
-                <p className="text-xs text-slate-400 mt-4">
-                  This means properties here are <strong className="text-white">serious listings</strong> from motivated sellers.
+                <p className="text-xs text-slate-500 mt-5 leading-relaxed">
+                  Properties here are <strong className="text-slate-900">serious listings</strong> from motivated sellers.
                 </p>
               </div>
             </div>
 
             {/* CTA Card */}
-            <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-6 border border-orange-200">
-              <h3 className="font-bold text-slate-900 text-lg mb-2">Get Notified</h3>
-              <p className="text-slate-600 text-sm mb-4">
-                Create a free account and be the first to know when new properties become available.
+            <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
+              <BrandMark size={20} />
+              <h3 className="font-bold text-slate-900 text-lg mt-4 mb-2 tracking-tight">Get Notified</h3>
+              <p className="text-slate-600 text-sm leading-relaxed mb-5">
+                Create a free buyer account and be the first to know when new properties become available in your areas.
               </p>
               <a
-                href="/join"
-                className="block w-full text-center py-3 bg-gradient-to-r from-[#e48900] to-[#c64500] text-white font-bold rounded-xl hover:shadow-lg transition-all"
+                href="/signup"
+                className="inline-flex items-center justify-center gap-2 w-full text-center py-3 bg-[#e48900] text-white text-sm font-semibold rounded-full hover:bg-[#c64500] active:scale-[0.98] transition-all"
               >
-                Create Free Account
+                Create free account
               </a>
             </div>
 
@@ -1067,7 +1063,7 @@ function ListingsContent() {
         </div>
       </div>
 
-      <AgentFooter />
+      <FooterLarge />
     </div>
   );
 }
@@ -1075,8 +1071,9 @@ function ListingsContent() {
 export default function ListingsPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-orange-500"></div>
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center">
+        <BrandMark size={36} loading />
+        <p className="mt-4 text-xs font-semibold text-slate-500 uppercase tracking-[0.18em]">Loading</p>
       </div>
     }>
       <ListingsContent />

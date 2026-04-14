@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
+import { useRequireAgent } from '../../hooks/useRequireAgent';
 import { db } from '../../firebase/clientApp';
 import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 import {
@@ -107,6 +108,7 @@ function StatCard({ label, value, icon: Icon, color }) {
 // ─── Main Component ──────────────────────────────────────────────────────────
 
 export default function CRMDashboard() {
+  useRequireAgent();
   const { user, userData, loading } = useAuth();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('buyers');

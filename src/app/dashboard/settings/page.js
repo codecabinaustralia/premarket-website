@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
+import { useRequireAgent } from '../../hooks/useRequireAgent';
 import { authFetch } from '../../utils/authFetch';
 import { db } from '../../firebase/clientApp';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -16,7 +17,10 @@ import {
   Check,
   Loader2,
   Building2,
+  MessageSquare,
 } from 'lucide-react';
+
+const TEAM_SMS_NUMBER = process.env.NEXT_PUBLIC_TWILIO_PHONE_NUMBER || '+61 491 570 006';
 
 const ROLES = [
   { id: 'homeowner', label: 'Home Owner / Investor' },
@@ -26,6 +30,7 @@ const ROLES = [
 ];
 
 export default function SettingsPage() {
+  useRequireAgent();
   const { user, userData, setUserData, loading } = useAuth();
   const router = useRouter();
   const fileInputRef = useRef(null);
@@ -45,6 +50,13 @@ export default function SettingsPage() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [resetSent, setResetSent] = useState(false);
   const [resetSending, setResetSending] = useState(false);
+
+  // SMS enrollment state
+  const [smsPhone, setSmsPhone] = useState(userData?.smsPhone || '');
+  const [smsEnabled, setSmsEnabled] = useState(!!userData?.smsEnabled);
+  const [smsSaving, setSmsSaving] = useState(false);
+  const [smsSaved, setSmsSaved] = useState(false);
+  const [smsError, setSmsError] = useState('');
 
   // Sync state if userData loads after initial render
   useState(() => {
@@ -155,6 +167,39 @@ export default function SettingsPage() {
       alert('Failed to save. Please try again.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSmsSave = async () => {
+    setSmsSaving(true);
+    setSmsSaved(false);
+    setSmsError('');
+    try {
+      const res = await authFetch('/api/users/sms-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          smsPhone: smsPhone.trim() || null,
+          smsEnabled,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to save SMS settings');
+      }
+      setSmsPhone(data.smsPhone || '');
+      setUserData((prev) => ({
+        ...prev,
+        smsPhone: data.smsPhone || null,
+        smsEnabled: data.smsEnabled,
+      }));
+      setSmsSaved(true);
+      setTimeout(() => setSmsSaved(false), 3000);
+    } catch (err) {
+      console.error('Error saving SMS settings:', err);
+      setSmsError(err.message || 'Failed to save SMS settings');
+    } finally {
+      setSmsSaving(false);
     }
   };
 
@@ -377,6 +422,80 @@ export default function SettingsPage() {
               <>
                 <KeyRound className="w-4 h-4" />
                 Send Password Reset Email
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* SMS */}
+        <div className="bg-white rounded-xl border border-slate-200 p-6">
+          <div className="flex items-center gap-2 mb-1">
+            <MessageSquare className="w-4 h-4 text-orange-600" />
+            <h2 className="text-sm font-semibold text-slate-900">SMS Shortcuts</h2>
+          </div>
+          <p className="text-xs text-slate-500 mb-4">
+            Text <span className="font-semibold text-slate-700">{TEAM_SMS_NUMBER}</span> from your mobile to add listings, request reports, or grab a public share link — no app or dashboard required.
+          </p>
+
+          <div className="space-y-3 mb-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Your Mobile Number</label>
+              <input
+                type="tel"
+                value={smsPhone}
+                onChange={(e) => setSmsPhone(e.target.value)}
+                placeholder="+61412345678"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400 transition-all"
+              />
+              <p className="text-xs text-slate-400 mt-1">Used to identify you when texting our team SMS number. E.164 format.</p>
+            </div>
+
+            <label className="flex items-center gap-3 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={smsEnabled}
+                onChange={(e) => setSmsEnabled(e.target.checked)}
+                className="w-4 h-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500"
+              />
+              <span className="text-sm text-slate-700">Enable SMS shortcuts for this number</span>
+            </label>
+          </div>
+
+          <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 mb-4">
+            <p className="text-xs font-semibold text-slate-700 mb-1">Try texting:</p>
+            <ul className="text-xs text-slate-600 space-y-0.5">
+              <li>• A realestate.com.au URL to create a new listing</li>
+              <li>• <span className="font-mono">report latest</span> for a summary + emailed PDF</li>
+              <li>• <span className="font-mono">link 12 Pacific Ave</span> for the public share URL</li>
+              <li>• <span className="font-mono">help</span> for the full command list</li>
+            </ul>
+          </div>
+
+          {smsError && (
+            <p className="text-xs text-red-600 mb-3">{smsError}</p>
+          )}
+
+          <button
+            onClick={handleSmsSave}
+            disabled={smsSaving}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+              smsSaved ? 'bg-green-50 text-green-600' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            } disabled:opacity-70`}
+          >
+            {smsSaved ? (
+              <>
+                <Check className="w-4 h-4" />
+                Saved
+              </>
+            ) : smsSaving ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                Save SMS Settings
               </>
             )}
           </button>

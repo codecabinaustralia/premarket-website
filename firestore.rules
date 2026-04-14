@@ -102,6 +102,27 @@ service cloud.firestore {
     }
 
     // ═══════════════════════════════════════════════════════════
+    // WATCHED AREAS (Buyer dashboard)
+    // Suburbs/cities a buyer is tracking for PHI insights & alerts.
+    // Read/write: own docs only (userId match). Server-side writes
+    //   go through /api/buyer/watched-areas using the Admin SDK; this
+    //   rule unlocks optimistic client updates later.
+    // ═══════════════════════════════════════════════════════════
+    match /watchedAreas/{docId} {
+      allow read: if isAuth()
+        && resource.data.userId == request.auth.uid;
+
+      allow create: if isAuth()
+        && request.resource.data.userId == request.auth.uid;
+
+      allow update: if isAuth()
+        && resource.data.userId == request.auth.uid;
+
+      allow delete: if isAuth()
+        && resource.data.userId == request.auth.uid;
+    }
+
+    // ═══════════════════════════════════════════════════════════
     // AGENTS (Sub-profiles / team members)
     // Public read: property pages + listings display assigned
     //   agent name/avatar. Docs only contain name + avatar.

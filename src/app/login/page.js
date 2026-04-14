@@ -5,13 +5,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase/clientApp';
 import { useAuth } from '../context/AuthContext';
+import { defaultDashboardFor } from '../utils/roles';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, userData, loading: authLoading } = useAuth();
   const [view, setView] = useState('login'); // 'login' | 'reset'
 
   // Login state
@@ -26,12 +27,13 @@ export default function LoginPage() {
   const [resetError, setResetError] = useState('');
   const [resetSent, setResetSent] = useState(false);
 
-  // If already logged in, redirect to dashboard
+  // If already logged in, redirect to the right dashboard for their role.
+  // Wait for userData so buyers don't briefly land on /dashboard.
   useEffect(() => {
-    if (!authLoading && user) {
-      router.push('/dashboard');
+    if (!authLoading && user && userData) {
+      router.push(defaultDashboardFor(userData));
     }
-  }, [user, authLoading, router]);
+  }, [user, userData, authLoading, router]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -40,7 +42,8 @@ export default function LoginPage() {
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      router.push('/dashboard');
+      // Don't push here — the useEffect above waits for userData
+      // and routes buyers to /buyer-dashboard, agents to /dashboard.
     } catch (err) {
       console.error('Login error:', err);
       if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
@@ -195,11 +198,17 @@ export default function LoginPage() {
                   </motion.button>
                 </form>
 
-                <div className="mt-6 text-center">
+                <div className="mt-6 text-center space-y-2">
                   <p className="text-sm text-slate-500">
                     Don&apos;t have an account?{' '}
-                    <Link href="/join" className="text-orange-600 hover:underline font-medium">
-                      Sign up free
+                    <Link href="/signup" className="text-orange-600 hover:underline font-medium">
+                      Create a buyer account
+                    </Link>
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    Real estate agent?{' '}
+                    <Link href="/join" className="text-orange-500 hover:underline font-medium">
+                      Join here
                     </Link>
                   </p>
                 </div>

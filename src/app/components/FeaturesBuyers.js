@@ -9,7 +9,7 @@ const stages = [
     title: "Access Exclusive Properties",
     text: "Discover properties not found anywhere else. Browse pre-market and on-market listings with real buyer price data.",
     benefits: [
-      "Browse exclusive off-market properties first",
+      "Browse off-market, pre-market and on-market listings",
       "No competition from other platforms",
       "Discover hidden opportunities early",
       "Connect directly with motivated sellers"

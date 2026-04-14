@@ -12,7 +12,7 @@ export default function DevDocsContent({ sectionKey }) {
     case 'architecture':
       return (
         <div className={prose}>
-          <p>Premarket is a three-tier platform for off-market real estate.</p>
+          <p>Premarket is a three-tier platform for off-market, pre-market and on-market real estate.</p>
           <p className={heading}>Components</p>
           <ul className="list-disc pl-5 space-y-1.5">
             <li><strong>Next.js Website</strong> — Next.js 15 (App Router) deployed on Vercel at <span className={code}>premarket.homes</span>. Handles the marketing site, agent dashboard, API endpoints, cron jobs, and admin tools.</li>

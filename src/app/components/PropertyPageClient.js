@@ -10,6 +10,7 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 import AgentFooter from '../components/AgentFooter';
 import Nav from '../components/Nav';
+import LikeButton from './LikeButton';
 import { usePropertyEngagement } from '../hooks/usePropertyEngagement';
 
 // Generate a session ID for tracking price opinions
@@ -1487,9 +1488,10 @@ export default function PropertyPageClient() {
                         <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
                       </svg>
                     </div>
-                    <h4 className="font-bold text-slate-800 text-lg">
+                    <h4 className="font-bold text-slate-800 text-lg flex-1">
                       Interested in this property?
                     </h4>
+                    {propertyId && <LikeButton propertyId={propertyId} size="md" />}
                   </div>
                   <p className="text-sm text-slate-600 mb-4">
                     Register your interest to be first in line when this property goes to market. Get priority access before open homes.

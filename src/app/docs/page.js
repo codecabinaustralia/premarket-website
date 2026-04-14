@@ -1302,7 +1302,7 @@ function DocsContent({ isAdmin, isTokenAccess, linkToken, user }) {
             <h3 className="text-lg font-semibold text-slate-900 mb-3">Why buyer&apos;s agents choose Premarket</h3>
             <div className="space-y-3 mb-2">
               {[
-                ['Client attraction', 'Clients expect their buyer\'s agent to have access to off-market and pre-market deals. Premarket delivers that consistently.'],
+                ['Client attraction', 'Clients expect their buyer\'s agent to have access to off-market, pre-market, and on-market deals. Premarket delivers that consistently.'],
                 ['Reduced competition', 'Properties in the pre-market phase have a fraction of the buyer interest they\'ll attract once publicly listed. Less competition means better outcomes.'],
                 ['Shape the data', 'Every price opinion a buyer\'s agent submits feeds the data engine that powers price education for agents and sellers. Their professional valuations carry weight — and contribute to the most accurate pricing dataset in real estate.'],
               ].map(([title, desc], i) => (
@@ -1420,7 +1420,7 @@ function DocsContent({ isAdmin, isTokenAccess, linkToken, user }) {
               <div>
                 <h4 className="font-medium text-slate-900 mb-1">1. Browse the showcase</h4>
                 <p className="text-slate-600 text-sm leading-relaxed">
-                  The buyer visits premarket.homes and explores listings that are off-market, private, or in early campaign phase. These are properties that haven&apos;t surfaced on any public portal — genuine early access.
+                  The buyer visits premarket.homes and explores listings that are off-market, pre-market, or on-market — genuine early access you won&apos;t find on public portals.
                 </p>
               </div>
 

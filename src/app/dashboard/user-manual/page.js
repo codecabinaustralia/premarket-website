@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
+import { useRequireAgent } from '../../hooks/useRequireAgent';
 import {
   BookOpen,
   Home,
@@ -62,6 +63,7 @@ const NAV_SECTIONS = [
 const ALL_IDS = NAV_SECTIONS.flatMap((s) => s.items.map((i) => i.id));
 
 export default function UserManualPage() {
+  useRequireAgent();
   const { user, loading } = useAuth();
   const router = useRouter();
   const [activeSection, setActiveSection] = useState('welcome');
