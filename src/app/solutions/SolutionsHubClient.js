@@ -3,12 +3,10 @@
 import { Home, Users, Briefcase, Building2, ArrowRight, ShieldCheck, Eye, TrendingUp } from 'lucide-react';
 import Nav from '../components/Nav';
 import FooterLarge from '../components/FooterLarge';
-import PriceOpinionToasts from '../components/PriceOpinionToasts';
 import { LiveTicker } from '../components/marketing/WowFactor';
 import {
   MarketingHero,
   SectionHeading,
-  BreakoutStats,
   FeatureCard,
   ClosingCTA,
   PullQuote,
@@ -54,8 +52,6 @@ export default function SolutionsHubClient() {
     <div className="bg-white text-slate-900">
       <Nav />
       <LiveTicker />
-      <PriceOpinionToasts />
-
       <MarketingHero
         eyebrow="Solutions"
         title={
@@ -72,29 +68,6 @@ export default function SolutionsHubClient() {
         secondaryCta={{ href: '/premarket', label: 'What is Premarket?' }}
       />
 
-      {/* Breakout stats */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 -mt-6 sm:-mt-10">
-        <BreakoutStats
-          stats={[
-            {
-              eyebrow: 'Real opinions',
-              value: 14823,
-              label: 'Anonymous price opinions submitted by real buyers across Australia.',
-            },
-            {
-              eyebrow: 'Privacy',
-              value: '0',
-              label: 'Open homes required to start collecting buyer feedback on a property.',
-            },
-            {
-              eyebrow: 'Confidence',
-              value: 92,
-              suffix: '%',
-              label: 'Of vendors say buyer evidence helped them set a more confident price.',
-            },
-          ]}
-        />
-      </section>
 
       {/* Four audiences */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-24 sm:py-32">

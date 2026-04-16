@@ -14,14 +14,11 @@ import {
 } from 'lucide-react';
 import Nav from '../../components/Nav';
 import FooterLarge from '../../components/FooterLarge';
-import PriceOpinionToasts from '../../components/PriceOpinionToasts';
 import {
   MarketingHero,
   SectionHeading,
-  BreakoutStats,
   FeatureCard,
   ClosingCTA,
-  PullQuote,
   TwoColumn,
   BulletList,
 } from '../../components/marketing/MarketingShell';
@@ -30,8 +27,6 @@ export default function AgentsClient() {
   return (
     <div className="bg-white text-slate-900">
       <Nav />
-      <PriceOpinionToasts />
-
       <MarketingHero
         eyebrow="For listing agents"
         title={
@@ -48,30 +43,6 @@ export default function AgentsClient() {
         secondaryCta={{ href: '/contact', label: 'Talk to our team' }}
       />
 
-      {/* Stats */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 -mt-6 sm:-mt-10">
-        <BreakoutStats
-          stats={[
-            {
-              eyebrow: 'Win rate',
-              value: 38,
-              suffix: '%',
-              label: 'Higher appraisal-to-listing conversion when agents arrive with a Premarket vendor report.',
-            },
-            {
-              eyebrow: 'Per campaign',
-              value: '$200',
-              label: 'Flat fee. No subscription. No monthly commitment. One campaign, one invoice.',
-            },
-            {
-              eyebrow: 'Setup',
-              value: 2,
-              suffix: ' min',
-              label: 'From login to live campaign collecting price opinions from real buyers.',
-            },
-          ]}
-        />
-      </section>
 
       {/* Why agents win with Premarket */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-24 sm:py-32">
@@ -200,15 +171,6 @@ export default function AgentsClient() {
             ))}
           </div>
         </div>
-      </section>
-
-      {/* Pull quote */}
-      <section className="pb-24 sm:pb-32">
-        <PullQuote
-          quote="I used to walk into appraisals with comparables and a smile. Now I walk in with twenty real buyers and a price range that argues for itself."
-          author="Listing agent"
-          role="Brisbane"
-        />
       </section>
 
       {/* Trust + brand */}

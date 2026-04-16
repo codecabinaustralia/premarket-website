@@ -14,7 +14,6 @@ import {
 } from 'lucide-react';
 import Nav from '../components/Nav';
 import FooterLarge from '../components/FooterLarge';
-import PriceOpinionToasts from '../components/PriceOpinionToasts';
 import {
   Eyebrow,
   fadeUp,
@@ -76,8 +75,6 @@ export default function ContactClient() {
   return (
     <div className="bg-white text-slate-900 min-h-screen">
       <Nav />
-      <PriceOpinionToasts />
-
       {/* Hero */}
       <section className="relative overflow-hidden bg-gradient-to-b from-orange-50/60 via-white to-white pt-20 sm:pt-28 pb-12">
         <div className="absolute -top-32 -right-32 w-[520px] h-[520px] bg-gradient-to-br from-orange-200/50 to-amber-200/30 rounded-full blur-3xl pointer-events-none" />

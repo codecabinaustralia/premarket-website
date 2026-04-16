@@ -61,7 +61,7 @@ export default function PropertyPageClient() {
   const [savedOfferId, setSavedOfferId] = useState(null);
   const [isSliding, setIsSliding] = useState(false);
   const [ipadContactStep, setIpadContactStep] = useState(false);
-  const [ipadPhone, setIpadPhone] = useState('');
+  const [phone, setPhone] = useState('');
 
   // Signup form state
   const [email, setEmail] = useState('');
@@ -405,7 +405,7 @@ export default function PropertyPageClient() {
     setIpadThankYou(false);
     setRegisterInterest(false);
     setIpadContactStep(false);
-    setIpadPhone('');
+    setPhone('');
     setQualificationData({
       isFirstHomeBuyer: false,
       isInvestor: false,
@@ -564,7 +564,8 @@ export default function PropertyPageClient() {
   };
 
   const handleIpadContactSubmit = () => {
-    if (!firstName.trim()) return;
+    // Registered buyers must provide name, email, and phone.
+    if (!firstName.trim() || !lastName.trim() || !email.trim() || !phone.trim()) return;
 
     // Save qualification + contact info to the offer
     setShowQualificationModal(false);
@@ -579,8 +580,8 @@ export default function PropertyPageClient() {
         buyerType: qualificationData.buyerType,
         seriousnessLevel: qualificationData.seriousnessLevel,
         buyerName: `${firstName.trim()} ${lastName.trim()}`.trim(),
-        buyerEmail: email.trim().toLowerCase() || null,
-        buyerPhone: ipadPhone.trim() || null,
+        buyerEmail: email.trim().toLowerCase(),
+        buyerPhone: phone.trim(),
         updatedAt: serverTimestamp(),
       }).catch((err) => console.error('Error updating iPad offer:', err));
     }
@@ -594,19 +595,29 @@ export default function PropertyPageClient() {
   const handleContactSubmit = async (e) => {
     e.preventDefault();
     setSignupError('');
+
+    // Registered buyers must provide name, email, and phone.
+    const hasAllContactFields =
+      firstName.trim() && lastName.trim() && email.trim() && phone.trim();
+    if (registerInterest && !hasAllContactFields) {
+      setSignupError('Please provide your name, email, and phone to register interest.');
+      return;
+    }
+
     setSubmitting(true);
 
     try {
       // Save contact + qualification info to the offer
       if (savedOfferId) {
         await updateDoc(doc(db, 'offers', savedOfferId), {
-          serious: registerInterest || false,
+          serious: registerInterest && hasAllContactFields ? true : false,
           isFirstHomeBuyer: qualificationData.isFirstHomeBuyer,
           isInvestor: qualificationData.isInvestor,
           buyerType: qualificationData.buyerType,
           seriousnessLevel: qualificationData.seriousnessLevel,
           buyerName: `${firstName.trim()} ${lastName.trim()}`.trim(),
           buyerEmail: email.trim().toLowerCase() || null,
+          buyerPhone: phone.trim() || null,
           // Link to existing user if they're logged in
           ...(currentAuthUser ? { userId: currentAuthUser.uid } : {}),
           updatedAt: serverTimestamp(),
@@ -995,7 +1006,7 @@ export default function PropertyPageClient() {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-semibold text-slate-800 mb-2">Last name</label>
+                        <label className="block text-sm font-semibold text-slate-800 mb-2">Last name *</label>
                         <input
                           type="text"
                           value={lastName}
@@ -1007,7 +1018,7 @@ export default function PropertyPageClient() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-slate-800 mb-2">Email</label>
+                      <label className="block text-sm font-semibold text-slate-800 mb-2">Email *</label>
                       <input
                         type="email"
                         value={email}
@@ -1018,11 +1029,11 @@ export default function PropertyPageClient() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-slate-800 mb-2">Phone</label>
+                      <label className="block text-sm font-semibold text-slate-800 mb-2">Phone *</label>
                       <input
                         type="tel"
-                        value={ipadPhone}
-                        onChange={(e) => setIpadPhone(e.target.value)}
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
                         placeholder="0400 000 000"
                         className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all text-slate-800"
                       />
@@ -1030,7 +1041,7 @@ export default function PropertyPageClient() {
 
                     <button
                       onClick={handleIpadContactSubmit}
-                      disabled={!firstName.trim()}
+                      disabled={!firstName.trim() || !lastName.trim() || !email.trim() || !phone.trim()}
                       className="w-full bg-gradient-to-r from-[#e48900] to-[#c64500] text-white font-bold py-4 rounded-xl transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed mt-2"
                     >
                       Register Interest
@@ -2151,6 +2162,20 @@ export default function PropertyPageClient() {
                       required
                       className="text-gray-900 placeholder-gray-300 w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all"
                       placeholder="john@example.com"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                      Phone
+                    </label>
+                    <input
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      required
+                      className="text-gray-900 placeholder-gray-300 w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all"
+                      placeholder="0400 000 000"
                     />
                   </div>
 

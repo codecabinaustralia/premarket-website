@@ -13,14 +13,11 @@ import {
 import { motion } from 'framer-motion';
 import Nav from '../../components/Nav';
 import FooterLarge from '../../components/FooterLarge';
-import PriceOpinionToasts from '../../components/PriceOpinionToasts';
 import {
   MarketingHero,
   SectionHeading,
-  BreakoutStats,
   FeatureCard,
   ClosingCTA,
-  PullQuote,
   TwoColumn,
   BulletList,
   fadeUp,
@@ -31,8 +28,6 @@ export default function PriceOpinionsClient() {
   return (
     <div className="bg-white text-slate-900">
       <Nav />
-      <PriceOpinionToasts />
-
       <MarketingHero
         eyebrow="Price Opinions"
         title={
@@ -49,15 +44,6 @@ export default function PriceOpinionsClient() {
         secondaryCta={{ href: '/features', label: 'All features' }}
       />
 
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 -mt-6 sm:-mt-10">
-        <BreakoutStats
-          stats={[
-            { eyebrow: 'Submitted', value: 14823, label: 'Anonymous price opinions across Australia and growing weekly.' },
-            { eyebrow: 'Median variance', value: 6.4, suffix: '%', label: 'How tight buyer opinions cluster — much narrower than agent appraisals.' },
-            { eyebrow: 'Resolution', value: 71, suffix: '%', label: 'Of campaigns adjust their guide price after seeing aggregated buyer opinions.' },
-          ]}
-        />
-      </section>
 
       {/* What it is */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-24 sm:py-32">
@@ -104,9 +90,6 @@ export default function PriceOpinionsClient() {
                   );
                 })}
               </div>
-              <p className="mt-6 text-xs text-slate-500 italic">
-                "After seeing the data, our vendor adjusted to $1.79M. Sold within nine days at $1.81M."
-              </p>
             </div>
           }
         />
@@ -233,14 +216,6 @@ export default function PriceOpinionsClient() {
             </motion.div>
           ))}
         </motion.div>
-      </section>
-
-      <section className="bg-slate-50 border-t border-slate-200/70 py-24 sm:py-32">
-        <PullQuote
-          quote="I priced a Brunswick terrace at $1.42M. Twelve other people did the same week. The seller listed at $1.45M. It cleared in eleven days."
-          author="Buyer"
-          role="Melbourne"
-        />
       </section>
 
       <ClosingCTA

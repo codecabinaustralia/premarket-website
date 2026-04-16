@@ -14,14 +14,12 @@ import {
 } from 'lucide-react';
 import Nav from '../../components/Nav';
 import FooterLarge from '../../components/FooterLarge';
-import PriceOpinionToasts from '../../components/PriceOpinionToasts';
 import {
   MarketingHero,
   SectionHeading,
   BreakoutStats,
   FeatureCard,
   ClosingCTA,
-  PullQuote,
   TwoColumn,
   BulletList,
 } from '../../components/marketing/MarketingShell';
@@ -30,8 +28,6 @@ export default function BuyersClient() {
   return (
     <div className="bg-white text-slate-900">
       <Nav />
-      <PriceOpinionToasts />
-
       <MarketingHero
         eyebrow="For buyers"
         title={
@@ -172,15 +168,6 @@ export default function BuyersClient() {
             }
           />
         </div>
-      </section>
-
-      {/* Pull quote */}
-      <section className="py-24 sm:py-32">
-        <PullQuote
-          quote="I saw the house on Premarket nine days before it appeared on realestate.com.au. I'd already inspected it privately by then."
-          author="Buyer"
-          role="Bondi, NSW"
-        />
       </section>
 
       {/* Why share a price opinion */}

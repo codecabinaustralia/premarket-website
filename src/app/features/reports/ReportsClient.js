@@ -12,14 +12,11 @@ import {
 } from 'lucide-react';
 import Nav from '../../components/Nav';
 import FooterLarge from '../../components/FooterLarge';
-import PriceOpinionToasts from '../../components/PriceOpinionToasts';
 import {
   MarketingHero,
   SectionHeading,
-  BreakoutStats,
   FeatureCard,
   ClosingCTA,
-  PullQuote,
   TwoColumn,
   BulletList,
 } from '../../components/marketing/MarketingShell';
@@ -28,8 +25,6 @@ export default function ReportsClient() {
   return (
     <div className="bg-white text-slate-900">
       <Nav />
-      <PriceOpinionToasts />
-
       <MarketingHero
         eyebrow="Reports"
         title={
@@ -46,15 +41,6 @@ export default function ReportsClient() {
         secondaryCta={{ href: '/features', label: 'All features' }}
       />
 
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 -mt-6 sm:-mt-10">
-        <BreakoutStats
-          stats={[
-            { eyebrow: 'Auto-updated', value: '24/7', label: 'Reports refresh in real time as buyers engage with the property.' },
-            { eyebrow: 'Time saved', value: 4, suffix: ' hrs', label: 'Average time saved per week vs. assembling vendor reports manually.' },
-            { eyebrow: 'Shareable', value: '1-click', label: 'Send a beautiful, branded report to your vendor with a single tap.' },
-          ]}
-        />
-      </section>
 
       {/* What's in a report */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-24 sm:py-32">
@@ -148,14 +134,6 @@ export default function ReportsClient() {
             }
           />
         </div>
-      </section>
-
-      <section className="py-24 sm:py-32">
-        <PullQuote
-          quote="My vendor used to ask me 'how's it going?' Now she logs in herself, reads the report, and tells me what she's thinking. We meet to make decisions, not to argue about price."
-          author="Senior listing agent"
-          role="Melbourne"
-        />
       </section>
 
       {/* Trust */}

@@ -1,7 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-
 /**
  * WOW Factor primitives — high-impact components designed to elevate the
  * marketing surface beyond a static brochure. Every piece here is deliberately

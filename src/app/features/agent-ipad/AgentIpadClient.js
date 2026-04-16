@@ -13,14 +13,11 @@ import {
 } from 'lucide-react';
 import Nav from '../../components/Nav';
 import FooterLarge from '../../components/FooterLarge';
-import PriceOpinionToasts from '../../components/PriceOpinionToasts';
 import {
   MarketingHero,
   SectionHeading,
-  BreakoutStats,
   FeatureCard,
   ClosingCTA,
-  PullQuote,
   TwoColumn,
   BulletList,
 } from '../../components/marketing/MarketingShell';
@@ -29,8 +26,6 @@ export default function AgentIpadClient() {
   return (
     <div className="bg-white text-slate-900">
       <Nav />
-      <PriceOpinionToasts />
-
       <MarketingHero
         eyebrow="Agent iPad"
         title={
@@ -47,15 +42,6 @@ export default function AgentIpadClient() {
         secondaryCta={{ href: '/features', label: 'All features' }}
       />
 
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 -mt-6 sm:-mt-10">
-        <BreakoutStats
-          stats={[
-            { eyebrow: 'Capture rate', value: 4.2, suffix: 'x', label: 'More buyer feedback captured per open home compared to paper sign-in sheets.' },
-            { eyebrow: 'Sync', value: 'Live', label: 'Every opinion appears in your campaign dashboard in seconds.' },
-            { eyebrow: 'Offline', value: '100%', label: 'Works in the basement, the garage, the rural property without signal.' },
-          ]}
-        />
-      </section>
 
       {/* Designed for the field */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-24 sm:py-32">
@@ -142,14 +128,6 @@ export default function AgentIpadClient() {
             }
           />
         </div>
-      </section>
-
-      <section className="py-24 sm:py-32">
-        <PullQuote
-          quote="I get more useful feedback in one open home with the iPad than I used to get in an entire month of phone follow-ups."
-          author="Senior listing agent"
-          role="Perth"
-        />
       </section>
 
       {/* Tech */}

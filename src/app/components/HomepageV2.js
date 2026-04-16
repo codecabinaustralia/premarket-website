@@ -8,38 +8,6 @@ import Image from 'next/image';
 // UTILITIES
 // ══════════════════════════════════════════════
 
-function useCountUp(end, duration = 2000) {
-  const [count, setCount] = useState(0);
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: '-100px' });
-  const hasStarted = useRef(false);
-
-  useEffect(() => {
-    if (!isInView || hasStarted.current) return;
-    hasStarted.current = true;
-
-    const startTime = performance.now();
-    const step = (now) => {
-      const elapsed = now - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setCount(Math.round(eased * end));
-      if (progress < 1) requestAnimationFrame(step);
-    };
-    requestAnimationFrame(step);
-  }, [isInView, end, duration]);
-
-  return { count, ref };
-}
-
-function AnimatedCounter({ value, prefix = '', suffix = '', className = '' }) {
-  const { count, ref } = useCountUp(value, 2200);
-  return (
-    <span ref={ref} className={className}>
-      {prefix}{count.toLocaleString()}{suffix}
-    </span>
-  );
-}
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -239,45 +207,6 @@ function HeroSection() {
   );
 }
 
-// ══════════════════════════════════════════════
-// SECTION 2: PAIN STATS (ATTENTION)
-// ══════════════════════════════════════════════
-
-function PainStats() {
-  return (
-    <section className="py-0 bg-slate-900 border-y border-white/5">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-white/5">
-          {[
-            { value: 73, suffix: '%', label: 'of sellers overprice at listing', source: 'CoreLogic 2024' },
-            { value: 44, suffix: '%', label: 'require a price reduction before selling', source: 'Domain Research' },
-            { value: 2.3, suffix: 'x', label: 'longer on market when initially overpriced', source: 'REA Group Data', decimal: true },
-          ].map((stat, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: i * 0.15 }}
-              className="py-10 sm:py-14 px-6 sm:px-8 text-center"
-            >
-              <p className="text-5xl sm:text-6xl font-bold text-white mb-3 tabular-nums">
-                {stat.decimal ? (
-                  <AnimatedCounter value={23} prefix="" suffix="" className="" />
-                ) : (
-                  <AnimatedCounter value={stat.value} className="" />
-                )}
-                <span className="text-orange-400">{stat.decimal ? '.x' : stat.suffix}</span>
-              </p>
-              <p className="text-slate-400 text-sm font-medium mb-1">{stat.label}</p>
-              <p className="text-slate-600 text-xs">{stat.source}</p>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
 
 // ══════════════════════════════════════════════
 // SECTION 3: THE PROBLEM (INTEREST)
@@ -1366,7 +1295,7 @@ export default function HomepageV2() {
   return (
     <>
       <HeroSection />
-      <PainStats />
+
       <TheProblem />
       <PriceEducationReveal />
       <LiveDemo />

@@ -36,38 +36,6 @@ function ShimmerImage({ src, alt, ...props }) {
 // UTILITIES
 // ══════════════════════════════════════════════
 
-function useCountUp(end, duration = 2000) {
-  const [count, setCount] = useState(0);
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: '-100px' });
-  const hasStarted = useRef(false);
-
-  useEffect(() => {
-    if (!isInView || hasStarted.current) return;
-    hasStarted.current = true;
-
-    const startTime = performance.now();
-    const step = (now) => {
-      const elapsed = now - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setCount(Math.round(eased * end));
-      if (progress < 1) requestAnimationFrame(step);
-    };
-    requestAnimationFrame(step);
-  }, [isInView, end, duration]);
-
-  return { count, ref };
-}
-
-function AnimatedCounter({ value, prefix = '', suffix = '', className = '' }) {
-  const { count, ref } = useCountUp(value, 2200);
-  return (
-    <span ref={ref} className={className}>
-      {prefix}{count.toLocaleString()}{suffix}
-    </span>
-  );
-}
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -952,53 +920,6 @@ function DataComparison() {
   );
 }
 
-// ══════════════════════════════════════════════
-// SECTION 6: STATS BAR
-// ══════════════════════════════════════════════
-
-function StatsBar() {
-  return (
-    <section className="py-16 bg-slate-900">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-4 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            <p className="text-4xl sm:text-5xl font-bold text-white mb-2">
-              <AnimatedCounter value={250} suffix="+" className="" />
-            </p>
-            <p className="text-slate-400 text-sm font-medium">Properties listed</p>
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-          >
-            <p className="text-4xl sm:text-5xl font-bold text-white mb-2">
-              <AnimatedCounter value={5000} suffix="+" className="" />
-            </p>
-            <p className="text-slate-400 text-sm font-medium">Price opinions submitted</p>
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-          >
-            <p className="text-4xl sm:text-5xl font-bold text-white mb-2">
-              <AnimatedCounter value={120} suffix="+" className="" />
-            </p>
-            <p className="text-slate-400 text-sm font-medium">Agents on platform</p>
-          </motion.div>
-        </div>
-      </div>
-    </section>
-  );
-}
 
 // ══════════════════════════════════════════════
 // SECTION 7: FOR AGENTS TEASER
@@ -1119,7 +1040,7 @@ export default function PublicHomepage() {
       <HowItWorks />
       <TrustSection />
       <DataComparison />
-      <StatsBar />
+
       <AgentTeaser />
       <FinalCTA />
     </>

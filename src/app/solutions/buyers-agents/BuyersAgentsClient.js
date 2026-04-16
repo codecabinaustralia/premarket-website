@@ -14,14 +14,11 @@ import {
 } from 'lucide-react';
 import Nav from '../../components/Nav';
 import FooterLarge from '../../components/FooterLarge';
-import PriceOpinionToasts from '../../components/PriceOpinionToasts';
 import {
   MarketingHero,
   SectionHeading,
-  BreakoutStats,
   FeatureCard,
   ClosingCTA,
-  PullQuote,
   TwoColumn,
   BulletList,
 } from '../../components/marketing/MarketingShell';
@@ -30,8 +27,6 @@ export default function BuyersAgentsClient() {
   return (
     <div className="bg-white text-slate-900">
       <Nav />
-      <PriceOpinionToasts />
-
       <MarketingHero
         eyebrow="For buyer's agents"
         title={
@@ -48,29 +43,6 @@ export default function BuyersAgentsClient() {
         secondaryCta={{ href: '/contact', label: 'Talk to our team' }}
       />
 
-      {/* Stats */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 -mt-6 sm:-mt-10">
-        <BreakoutStats
-          stats={[
-            {
-              eyebrow: 'Head start',
-              value: 14,
-              suffix: ' days',
-              label: 'Median lead time premarket access gives buyer\'s agents over public-portal buyers.',
-            },
-            {
-              eyebrow: 'Active campaigns',
-              value: 1280,
-              label: 'Live and recently-closed Premarket campaigns across Australia, growing weekly.',
-            },
-            {
-              eyebrow: 'Cost',
-              value: '$0',
-              label: 'Buyer\'s agent accounts are free. Submit unlimited opinions and registrations.',
-            },
-          ]}
-        />
-      </section>
 
       {/* Why buyer's agents love it */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-24 sm:py-32">
@@ -165,15 +137,6 @@ export default function BuyersAgentsClient() {
             }
           />
         </div>
-      </section>
-
-      {/* Pull quote */}
-      <section className="py-24 sm:py-32">
-        <PullQuote
-          quote="I'm closing more deals before they hit the portals than after. That's a complete reversal in eighteen months."
-          author="Buyer's agent"
-          role="Sydney"
-        />
       </section>
 
       {/* Trust + privacy */}

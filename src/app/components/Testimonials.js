@@ -3,62 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 
-const testimonials = [
-  {
-    name: "Sarah Mitchell",
-    role: "Homeowner – Sydney",
-    quote: "I was nervous about listing my home, but Premarket let me test the waters first. Got 12 genuine buyer opinions and saved thousands by knowing exactly what my home was worth before committing to an agent.",
-    image: "assets/testimonials/1.png"
-  },
-  {
-    name: "David Chen",
-    role: "First Home Buyer – Melbourne",
-    quote: "Finally found properties before they hit the market! Made an offer on my dream home before it even went to auction. Best part? No bidding wars.",
-    image: "assets/testimonials/2.png"
-  },
-  {
-    name: "Emma Roberts",
-    role: "Homeowner – Brisbane",
-    quote: "Thought I'd have to spend $15k on marketing and open homes. Premarket showed me I had genuine buyers interested without spending a cent. Saved money and avoided the stress.",
-    image: "assets/testimonials/3.png"
-  },
-  {
-    name: "Michael Torres",
-    role: "Property Investor – Perth",
-    quote: "As an investor, getting early access to off-market properties is gold. I've secured two investment properties through Premarket before they went public. No competition, better prices.",
-    image: "assets/testimonials/4.png"
-  },
-  {
-    name: "Lisa Nguyen",
-    role: "Homeowner – Adelaide",
-    quote: "I wasn't sure if it was the right time to sell. The free report showed me real buyer interest and actual price opinions – not just agent estimates. Gave me the confidence to list at the right price.",
-    image: "assets/testimonials/5.png"
-  },
-  {
-    name: "James Patterson",
-    role: "Buyer – Gold Coast",
-    quote: "Tired of fishing through the same listings as everyone else. Premarket gave me exclusive access to homes that weren't even advertised yet. Found my forever home in just 3 weeks.",
-    image: "assets/testimonials/6.png"
-  },
-  {
-    name: "Rachel Kumar",
-    role: "Homeowner – Canberra",
-    quote: "No open homes, no strangers walking through my house every weekend, and I still got multiple genuine offers. Premarket made selling so much easier and more private.",
-    image: "assets/testimonials/7.png"
-  },
-  {
-    name: "Tom Wilson",
-    role: "Investor – Newcastle",
-    quote: "Being able to give my price opinion and show genuine interest before a property goes public is a game-changer. I've beaten other buyers to the punch three times now.",
-    image: "assets/testimonials/8.png"
-  },
-  {
-    name: "Jessica Brown",
-    role: "Homeowner – Hobart",
-    quote: "The detailed report showed me exactly what buyers were willing to pay – not what marketing brochures claimed. Armed with real data, I sold for $50k more than the initial agent estimate.",
-    image: "assets/testimonials/9.png"
-  }
-];
+const testimonials = [];
 
 export default function Testimonials() {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -130,15 +75,6 @@ export default function Testimonials() {
           ))}
         </div>
 
-        {/* Trust Badge */}
-        <div className="text-center mt-16">
-          <div className="inline-flex items-center gap-3 px-6 py-3 bg-white rounded-full shadow-lg border border-gray-100">
-            <svg className="w-6 h-6 text-teal-600" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-            </svg>
-            <span className="font-semibold text-gray-900">Trusted by 10,000+ Australians</span>
-          </div>
-        </div>
       </div>
     </section>
   );

@@ -1060,19 +1060,21 @@ export default function PropertyReportPage() {
           });
         }
 
-        // Enrich offers with resolved buyer name, contact info, and preferences
+        // Enrich offers with resolved buyer name, contact info, and preferences.
+        // Prefer user-profile data (resolved from userId); fall back to whatever
+        // was captured directly on the offer (e.g. iPad kiosk flow).
         const enrichedOffers = rawOffers.map(o => {
           if (o.type === 'opinion' && o.serious === true && o.userId && userMap[o.userId]) {
             const u = userMap[o.userId];
             const resolvedName = (u.firstName && u.lastName)
               ? `${u.firstName} ${u.lastName}`.trim()
-              : (u.firstName || o.buyerName || o.userName || 'Anonymous');
+              : (u.firstName || o.buyerName || o.userName || null);
             const prefs = u.buyerPreferences || {};
             return {
               ...o,
               resolvedBuyerName: resolvedName,
-              resolvedEmail: u.email || null,
-              resolvedPhone: u.phone || null,
+              resolvedEmail: u.email || o.buyerEmail || null,
+              resolvedPhone: u.phone || o.buyerPhone || null,
               preferredLocations: prefs.locations || [],
               preferredType: prefs.propertyType || null,
               minBedrooms: prefs.minBedrooms || null,
@@ -1080,7 +1082,13 @@ export default function PropertyReportPage() {
               maxBudget: prefs.maxBudget || null,
             };
           }
-          return { ...o, resolvedBuyerName: 'Anonymous' };
+          // No linked user profile — use contact info captured on the offer itself
+          return {
+            ...o,
+            resolvedBuyerName: o.buyerName || o.userName || null,
+            resolvedEmail: o.buyerEmail || null,
+            resolvedPhone: o.buyerPhone || null,
+          };
         });
 
         setOffers(enrichedOffers);

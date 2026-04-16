@@ -44,6 +44,12 @@ export default function PropertiesTab({ user }) {
         getDocs(collection(db, 'properties')),
         authFetch(`/api/admin/users`),
       ]);
+      if (!usersRes.ok) {
+        const errText = await usersRes.text().catch(() => '');
+        throw new Error(
+          `Failed to load users (${usersRes.status}): ${errText || usersRes.statusText || 'no body'}`
+        );
+      }
       const usersData = await usersRes.json();
 
       const userMap = {};

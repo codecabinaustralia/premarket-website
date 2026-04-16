@@ -12,14 +12,11 @@ import {
 } from 'lucide-react';
 import Nav from '../../components/Nav';
 import FooterLarge from '../../components/FooterLarge';
-import PriceOpinionToasts from '../../components/PriceOpinionToasts';
 import {
   MarketingHero,
   SectionHeading,
-  BreakoutStats,
   FeatureCard,
   ClosingCTA,
-  PullQuote,
   TwoColumn,
   BulletList,
 } from '../../components/marketing/MarketingShell';
@@ -28,8 +25,6 @@ export default function RemindersClient() {
   return (
     <div className="bg-white text-slate-900">
       <Nav />
-      <PriceOpinionToasts />
-
       <MarketingHero
         eyebrow="Reminders"
         title={
@@ -46,15 +41,6 @@ export default function RemindersClient() {
         secondaryCta={{ href: '/features', label: 'All features' }}
       />
 
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 -mt-6 sm:-mt-10">
-        <BreakoutStats
-          stats={[
-            { eyebrow: 'Re-engagement', value: 38, suffix: '%', label: 'Average lift in buyer engagement after a smart reminder fires.' },
-            { eyebrow: 'Time saved', value: 5, suffix: ' hrs/wk', label: 'Average time saved per agent on manual buyer follow-ups.' },
-            { eyebrow: 'Deliverability', value: 99, suffix: '%', label: 'Email deliverability across our buyer database.' },
-          ]}
-        />
-      </section>
 
       {/* What gets automated */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-24 sm:py-32">
@@ -145,14 +131,6 @@ export default function RemindersClient() {
             }
           />
         </div>
-      </section>
-
-      <section className="py-24 sm:py-32">
-        <PullQuote
-          quote="My re-engagement rate jumped 40% the first month. I literally just turned the reminders on and walked away."
-          author="Listing agent"
-          role="Gold Coast"
-        />
       </section>
 
       <ClosingCTA

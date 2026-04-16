@@ -13,14 +13,11 @@ import {
 } from 'lucide-react';
 import Nav from '../../components/Nav';
 import FooterLarge from '../../components/FooterLarge';
-import PriceOpinionToasts from '../../components/PriceOpinionToasts';
 import {
   MarketingHero,
   SectionHeading,
-  BreakoutStats,
   FeatureCard,
   ClosingCTA,
-  PullQuote,
   TwoColumn,
   BulletList,
   fadeUp,
@@ -31,8 +28,6 @@ export default function HomeOwnersClient() {
   return (
     <div className="bg-white text-slate-900">
       <Nav />
-      <PriceOpinionToasts />
-
       <MarketingHero
         eyebrow="For home owners"
         title={
@@ -44,34 +39,11 @@ export default function HomeOwnersClient() {
             — before you list it.
           </>
         }
-        subtitle="No open homes. No upfront photography. No public listing risk. Just real buyers, real opinions, and real evidence — collected privately by your local agent."
+        subtitle="Your local real estate agent represents your property on Premarket. No open homes. No upfront photography. No public listing risk. Just real buyers, real opinions, and real evidence — collected privately through your agent."
         primaryCta={{ href: '/contact', label: 'Find a Premarket agent' }}
         secondaryCta={{ href: '/premarket', label: 'How does it work?' }}
       />
 
-      {/* Breakout stats */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 -mt-6 sm:-mt-10">
-        <BreakoutStats
-          stats={[
-            {
-              eyebrow: 'Privacy',
-              value: '100%',
-              label: 'Private campaigns. Your home never appears on the public portals unless you say so.',
-            },
-            {
-              eyebrow: 'Cost to test',
-              value: '$0',
-              label: 'No marketing spend, no photography, no styling fees to start collecting buyer evidence.',
-            },
-            {
-              eyebrow: 'Confidence',
-              value: 9,
-              suffix: ' in 10',
-              label: 'Vendors say buyer evidence helped them set a more confident asking price.',
-            },
-          ]}
-        />
-      </section>
 
       {/* Important — vendors don't self-list */}
       <section className="max-w-5xl mx-auto px-4 sm:px-6 py-20 sm:py-28">
@@ -86,13 +58,13 @@ export default function HomeOwnersClient() {
             Important — Premarket is agent-led
           </p>
           <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight leading-tight">
-            Premarket campaigns are run by your local real estate agent — not by you directly.
+            Your local agent represents your property — you can&apos;t list directly.
           </h2>
           <p className="mt-5 text-lg text-slate-700 leading-relaxed">
-            We changed this on purpose. The agent on the ground knows your suburb, your buyer pool,
-            and the negotiation dynamics that protect your price. Your job is to choose a great
-            agent — and then ask them to run the campaign through Premarket so you both work from
-            the same buyer evidence.
+            Every Premarket property is represented by a licensed local agent. They know your suburb,
+            your buyer pool, and the negotiation dynamics that protect your price. Your job is to
+            choose a great agent — and then ask them to run the campaign through Premarket so you
+            both work from the same buyer evidence.
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
             <a
@@ -181,7 +153,7 @@ export default function HomeOwnersClient() {
               items={[
                 {
                   title: '1 · Choose your agent',
-                  body: 'Pick a local agent you trust. Ask them if they run Premarket campaigns — most do, and the ones who don\'t can sign up for free.',
+                  body: 'Pick a local agent you trust. They represent your property and run the entire campaign on your behalf — you can\'t list directly.',
                 },
                 {
                   title: '2 · Build the private campaign',
@@ -202,15 +174,6 @@ export default function HomeOwnersClient() {
               ]}
             />
           }
-        />
-      </section>
-
-      {/* Pull quote */}
-      <section className="bg-gradient-to-b from-white to-slate-50 py-24 sm:py-32">
-        <PullQuote
-          quote="I had three appraisals across a $400k range. Premarket gave me 31 actual price opinions and a buyer who paid the price the data said was real."
-          author="Vendor"
-          role="Sold privately, Brisbane"
         />
       </section>
 

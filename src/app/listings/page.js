@@ -1027,10 +1027,10 @@ function ListingsContent() {
                 <h3 className="font-bold text-slate-900 text-lg mb-4 tracking-tight">Why Homeowners Use Premarket</h3>
                 <ul className="space-y-3 text-sm text-slate-700">
                   {[
-                    'Collect real buyer price opinions',
+                    'Your local agent runs and represents your property',
+                    'Collect real buyer price opinions privately',
                     'Find serious buyers without open homes',
-                    'Gauge real buyer price expectations',
-                    'Sell faster with qualified leads',
+                    'Decide to list — or pause — with zero public exposure',
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-2.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-[#e48900] flex-shrink-0 mt-2" />
@@ -1039,7 +1039,7 @@ function ListingsContent() {
                   ))}
                 </ul>
                 <p className="text-xs text-slate-500 mt-5 leading-relaxed">
-                  Properties here are <strong className="text-slate-900">serious listings</strong> from motivated sellers.
+                  Every property is represented by a <strong className="text-slate-900">licensed local agent</strong> — homeowners don&apos;t list directly.
                 </p>
               </div>
             </div>

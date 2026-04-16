@@ -99,7 +99,9 @@ export async function buildReport(propertyId) {
     }
   }
 
-  // Build serious buyer details with all registration data
+  // Build serious buyer details with all registration data.
+  // Prefer linked user profile; fall back to contact info captured directly on
+  // the offer (e.g. iPad kiosk / web "register interest" flow).
   const seriousBuyerDetails = serious.map(o => {
     const u = o.userId ? userMap[o.userId] : null;
     const name = (u?.firstName && u?.lastName) ? `${u.firstName} ${u.lastName}`.trim()
@@ -107,8 +109,8 @@ export async function buildReport(propertyId) {
     const prefs = u?.buyerPreferences || {};
     return {
       name,
-      email: u?.email || null,
-      phone: u?.phone || null,
+      email: u?.email || o.buyerEmail || null,
+      phone: u?.phone || o.buyerPhone || null,
       price: o.offerAmount || 0,
       buyerType: o.buyerType || null,
       seriousness: o.seriousnessLevel || null,

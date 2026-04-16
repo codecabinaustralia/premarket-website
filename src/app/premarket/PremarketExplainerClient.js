@@ -16,11 +16,9 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Nav from '../components/Nav';
 import FooterLarge from '../components/FooterLarge';
-import PriceOpinionToasts from '../components/PriceOpinionToasts';
 import {
   MarketingHero,
   SectionHeading,
-  BreakoutStats,
   FeatureCard,
   ClosingCTA,
   PullQuote,
@@ -105,8 +103,6 @@ export default function PremarketExplainerClient() {
   return (
     <div className="bg-white text-slate-900">
       <Nav />
-      <PriceOpinionToasts />
-
       <MarketingHero
         eyebrow="What is Premarket?"
         title={
@@ -123,15 +119,6 @@ export default function PremarketExplainerClient() {
         secondaryCta={{ href: '/contact', label: 'Talk to us' }}
       />
 
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 -mt-6 sm:-mt-10">
-        <BreakoutStats
-          stats={[
-            { eyebrow: 'Open homes required', value: '0', label: 'Premarket campaigns collect buyer evidence without a single open home.' },
-            { eyebrow: 'Photography required', value: '0', label: 'A couple of phone photos is enough to start. Pro photography comes later — if at all.' },
-            { eyebrow: 'Real opinions submitted', value: 14823, label: 'Anonymous price opinions from real Australian buyers and growing weekly.' },
-          ]}
-        />
-      </section>
 
       {/* Big idea */}
       <section className="max-w-5xl mx-auto px-4 sm:px-6 py-24 sm:py-32 text-center">

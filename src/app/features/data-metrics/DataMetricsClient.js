@@ -14,13 +14,10 @@ import {
 import { motion } from 'framer-motion';
 import Nav from '../../components/Nav';
 import FooterLarge from '../../components/FooterLarge';
-import PriceOpinionToasts from '../../components/PriceOpinionToasts';
 import {
   MarketingHero,
   SectionHeading,
-  BreakoutStats,
   ClosingCTA,
-  PullQuote,
   fadeUp,
   stagger,
 } from '../../components/marketing/MarketingShell';
@@ -96,8 +93,6 @@ export default function DataMetricsClient() {
   return (
     <div className="bg-white text-slate-900">
       <Nav />
-      <PriceOpinionToasts />
-
       <MarketingHero
         eyebrow="Data Metrics"
         title={
@@ -114,15 +109,6 @@ export default function DataMetricsClient() {
         secondaryCta={{ href: '/features', label: 'All features' }}
       />
 
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 -mt-6 sm:-mt-10">
-        <BreakoutStats
-          stats={[
-            { eyebrow: 'Live indicators', value: 8, label: 'PHI metrics tracked per suburb, updated continuously.' },
-            { eyebrow: 'Suburbs covered', value: 14000, label: 'Australian suburbs scored using buyer evidence and platform activity.' },
-            { eyebrow: 'Refresh', value: 'Live', label: 'Scores update as buyers engage with properties — not once a quarter.' },
-          ]}
-        />
-      </section>
 
       {/* Eight metrics */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-24 sm:py-32">
@@ -207,14 +193,6 @@ export default function DataMetricsClient() {
             ))}
           </motion.div>
         </div>
-      </section>
-
-      <section className="py-24 sm:py-32">
-        <PullQuote
-          quote="The MHI in our suburb went from 41 to 67 in three weeks. We listed the next day. Sold it eight days later."
-          author="Listing agent"
-          role="Inner West, Sydney"
-        />
       </section>
 
       <ClosingCTA
