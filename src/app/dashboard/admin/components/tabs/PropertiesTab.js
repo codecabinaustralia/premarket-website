@@ -349,9 +349,9 @@ export default function PropertiesTab({ user }) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-slate-900 text-sm truncate">
-                        {p.address || p.formattedAddress || 'No address'}
+                        {p.formattedAddress || p.address || 'No address'}
                       </p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-slate-500 truncate">
                         {agentName}
                         {p.agentId && allAgentDocs[p.agentId] && (
                           <span className="text-orange-500"> ({allAgentDocs[p.agentId].name})</span>

@@ -103,6 +103,7 @@ export default function AddPropertyPage() {
   const [images, setImages] = useState([]);
   const [video, setVideo] = useState(null);
   const [eagerness, setEagerness] = useState(null);
+  const [showSuburbOnly, setShowSuburbOnly] = useState(false);
   const [clientName, setClientName] = useState('');
   const [clientEmail, setClientEmail] = useState('');
   const [clientPhone, setClientPhone] = useState('');
@@ -590,6 +591,7 @@ export default function AddPropertyPage() {
         clientPhone: clientPhone.trim() || null,
         propertyType: type,
         listingStatus,
+        showSuburbOnly,
         wantsPremiumListing: false,
         agent: true,
         vendorUploaded: true,
@@ -726,6 +728,29 @@ export default function AddPropertyPage() {
                 {address && (
                   <div className="mt-4 p-4 bg-orange-50 rounded-xl border border-orange-200">
                     <p className="text-sm text-orange-800"><strong>Selected:</strong> {formattedAddress}</p>
+                  </div>
+                )}
+
+                {/* Show Address Toggle */}
+                {address && (
+                  <div className="mt-6 flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200">
+                    <div>
+                      <p className="text-sm font-medium text-slate-700">Hide street address</p>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        {showSuburbOnly
+                          ? `Buyers will only see "${address}" — map will be hidden`
+                          : 'Full address and map will be visible to buyers'}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowSuburbOnly(!showSuburbOnly)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${showSuburbOnly ? 'bg-orange-500' : 'bg-slate-300'}`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${showSuburbOnly ? 'translate-x-6' : 'translate-x-1'}`}
+                      />
+                    </button>
                   </div>
                 )}
 

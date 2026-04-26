@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import Countdown from './Countdown';
 import { ChevronRight, Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useModal } from '../context/ModalContext';
@@ -22,12 +21,7 @@ export default function Header() {
 
 
   return (
-    <header className="bg-white shadow pt-20 sm:pt-14 relative z-50">
-      {/* Countdown fixed at top */}
-      <div className="fixed top-0 left-0 w-full z-50">
-        <Countdown />
-      </div>
-
+    <header className="bg-white shadow relative z-50">
       {/* Header content */}
       <div className="container mx-auto px-4 py-4 flex justify-between items-center relative z-40">
         <div className="flex items-center space-x-4">

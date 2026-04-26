@@ -1415,8 +1415,8 @@ export default function PropertyPageClient() {
                 </div>
               )}
 
-              {/* Map Section */}
-              {property?.location?.latitude && property?.location?.longitude && (
+              {/* Map Section — hidden when address is suburb-only */}
+              {property?.location?.latitude && property?.location?.longitude && !property?.showSuburbOnly && (
                 <div className="mb-8">
                   <h3 className="text-lg font-bold text-slate-900 mb-3">Location</h3>
                   <div className="rounded-xl overflow-hidden border border-slate-200">

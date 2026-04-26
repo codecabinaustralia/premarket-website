@@ -3,7 +3,6 @@
 import { Home, Users, Briefcase, Building2, ArrowRight, ShieldCheck, Eye, TrendingUp } from 'lucide-react';
 import Nav from '../components/Nav';
 import FooterLarge from '../components/FooterLarge';
-import { LiveTicker } from '../components/marketing/WowFactor';
 import {
   MarketingHero,
   SectionHeading,
@@ -51,7 +50,6 @@ export default function SolutionsHubClient() {
   return (
     <div className="bg-white text-slate-900">
       <Nav />
-      <LiveTicker />
       <MarketingHero
         eyebrow="Solutions"
         title={

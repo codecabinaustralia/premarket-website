@@ -11,7 +11,6 @@ import FooterLarge from '../components/FooterLarge';
 import LikeButton from '../components/LikeButton';
 import BrandMark from '../components/BrandMark';
 import { SkeletonCard, Spinner } from '../components/marketing/Loading';
-import { LiveTicker } from '../components/marketing/WowFactor';
 import { Sparkles, ShieldCheck, Heart, MessageSquare } from 'lucide-react';
 
 function ShimmerImage({ src, alt, ...props }) {
@@ -466,7 +465,6 @@ function ListingsContent() {
   return (
     <div className="min-h-screen bg-white">
       <Nav />
-      <LiveTicker />
 
       {/* Hero Section — light themed with image accent */}
       <div className="relative bg-gradient-to-b from-orange-50/60 via-white to-white overflow-hidden border-b border-slate-100">

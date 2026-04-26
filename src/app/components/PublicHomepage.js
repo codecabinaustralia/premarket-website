@@ -7,8 +7,6 @@ import Link from 'next/link';
 import { db } from '../firebase/clientApp';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import {
-  LiveTicker,
-  HeroFloatingDecor,
   GradientMesh,
   PulseBadge,
   GlowButton,
@@ -143,9 +141,6 @@ function HeroSection() {
       <GradientMesh />
       {/* Subtle warm gradient wash */}
       <div className="absolute inset-0 bg-gradient-to-b from-orange-50/30 via-white/40 to-white" />
-
-      {/* Floating product cards (lg+ only) */}
-      <HeroFloatingDecor />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-20 lg:pt-28 pb-20 sm:pb-24 lg:pb-32 relative z-10">
 
@@ -1034,7 +1029,6 @@ function FinalCTA() {
 export default function PublicHomepage() {
   return (
     <>
-      <LiveTicker />
       <HeroSection />
       <FeaturedProperties />
       <HowItWorks />
