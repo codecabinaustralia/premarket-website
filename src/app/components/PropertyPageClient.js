@@ -55,6 +55,7 @@ export default function PropertyPageClient() {
   const [minPrice, setMinPrice] = useState(0);
   const [maxPrice, setMaxPrice] = useState(0);
   const [showPriceOpinionModal, setShowPriceOpinionModal] = useState(false);
+  const [showConfirmOpinionModal, setShowConfirmOpinionModal] = useState(false);
   const [showSignupModal, setShowSignupModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [registerInterest, setRegisterInterest] = useState(false);
@@ -111,16 +112,21 @@ export default function PropertyPageClient() {
     }
   }, [property, propertyId]);
 
-  // Save price opinion when slider is released
+  // Ask the user to confirm their opinion when the slider is released
   useEffect(() => {
     if (!isSliding && priceOpinion > 0 && propertyId) {
-      if (isIpadMode) {
-        saveIpadPriceOpinion();
-      } else {
-        savePriceOpinion();
-      }
+      setShowConfirmOpinionModal(true);
     }
   }, [isSliding]);
+
+  const confirmPriceOpinion = () => {
+    setShowConfirmOpinionModal(false);
+    if (isIpadMode) {
+      saveIpadPriceOpinion();
+    } else {
+      savePriceOpinion();
+    }
+  };
   
   useEffect(() => {
     if (!propertyId) return;
@@ -401,6 +407,7 @@ export default function PropertyPageClient() {
     setShowQualificationModal(false);
     setShowSignupModal(false);
     setShowPriceOpinionModal(false);
+    setShowConfirmOpinionModal(false);
     setShowThankYou(false);
     setIpadThankYou(false);
     setRegisterInterest(false);
@@ -692,6 +699,43 @@ export default function PropertyPageClient() {
   const typeMap = { 1: 'House', 2: 'Apartment', 3: 'Villa', 4: 'Townhouse', 5: 'Acreage', 6: 'Duplex' };
   const displayPropertyType = typeMap[propertyType] || propertyData?.property_type || 'Property';
 
+  const confirmOpinionModal = showConfirmOpinionModal && (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center"
+      >
+        <p className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-3">
+          Your price opinion
+        </p>
+        <div className="text-5xl font-bold text-orange-600 mb-6">
+          {formatMoney(priceOpinion)}
+        </div>
+        <h3 className="text-xl font-bold text-slate-800 mb-2">
+          Are you happy to confirm your anonymous opinion?
+        </h3>
+        <p className="text-sm text-slate-500 mb-8">
+          Your opinion stays anonymous — no signup required.
+        </p>
+        <div className="space-y-3">
+          <button
+            onClick={confirmPriceOpinion}
+            className="w-full bg-gradient-to-r from-[#e48900] to-[#c64500] text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all"
+          >
+            Yes, confirm my opinion
+          </button>
+          <button
+            onClick={() => setShowConfirmOpinionModal(false)}
+            className="w-full py-3 text-slate-600 hover:text-slate-900 font-medium transition-colors"
+          >
+            Adjust my price
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+
   // ═══════════════════════════════════════════════════════════════
   // iPad Open Home Mode - Fullscreen price opinion kiosk
   // ═══════════════════════════════════════════════════════════════
@@ -831,7 +875,7 @@ export default function PropertyPageClient() {
 
           {/* Instruction */}
           <p className="text-slate-400 text-sm">
-            Drag the slider and release to submit your opinion
+            Drag the slider and release to confirm your opinion
           </p>
         </div>
 
@@ -847,6 +891,8 @@ export default function PropertyPageClient() {
             unoptimized
           />
         </div>
+
+        {confirmOpinionModal}
 
         {/* Qualification Modal for iPad mode */}
         {showQualificationModal && (
@@ -1354,9 +1400,11 @@ export default function PropertyPageClient() {
                 <div className="mb-8">
                   <h3 className="text-xl font-bold text-slate-900 mb-4">About This Property</h3>
                   <div className="prose prose-slate max-w-none">
-                    <p className={`text-slate-600 leading-relaxed ${!showFullDescription && 'line-clamp-4'}`}>
-                      {description}
-                    </p>
+                    <div className={`text-slate-600 leading-relaxed space-y-3 ${!showFullDescription && 'line-clamp-4'}`}>
+                      {description.split('\n').filter(p => p.trim()).map((paragraph, i) => (
+                        <p key={i}>{paragraph}</p>
+                      ))}
+                    </div>
                     {description.length > 300 && (
                       <button
                         onClick={() => setShowFullDescription(!showFullDescription)}
@@ -1842,6 +1890,8 @@ export default function PropertyPageClient() {
           </div>
         </div>
       </motion.div>
+
+      {confirmOpinionModal}
 
       {/* Price Opinion Modal */}
       {showPriceOpinionModal && (

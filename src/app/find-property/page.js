@@ -7,7 +7,7 @@ async function getProperty(propertyId) {
 
   try {
     const response = await fetch(
-      `https://firestore.googleapis.com/v1/projects/premarket-app/databases/(default)/documents/properties/${propertyId}`,
+      `https://firestore.googleapis.com/v1/projects/premarket-homes/databases/(default)/documents/properties/${propertyId}?key=AIzaSyDuUEafvE_UXtNEpU--AnkO6bh_8l5j0I8`,
       { next: { revalidate: 60 } } // Cache for 60 seconds
     );
 

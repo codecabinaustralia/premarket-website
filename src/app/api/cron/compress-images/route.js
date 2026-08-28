@@ -13,16 +13,34 @@ export async function GET(request) {
 
   try {
     // Find properties that need compression:
-    // - has imageUrls
-    // - imagesCompressed is not true
-    // - not currently uploading
-    const snapshot = await adminDb
+    // Query 1: explicitly flagged as uncompressed
+    const flaggedSnapshot = await adminDb
       .collection('properties')
       .where('imagesCompressed', '==', false)
       .limit(10)
       .get();
 
-    if (snapshot.empty) {
+    // Query 2: properties where imagesCompressed field was never set
+    // (Firestore == false won't match missing fields)
+    const allSnapshot = await adminDb
+      .collection('properties')
+      .orderBy('createdAt', 'desc')
+      .limit(50)
+      .get();
+
+    const unflaggedDocs = allSnapshot.docs.filter(doc => {
+      const data = doc.data();
+      return data.imagesCompressed === undefined || data.imagesCompressed === null;
+    }).slice(0, 10);
+
+    // Combine both sets, deduplicate by ID
+    const docMap = new Map();
+    for (const doc of [...flaggedSnapshot.docs, ...unflaggedDocs]) {
+      docMap.set(doc.id, doc);
+    }
+    const docs = Array.from(docMap.values()).slice(0, 10);
+
+    if (docs.length === 0) {
       return NextResponse.json({ message: 'No properties to compress', processed: 0 });
     }
 
@@ -34,7 +52,7 @@ export async function GET(request) {
     let processed = 0;
     let skipped = 0;
 
-    for (const doc of snapshot.docs) {
+    for (const doc of docs) {
       const property = doc.data();
       const propertyId = doc.id;
 

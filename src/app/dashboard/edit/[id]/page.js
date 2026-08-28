@@ -438,6 +438,27 @@ export default function EditPropertyPage() {
     }
   };
 
+  // Convert HEIC/HEIF files to JPEG before upload
+  const convertHeicIfNeeded = async (file) => {
+    const ext = (file.name || '').toLowerCase();
+    if (ext.endsWith('.heic') || ext.endsWith('.heif') || file.type === 'image/heic' || file.type === 'image/heif') {
+      try {
+        const { default: heic2any } = await import('heic2any');
+        const blob = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.85 });
+        const converted = new File(
+          [blob],
+          file.name.replace(/\.heic$|\.heif$/i, '.jpg'),
+          { type: 'image/jpeg' }
+        );
+        return converted;
+      } catch (err) {
+        console.error('HEIC conversion failed:', err);
+        return file;
+      }
+    }
+    return file;
+  };
+
   // Submit — update existing property
   // Background upload helper
   const uploadMediaInBackground = async (propId, userId, newFiles, existingUrls, videoFile, existingVidUrl) => {
@@ -445,7 +466,7 @@ export default function EditPropertyPage() {
 
     try {
       for (const rawFile of newFiles) {
-        const file = rawFile;
+        const file = await convertHeicIfNeeded(rawFile);
         const storageRef = ref(storage, `propertyImages/${userId}/${Date.now()}-${file.name}`);
         const uploadTask = uploadBytesResumable(storageRef, file);
 
