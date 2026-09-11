@@ -276,7 +276,10 @@ export default function PropertyPageClient() {
       localStorage.setItem(viewKey, Date.now().toString());
 
       // Use server-side API to track view (bypasses security rules)
-      await fetch('/api/track-view', {
+      // Endpoint intentionally avoids the word "track" — ad blockers / privacy
+      // extensions (uBlock, Brave Shields, Safari ITP) silently block requests
+      // whose path contains "track", which was causing views to go uncounted.
+      await fetch('/api/property-visit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ propertyId: propId, visitorId, isReturn }),
